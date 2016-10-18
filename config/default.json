@@ -1,0 +1,22 @@
+{
+  "port": "13055",
+  "db": {
+    "host": "localhost",
+    "port": 27017,
+    "username": "",
+    "password": "",
+    "database": "pbs-inherit"
+  },
+  "fleet":{
+    "mysore":{
+     "name":"mysore",
+      "size":500
+    }
+
+  },
+  "security": {
+    "secret": "rideonallends",
+    "enabled": false,
+    "tokenExpiryHours": 2
+  }
+}
