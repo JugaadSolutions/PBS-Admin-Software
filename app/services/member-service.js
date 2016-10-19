@@ -122,7 +122,7 @@ exports.checkout=function (record,callback) {
             });
         },
         function (callback) {
-            Port.find({'_id':record.fromPort},function (err,result) {
+            Port.findOne({'_id':record.fromPort},function (err,result) {
                 if(err)
                 {
                     errorstatus=1;

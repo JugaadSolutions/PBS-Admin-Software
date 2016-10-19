@@ -5,7 +5,10 @@
 var async = require('async')
     /*config = require('config'),
     request = require('request')*/;
-var DockStation=require('../models/dock-station');
+var DockStation=require('../models/dock-station'),
+    DockPort= require('../models/dock-port');
+
+var DockService = require('../services/docking-port-service');
 // Application Level Dependencies
 /*var DockingStation = require('../models/docking-station'),
     Member = require('../models/user'),
@@ -99,12 +102,71 @@ exports.createStation = function (record, callback) {
 
 
 exports.createDS = function (record,callback) {
+    var stationDetails;
+    var stationDetailsUpdated;
+    var portInfo;
+    
+    async.series([
+        function (callback) {
+            DockStation.create(record,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                stationDetails=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            for(var i=0;i<stationDetails.noofPorts;i++)
+            {
+                var portsDetails={
+                    StationId:stationDetails._id,
+                    FPGA:i,
+                    Name:stationDetails.name+"-"+stationDetails.stationNumber
+                };
+                DockService.createPort(portsDetails,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
 
-DockStation.create(record,function (err,result) {
-    if(err)
-    {
-        return callback(err,null);
-    }
-    return callback(null,result);
-});
+                    DockStation.findById(stationDetails._id,function (err,rec) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+
+                        portInfo={
+                            dockingPortId:result._id
+                        };
+                        stationDetails.portIds.push(portInfo);
+
+                    });
+                });
+            }
+            callback(null,null);
+        },
+        function (callback) {
+            DockStation.findByIdAndUpdate(stationDetails._id,stationDetails,function (err,records) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                //stationDetails=records;
+                stationDetailsUpdated=records;
+                return callback(null,records);
+            });
+
+        }
+        
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,stationDetailsUpdated);
+    });
+
+
 };

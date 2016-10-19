@@ -55,6 +55,21 @@ router
         });
     })
 
+    .post('/checkin/app', function (req, res, next) {
+        MobileService.checkinApp(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.CHECK_IN_ENTRY_CREATED, description: '', data: result});
+            }
+
+        });
+    })
+
+
     .post('/checkin', function (req, res, next) {
         MemberService.checkin(req.body,function (err,result) {
             if(err)

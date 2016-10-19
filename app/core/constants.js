@@ -8,6 +8,12 @@ ADMIN:"admin",
     EMPLOYEE:"employee"
 };
 
+exports.AvailabilityStatus={
+    FULL:0,
+    EMPTY:1,
+    NORMAL:2
+};
+
 exports.FleetStatus={
     WORKING:0,
     DECOMMISSIONED:-1
