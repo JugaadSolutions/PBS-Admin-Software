@@ -2,7 +2,7 @@
 var express = require('express');
 
 // Application Level Dependencies
-var //DockingStation = require('../models/docking-station'),
+var MaintenanceCenter = require('../models/maintenance-center'),
 
     MaintenanceCenterService = require('../services/maintenance-center-service'),
 
@@ -13,6 +13,19 @@ var router = express.Router();
 
 // Router Methods
 router
+
+    .get('/',function (req,res,next) {
+        MaintenanceCenter.find({'stationType':'maintenance-center'},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
 
 
     .post('/', function (req, res, next) {

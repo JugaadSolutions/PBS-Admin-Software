@@ -7,7 +7,9 @@ var mongoose = require('mongoose'),
 
 
 var RedistributionVehicleSchema = require('mongoose').model('station').schema.extend({
-    name:{type:String,required:false,unique:true}
+    name:{type:String,required:false,unique:true},
+    vehiclePlate: {type: String, required: true, unique: true},
+    driverId: {type: String, required: false}
 });
 
 var RedistributionVehicle = mongoose.model('redistribution-vehicle', RedistributionVehicleSchema);

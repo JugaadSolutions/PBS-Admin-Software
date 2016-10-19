@@ -2,7 +2,7 @@
 var express = require('express');
 
 // Application Level Dependencies
-var //DockingStation = require('../models/docking-station'),
+var RedistributionVehicle= require('../models/redistribution-vehicle'),
 
     RedistributionVehicleService = require('../services/redistribution-vehicle-service'),
 
@@ -14,6 +14,19 @@ var router = express.Router();
 // Router Methods
 router
 
+
+    .get('/',function (req,res,next) {
+        RedistributionVehicle.find({'stationType':'redistribution-vehicle'},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
 
     .post('/', function (req, res, next) {
 

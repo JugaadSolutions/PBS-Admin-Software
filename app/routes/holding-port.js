@@ -2,7 +2,7 @@
 var express = require('express');
 
 // Application Level Dependencies
-var //DockingStation = require('../models/docking-station'),
+var HoldingPort = require('../models/holding-port'),
 
     HoldingPortService = require('../services/holding-port-service'),
 
@@ -14,6 +14,17 @@ var router = express.Router();
 // Router Methods
 router
 
+    .get('/',function (req,res,next) {
+
+        HoldingPort.find({'_type':'Holding-area'},function(err,result) {
+            if (err) {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+    })
 
     .post('/', function (req, res, next) {
 

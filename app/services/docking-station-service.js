@@ -104,7 +104,7 @@ exports.createStation = function (record, callback) {
 exports.createDS = function (record,callback) {
     var stationDetails;
     var stationDetailsUpdated;
-    var portInfo;
+    var portInfo=[];
     
     async.series([
         function (callback) {
@@ -118,47 +118,55 @@ exports.createDS = function (record,callback) {
             });
         },
         function (callback) {
+            var j=1;
             for(var i=0;i<stationDetails.noofPorts;i++)
             {
+                if(j>4)
+                {
+                    j=1;
+                }
                 var portsDetails={
                     StationId:stationDetails._id,
-                    FPGA:i,
-                    Name:stationDetails.name+"-"+stationDetails.stationNumber
+                    FPGA:j,
+                    Name:stationDetails.name+"- PORT -"+j
                 };
+
                 DockService.createPort(portsDetails,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
 
-                    DockStation.findById(stationDetails._id,function (err,rec) {
+                    /* DockStation.findById(stationDetails._id,function (err,rec) {
+                     if(err)
+                     {
+                     return callback(err,null);
+                     }*/
+
+                    var portInfo={
+                        dockingPortId:result._id
+                    };
+                    stationDetails.portIds.push(portInfo);
+                    DockStation.findByIdAndUpdate(stationDetails._id,stationDetails,function (err,records) {
                         if(err)
                         {
                             return callback(err,null);
                         }
-
-                        portInfo={
-                            dockingPortId:result._id
-                        };
-                        stationDetails.portIds.push(portInfo);
-
+                        //stationDetails=records;
+                        stationDetailsUpdated=records;
+                        // return callback(null,records);
                     });
+
+                    //});
                 });
+                j=j+1;
             }
             callback(null,null);
-        },
-        function (callback) {
-            DockStation.findByIdAndUpdate(stationDetails._id,stationDetails,function (err,records) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                //stationDetails=records;
-                stationDetailsUpdated=records;
-                return callback(null,records);
-            });
+        }/*,
+         function (callback) {
 
-        }
+
+         }*/
         
     ],function (err,result) {
         if(err)
@@ -170,3 +178,23 @@ exports.createDS = function (record,callback) {
 
 
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

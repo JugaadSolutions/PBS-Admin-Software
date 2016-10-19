@@ -2,7 +2,7 @@
 var express = require('express');
 
 // Application Level Dependencies
-var //DockingStation = require('../models/docking-station'),
+var MaintenancePort = require('../models/maintenance-port'),
 
     MaintenancePortService = require('../services/maintenance-port-service'),
 
@@ -13,6 +13,18 @@ var router = express.Router();
 
 // Router Methods
 router
+
+    .get('/',function (req,res,next) {
+
+        MaintenancePort.find({'_type':'Maintenance-area'},function(err,result) {
+            if (err) {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+    })
 
 
     .post('/', function (req, res, next) {
