@@ -2,8 +2,34 @@
  * Created by root on 4/10/16.
  */
 
+exports.PayDescription={
+    SECURITY_DEPOSIT:"Security Deposit",
+    PROCESSING_FEE:"Processing Fee",
+    SMART_CARD_FEE:"Smart Card Fee",
+    //USAGE_FEE:"Usage Fee",
+    DEBIT_NOTE:"Debit note",
+    CREDIT_NOTE:"Credit note"
+};
+
+exports.PayMode={
+    CASH:"Cash",
+    CREDIT_CARD:"Credit Card",
+    DEBIT_CARD:"Debit Card",
+    NET_BANKING:"Net Banking"
+};
+
+    exports.PayThrough={
+    POS:"Pos",
+    PAYMENT_GATEWAY:"Payment Gateway"
+};
+
+exports.Loc={
+    REG_CENTRE:"Registration Centre",
+    ONLINE:"Online"
+};
+
 exports.Role={
-ADMIN:"admin",
+    ADMIN:"admin",
     MEMBER:"member",
     EMPLOYEE:"employee"
 };

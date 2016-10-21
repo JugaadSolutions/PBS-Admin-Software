@@ -77,6 +77,92 @@ router
 
         });
     })
-;
 
+    .post('/:id/assignmembership', function (req, res, next) {
+
+        MemberService.assignMembership(req.params.id, req.body.membershipId, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.UPDATING_RECORD_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .post('/:id/assigncard', function (req, res, next) {
+
+        MemberService.addCard(req.params.id, req.body.cardNumber, req.body.membershipId, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .post('/:id/credit', function (req, res, next) {
+
+        MemberService.creditMember(req.params.id, req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.YOUR_PAYMENT_HAS_BEEN_SUCCESSFULLY_PROCESSED,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        MemberService.updateMember(existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+
+
+;
 module.exports = router;

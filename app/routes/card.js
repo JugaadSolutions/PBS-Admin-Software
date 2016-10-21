@@ -6,7 +6,7 @@ var Card = require('../models/card'),
 
     //MembershipService = require('../services/membership-service'),
 
-    RequestDataHandler = require('../handlers/request-data-handler'),
+    //RequestDataHandler = require('../handlers/request-data-handler'),
     Messages = require('../core/messages');
 
 var router = express.Router();

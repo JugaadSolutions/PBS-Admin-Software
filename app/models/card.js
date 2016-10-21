@@ -3,12 +3,13 @@ var mongoose = require('mongoose');
 //bcrypt = require('bcryptjs');
 //var extend = require('mongoose-schema-extend');
 var Schema = mongoose.Schema;
-var abstract = require('./abstract');
-//Constants = require('../core/constants'),
+var abstract = require('./abstract'),
+Constants = require('../core/constants');
 //Messages = require('../core/messages'),
 //ValidationHandler = require('../handlers/validation-handler');
 //var autoIncrement = require('mongoose-auto-increment');
-
+const CardStatus = Constants.CardStatus;
+const CardType = Constants.CardType;
 
 var CardSchema = mongoose.Schema({
     cardNumber: {type: Number, required: true, unique: true},
@@ -16,7 +17,9 @@ var CardSchema = mongoose.Schema({
     assignedTo: {type: Schema.ObjectId, required: false, ref: 'user'},
     issuedBy: {type: Schema.ObjectId, required: false, ref: 'user'},
     balance: {type: Number, required: false, default: 0},
-    membershipId: {type: Schema.ObjectId, required: false, ref: 'Membership'}
+    membershipId: {type: Schema.ObjectId, required: false, ref: 'Membership'},
+    status: {type: CardStatus, required: true, default: CardStatus.INACTIVE},
+    cardType: {type: CardType, required: true,default: CardType.REGISTERED_MEMBER}
 
 }, { collection : 'cards' });
 

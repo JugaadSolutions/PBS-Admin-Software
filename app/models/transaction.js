@@ -14,10 +14,10 @@ var abstract = require('./abstract');
 var Schema = mongoose.Schema;
 var schema = {
 
-    user: {type: Schema.ObjectId, required: false, ref: 'User'},
-    vehicle: {type: Schema.ObjectId, required: true, ref: 'Vehicle'},
-    fromPort: {type: Schema.ObjectId, required: true, ref: 'Dockport'},
-    toPort: {type: Schema.ObjectId, required: true,ref: 'Dockport'},
+    user: {type: Schema.ObjectId, required: false, ref: 'user'},
+    vehicle: {type: Schema.ObjectId, required: true, ref: 'vehicle'},
+    fromPort: {type: Schema.ObjectId, required: true, ref: 'port'},
+    toPort: {type: Schema.ObjectId, required: true,ref: 'port'},
     checkOutTime: {type: Date, required: false},
     checkInTime: {type: Date, required: false},
     duration: {type: Number, required: false},
