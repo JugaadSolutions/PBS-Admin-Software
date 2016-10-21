@@ -12,6 +12,11 @@ var autoIncrement = require('mongoose-auto-increment');
 const Sex = Constants.Sex;
 const ProofType = Constants.ProofType;
 
+const EmergencyContact = {
+    contactName: {type: String, required: false},
+    contactNumber: {type: String, required: false}
+};
+
 const Document = {
     documentType: {type: ProofType, required: false},
     documentNumber: {type: String, required: false},
@@ -28,7 +33,7 @@ var UserSchema = mongoose.Schema({
     fatherName: {type: String, required: false},
     email: {type: String, required: false, unique: true, validate: [ValidationHandler.validateEmail, 'Invalid email']},
     emailVerified: {type: Boolean, required: false, default: true},
-    password: {type: String, required: false},
+    password: {type: String, required: false,default:'member@123'},
     phoneNumber: {type: String, required: false, unique: true},
     age: {type: Number, required: false, min: 5, max: 100},
     sex: {type: Sex, required: false},
@@ -36,12 +41,14 @@ var UserSchema = mongoose.Schema({
     city: {type: String, required: false},
     state: {type: String, required: false},
     country: {type: String, required: false},
+    countryCode:{type: String, required: false},
     pinCode: {type: String, required: false},
     education: {type: String, required: false},
     occupation: {type: String, required: false},
-    picture: {type: String, required: false, default: ''},
+    profilePic: {type: String, required: false, default: ''},
     cardNum:{type: Number, required: false},
-
+    smartCardNumber: {type: String, required: false},
+    emergencyContact: {type: EmergencyContact, required: false},
     assignedUser: {type: Schema.ObjectId, required: false},
     documents: {type: [Document], required: false}
 

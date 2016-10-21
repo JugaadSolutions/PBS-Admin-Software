@@ -6,7 +6,7 @@ var Membership = require('../models/membership'),
 
     //MembershipService = require('../services/membership-service'),
 
-    //RequestDataHandler = require('../handlers/request-data-handler'),
+    RequestDataHandler = require('../handlers/request-data-handler'),
     Messages = require('../core/messages');
 
 var router = express.Router();
@@ -14,7 +14,7 @@ var router = express.Router();
 // Router Methods
 router
 
-    .get('/',function (req,res,next) {
+/*    .get('/',function (req,res,next) {
     Membership.find({},function (err,result) {
         if(err)
         {
@@ -25,6 +25,31 @@ router
         }
 
     });
+    })*/
+
+    .get('/', function (req, res, next) {
+
+        var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+        Membership.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result.docs
+                });
+
+            }
+
+        });
+
     })
 
     .post('/', function (req, res, next) {

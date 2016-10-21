@@ -11,12 +11,12 @@ var abstract = require('./abstract');
 
 
 var CardSchema = mongoose.Schema({
-    cardNumber: {type: String, required: true, unique: true},
+    cardNumber: {type: Number, required: true, unique: true},
     cardRFID: {type: String, required: true, unique: true},
     assignedTo: {type: Schema.ObjectId, required: false, ref: 'user'},
+    issuedBy: {type: Schema.ObjectId, required: false, ref: 'user'},
     balance: {type: Number, required: false, default: 0},
-    membershipId: {type: Schema.ObjectId, required: false, ref: 'Membership'},
-
+    membershipId: {type: Schema.ObjectId, required: false, ref: 'Membership'}
 
 }, { collection : 'cards' });
 

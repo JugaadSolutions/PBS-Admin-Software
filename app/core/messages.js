@@ -29,6 +29,7 @@ module.exports={
 
     LOGIN_SUCCESSFUL:"Login Successful",
 
+    NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE:"No such record exists in the database",
     NO_DOCKING_UNIT_FOUND: "No docking unit found!",
     NO_PORT_FOUND: "No docking port found!",
 
