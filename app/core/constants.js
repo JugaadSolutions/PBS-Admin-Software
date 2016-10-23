@@ -65,7 +65,7 @@ exports.ProofType = {
 exports.MemberStatus = {
     PROSPECTIVE: 0,
     REGISTERED: 1,
-    RENEWED: 2,
+    //RENEWED: 2,
     CANCELLED: -1,
     SUSPENDED: -2
 };

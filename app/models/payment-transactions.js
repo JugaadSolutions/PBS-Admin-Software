@@ -18,8 +18,8 @@ var PaymentTransactionSchema = mongoose.Schema({
     gatewayTransactionId:{type:String,required:false},
     comments:{type:String,required:false},
     location:{type:Loc,required:true,default:Loc.REG_CENTRE},
-    credit:{type:Number,required:false},
-    debit:{type:Number,required:false},
+    debit:{type:Number,required:false,default:0},
+    credit:{type:Number,required:false,default:0},
     balance:{type:Number,required:true}
 
 }, { collection : 'payment-transactions'});

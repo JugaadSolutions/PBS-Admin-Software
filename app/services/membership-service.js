@@ -61,9 +61,41 @@ exports.calculateValidity = function (membershipId, memberId, callback) {
 
                     });
 
-                } else {
-                    return callback(null, null);
-                }
+                } /*else {
+                    Membership.findById(membershipId, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        if (!result) {
+                            return callback(new Error(Messages.NO_MEMBERSHIP_FOUND), null);
+                        }
+
+                        var date1 = new Date("12/28/2010");
+                        var date2 = new Date("12/15/2010");
+                        var timeDiff = date1.getTime() - date2.getTime() ;
+                        var diffDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+                        var currentDate = new Date();
+
+
+                        var timeDiff = currentDate.getTime() - validity.getTime();
+                        if(timeDiff<0)
+                        {
+                            validity.setDate(validity + result.validity);
+                            validity = currentDate;
+                        }
+                        else
+                            {
+
+                            }
+
+
+                        return callback(null, validity);
+
+                    });
+                }*/
             }
 
         ],

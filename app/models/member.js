@@ -13,8 +13,10 @@ var MemberSchema = require('mongoose').model('user').schema.extend({
     processingFeesDeducted: {type: Boolean, required: false, default: false},
     smartCardId: {type: Schema.ObjectId, required: false, ref: 'card'},
     smartCardKey:{type: String, required: false},
-    creditBalance: {type: Number, required: false, default: 0},
-    securityDeposit:{type:Number,required:false}
+    creditBalance: {type: Number, required: false, default:0},
+    securityDeposit:{type:Number,required:false,default:0},
+    smartCardFees:{type:Number,required:false,default:0},
+    processingFees:{type:Number,required:false,default:0}
 
 });
 

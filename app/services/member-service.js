@@ -4,8 +4,10 @@ var Member = require('../models/member'),
     uuid = require('node-uuid'),
     async=require('async'),
     MembershipService=require('../services/membership-service'),
+    PaymentTransaction=require('../services/payment-transaction'),
     Messages = require('../core/messages'),
     Constants =require('../core/constants'),
+    Transaction = require('../models/payment-transactions'),
     Card = require('../models/card'),
     CardService = require('../services/card-service'),
     User=require('../models/user');
@@ -306,11 +308,11 @@ exports.updateMember = function (record,callback) {
 
 exports.assignMembership=function (memberId, membershipId,callback) {
 
-    var validity;
+   // var validity;
 
     async.series([
 
-            // Step 1: Method to calculate balance and validity
+           /* // Step 1: Method to calculate balance and validity
             function (callback) {
 
                 MembershipService.calculateValidity(membershipId, memberId, function (err, result) {
@@ -322,14 +324,14 @@ exports.assignMembership=function (memberId, membershipId,callback) {
                     validity = result;
                     return callback(null, result);
                 });
-            },
+            },*/
 
             // Step 2: Method to update Member validity
             function (callback) {
 
                 Member.findByIdAndUpdate(memberId, {
                     $set: {
-                        'validity': validity,
+                        //'validity': validity,
                         'membershipId': membershipId
                     }
                 }, function (err, result) {
@@ -470,6 +472,8 @@ exports.creditMember=function (id,record,callback) {
     var isProcessingFeeDeducted = false;
     var amount = 0;
     var transObject;
+    var transactionDetails=0;
+    var validity;
 
     async.series([
 
@@ -495,9 +499,17 @@ exports.creditMember=function (id,record,callback) {
 
         },
         function (callback) {
+           /* var orderId = 'PBS'+ new Date().getTime();*/
             if(isProcessingFeeDeducted)
             {
-                var orderId = 'PBS'+ new Date().getTime();
+                PaymentTransaction.existingMember(memberObject,record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+/*
                    transObject={
                        memberId:memberObject._id,
                        invoiceNo: orderId,
@@ -506,17 +518,53 @@ exports.creditMember=function (id,record,callback) {
                        paymentThrough:Constants.PayThrough.POS,
                        gatewayTransactionId:record.transactionNumber,
                        comments:record.comments,
-                       location:'gh'
+                       credit:record.credit,
+                       balance:record.credit
                    };
+                   Transaction.create(transObject,function (err,result) {
+                       if(err)
+                       {
+                           return callback(err,null);
+                       }
+                       transactionDetails=result;
+                       return callback(null,result);
+                   });*/
+            }
+            else
+            {
+                PaymentTransaction.newMember(memberObject,record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+
             }
 
+        },
+        function (callback) {
+            if(transactionDetails!=0)
+            {
+                memberObject.creditBalance=transactionDetails.balance;
+                Member.findByIdAndUpdate(memberObject._id,memberObject,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberObject=result;
+                    return callback(null,result);
+                });
+            }
         }
+
+
     ],function (err,result) {
         if(err)
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,memberObject);
     });
 
 };
