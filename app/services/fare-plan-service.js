@@ -14,11 +14,12 @@ exports.calculateFarePlan = function (id, duration, callback) {
             return callback(err, null);
         }
 
-        fee = result.plans[0].fee;
+        fee = 250;
         for (var i = 0; i < result.plans.length; i++) {
 
-            if (duration >= result.plans[i].endTime) {
+            if (duration <= result.plans[i].endTime) {
                 fee = result.plans[i].fee;
+                break;
             }
 
         }
