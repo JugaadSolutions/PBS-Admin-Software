@@ -2,7 +2,7 @@ var async = require('async'),
     User = require('../models/user'),
     vehicle = require('../models/vehicle');
 
-var MemberService = require('./transaction-service');
+var MemberService = require('../services/transaction-service');
 
 
 exports.checkoutApp=function (record,callback) {

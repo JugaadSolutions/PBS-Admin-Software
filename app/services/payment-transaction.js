@@ -8,7 +8,7 @@ MembershipService=require('../services/membership-service'),
 
 
 exports.existingMember = function (memberObject,record,callback) {
-    var validity;
+/*    var validity;
     var transObject;
     var transactionDetails;
     var orderId = 'PBS'+ new Date().getTime();
@@ -53,7 +53,7 @@ exports.existingMember = function (memberObject,record,callback) {
            return callback(err,null);
        }
        return callback(null,result);
-   });
+   });*/
 
 };
 
@@ -102,7 +102,7 @@ exports.newMember = function (memberObject,record,callback) {
                         paymentThrough:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
-                        debit:record.credit,
+                        debit:memberShipObject.securityDeposit,
                         balance:record.credit
                     };
 
@@ -117,7 +117,7 @@ exports.newMember = function (memberObject,record,callback) {
                         paymentThrough:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
-                        debit:record.credit,
+                        debit:memberShipObject.smartCardFees,
                         balance:record.credit
                     };
                     transactionList.push(userfeeDeposit);
@@ -136,7 +136,7 @@ exports.newMember = function (memberObject,record,callback) {
                             paymentThrough:Constants.PayThrough.POS,
                             gatewayTransactionId:record.transactionNumber,
                             comments:record.comments,
-                            debit:record.credit,
+                            debit:memberShipObject.processingFees,
                             balance:record.credit
                         };
                         transactionList.push(processingObject);
@@ -190,6 +190,7 @@ exports.newMember = function (memberObject,record,callback) {
                 Member.findByIdAndUpdate(memberObject._id,{
                     $set: {
                         'validity': validity,
+                        'processingFeesDeducted':true,
                         'creditBalance':finalTransaction.balance,
                         'securityDeposit':memberShipObject.securityDeposit,
                         'smartCardFees': memberShipObject.smartCardFees,

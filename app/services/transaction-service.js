@@ -12,7 +12,7 @@ var async = require('async'),
     Port = require('../models/port');
  var fleet = require('../models/fleet');
 
-var TransactionReconciliation = require('./TransactionReconciliation');
+var TransactionReconciliation = require('./transaction-reconciliation');
 
 var Messages = require('../core/messages'),
     Constants = require('../core/constants');
@@ -396,7 +396,7 @@ exports.checkin=function (record,callback) {
         function (callback) {
             if(userDetails!=0)
             {
-                CheckIn.findByIdAndUpdate(checkInDetails._id,{$set:{'user':userDetails._id}},function (err,result) {
+                CheckIn.findByIdAndUpdate(checkInDetails._id,{$set:{'user':userDetails._id}},{new: true},function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -426,6 +426,7 @@ exports.checkin=function (record,callback) {
                 {
                     return callback(err,null);
                 }
+                checkInDetails=result;
                 return callback(null,result);
             });
         }

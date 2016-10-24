@@ -6,28 +6,70 @@ var async = require('async'),
     User = require('../models/user'),
     Member = require('../models/member'),
     DockPort=require('../models/dock-port'),
+    Messages = require('../core/messages'),
     Port = require('../models/port');
 var fleet = require('../models/fleet');
 
 var TransactionAssociation = require('../models/transaction-association'),
+    FarePlanService = require('../services/fare-plan-service'),
     Transaction = require('../models/transaction');
 
 
 exports.ReconcileTransaction=function (record,callback) {
 
     var userDetails=0;
+    var memberObject;
     var vehiclesDetails;
     var dockingPortDetails;
     var checkInDetails;
     var checkOutDetails=0;
+    var ismember=true;
     var farePlanId;
+    var creditUsed;
     var checkinEntry;
     var errorstatus=0;
     var errormsg='';
     var duration;
     var transAssociation=0;
+    var balance;
 
     async.series([
+        function (callback) {
+            User.findOne({'_id':record.user},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result._type!='member')
+                {
+                    ismember=false;
+                }
+                userDetails=result;
+                return callback(null,result);
+            });
+        },
+
+        function (callback) {
+          if(ismember)
+          {
+              Member.findOne({'_id': userDetails._id}).populate('membershipId').lean().exec(function (err, result) {
+
+                  if (err) {
+                      return callback(err, null);
+                  }
+
+                  if (!result) {
+                      return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                  }
+
+                  memberObject = result;
+                  farePlanId = result.membershipId.farePlan;
+                  return callback(null, result);
+
+              });
+          }
+          //return callback(null,null);
+        },
         /*function (callback) {
             vehicle.findById(record.vehicleId,function (err,result) {
                 if(err)
@@ -86,7 +128,8 @@ exports.ReconcileTransaction=function (record,callback) {
 
                         CheckOut.findOne({
                     'vehicleId': record.vehicleId,
-                    'status': 'Open'
+                    'status': 'Open',
+                            'checkOutTime': {$lt:moment(record.checkInTime)}
                 }).sort({'checkOutTime': -1}).exec(function (err, result) {
                     if (err) {
                         return callback();
@@ -105,6 +148,43 @@ exports.ReconcileTransaction=function (record,callback) {
                  }
              },*/
 
+            function (callback) {
+                if(ismember)
+                {
+                    var checkInTime = moment(record.checkInTime);
+                    var checkOutTime = moment(checkOutDetails.checkOutTime);
+
+                    var durationMin = moment.duration(checkInTime.diff(checkOutTime));
+                    duration = durationMin.asMinutes();
+                    FarePlanService.calculateFarePlan(farePlanId, duration, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        creditUsed = result;
+                        return callback(null, result);
+                    });
+                }
+
+            },
+        function (callback) {
+                if(ismember) {
+                     balance = Number(memberObject.creditBalance) - creditUsed;
+                    Member.findByIdAndUpdate(memberObject._id, {
+                        $set:{'creditBalance': balance}
+                    }, {new: true}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        memberObject = result;
+                        return callback(null, result);
+
+                    });
+                }
+        },
 
  function (callback) {
     if (checkOutDetails!=0) {
@@ -123,11 +203,12 @@ exports.ReconcileTransaction=function (record,callback) {
 
  },
             function (callback) {
-                CheckIn.findByIdAndUpdate(transAssociation.checkInEntry,{$set:{'status':'Close'}},function (err,result) {
+                CheckIn.findByIdAndUpdate(transAssociation.checkInEntry,{$set:{'status':'Close'}},{new:true},function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
+                    checkInDetails=result;
                     return callback(null,result);
                 });
 
@@ -143,16 +224,34 @@ exports.ReconcileTransaction=function (record,callback) {
         }
             ,
  function (callback) {
+     var transaction;
+                if(ismember){
 
-         var transaction = {
-             user: record.user,
-             vehicle:record.vehicleId,
-             fromPort: checkOutDetails.fromPort,
-             toPort: record.toPort,
-             checkOutTime: checkOutDetails.checkOutTime,
-             checkInTime: record.checkInTime,
-             status: 'Close'
-         };
+                    transaction = {
+                        user: record.user,
+                        vehicle:record.vehicleId,
+                        fromPort: checkOutDetails.fromPort,
+                        toPort: record.toPort,
+                        checkOutTime: checkOutDetails.checkOutTime,
+                        checkInTime: record.checkInTime,
+                        duration:duration,
+                        creditsUsed:creditUsed,
+                        creditBalance:balance,
+                        status: 'Close'
+                    };
+                }
+                else {
+                    transaction = {
+                        user: record.user,
+                        vehicle:record.vehicleId,
+                        fromPort: checkOutDetails.fromPort,
+                        toPort: record.toPort,
+                        checkOutTime: checkOutDetails.checkOutTime,
+                        checkInTime: record.checkInTime,
+                        status: 'Close'
+                    };
+                }
+
          Transaction.create(transaction, function (err, result) {
              if (err) {
                  return callback(err, null);
@@ -166,7 +265,7 @@ exports.ReconcileTransaction=function (record,callback) {
             {
                 return callback(err,null);
             }
-            return callback(null,record);
+            return callback(null,checkInDetails);
         });
 };
 

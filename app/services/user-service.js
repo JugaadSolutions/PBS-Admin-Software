@@ -29,7 +29,7 @@ exports.loginUser = function (loginData, callback) {
     User.findOne({$or: [{phoneNumber: username}, {email: username}]}, function (err, record) {
 
         var Id = record._id;
-
+        var Role = record._type;
         if (err) {
             return callback(err, null);
         }
@@ -53,7 +53,7 @@ exports.loginUser = function (loginData, callback) {
             }
 
             record.userId = record._id;
-            record = _.pick(record, 'email', 'role', 'phoneNumber', 'userID', 'createdAt');
+            record = _.pick(record, 'email', '_type', 'phoneNumber', 'userID', 'createdAt');
 
 
 
@@ -66,7 +66,8 @@ exports.loginUser = function (loginData, callback) {
             var tokenData = {
                 token: token,
                 expiresIn: TOKEN_EXPIRATION_TIME,
-                id:Id
+                id:Id,
+                role:Role
             };
 
             return callback(null, tokenData);

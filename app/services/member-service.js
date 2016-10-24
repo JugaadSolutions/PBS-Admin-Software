@@ -469,6 +469,7 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
 exports.creditMember=function (id,record,callback) {
 
     var memberObject;
+    var updatedMemberObject;
     var isProcessingFeeDeducted = false;
     var amount = 0;
     var transObject;
@@ -507,6 +508,7 @@ exports.creditMember=function (id,record,callback) {
                     {
                         return callback(err,null);
                     }
+                    updatedMemberObject=result;
                     return callback(null,result);
                 });
 /*
@@ -537,12 +539,13 @@ exports.creditMember=function (id,record,callback) {
                     {
                         return callback(err,null);
                     }
+                    updatedMemberObject=result;
                     return callback(null,result);
                 });
 
             }
 
-        },
+        }/*,
         function (callback) {
             if(transactionDetails!=0)
             {
@@ -556,7 +559,7 @@ exports.creditMember=function (id,record,callback) {
                     return callback(null,result);
                 });
             }
-        }
+        }*/
 
 
     ],function (err,result) {
@@ -564,7 +567,7 @@ exports.creditMember=function (id,record,callback) {
         {
             return callback(err,null);
         }
-        return callback(null,memberObject);
+        return callback(null,updatedMemberObject);
     });
 
 };
