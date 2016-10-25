@@ -118,49 +118,52 @@ exports.createDS = function (record,callback) {
             });
         },
         function (callback) {
-            var j=1;
-            for(var i=0;i<stationDetails.noofPorts;i++)
-            {
-                if(j>4)
-                {
-                    j=1;
-                }
-                var portsDetails={
-                    StationId:stationDetails._id,
-                    FPGA:j,
-                    Name:stationDetails.name+"- PORT -"+j
-                };
+            // var j=1;
+            var count = Number(stationDetails.noofPorts)/4;
+            for (var i = 3; i < 3+(count); i++) {
 
-                DockService.createPort(portsDetails,function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-
-                    /* DockStation.findById(stationDetails._id,function (err,rec) {
-                     if(err)
-                     {
-                     return callback(err,null);
-                     }*/
-
-                    var portInfo={
-                        dockingPortId:result._id
+                /*if (j > 4) {
+                 j = 1;
+                 }*/
+                for(var port=1;port<=4;port++) {
+                    var portsDetails = {
+                        StationId: stationDetails._id,
+                        FPGA: i,
+                        ePortNumber: port,
+                        Name: stationDetails.name +"Unit-"+i+" PORT -" + port
                     };
-                    stationDetails.portIds.push(portInfo);
-                    DockStation.findByIdAndUpdate(stationDetails._id,stationDetails,function (err,records) {
-                        if(err)
-                        {
-                            return callback(err,null);
-                        }
-                        //stationDetails=records;
-                        stationDetailsUpdated=records;
-                        // return callback(null,records);
-                    });
 
-                    //});
-                });
-                j=j+1;
+                    DockService.createPort(portsDetails, function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        /* DockStation.findById(stationDetails._id,function (err,rec) {
+                         if(err)
+                         {
+                         return callback(err,null);
+                         }*/
+
+                        var portInfo = {
+                            dockingPortId: result._id
+                        };
+                        stationDetails.portIds.push(portInfo);
+                        DockStation.findByIdAndUpdate(stationDetails._id, stationDetails, function (err, records) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            //stationDetails=records;
+                            stationDetailsUpdated = records;
+                            // return callback(null,records);
+                        });
+
+
+                        //});
+                    });
+                }
+                // j = j + 1;
             }
+
             callback(null,null);
         }/*,
          function (callback) {
