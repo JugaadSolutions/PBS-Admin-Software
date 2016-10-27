@@ -9,7 +9,9 @@ var mongoose = require('mongoose');
 //var extend = require('mongoose-schema-extend');
 var Schema = mongoose.Schema;
 var abstract = require('./abstract'),
-Constants = require('../core/constants');
+ autoIncrement = require('mongoose-auto-increment'),
+    Constants = require('../core/constants');
+
 //Messages = require('../core/messages'),
 //ValidationHandler = require('../handlers/validation-handler');
 //var autoIncrement = require('mongoose-auto-increment');
@@ -25,6 +27,7 @@ var currentStatus = Constants.VehicleLocationStatus;
 
 var VehicleSchema = mongoose.Schema({
     fleetId:{type:Schema.ObjectId,required:true,ref:'Fleet'},
+    vehicleUid: Number,
     vehicleNumber:{type:String,required:true,unique:true},//ref:'User'},
     vehicleRFID: {type: String, required: true,unique:true}, //ref: 'Bicycle'},
     vehicleType:{type:vtype,required:true, default:vtype.BICYCLE},
@@ -39,6 +42,8 @@ var VehicleSchema = mongoose.Schema({
 var Vehicle = mongoose.model('vehicle', VehicleSchema);
 
 VehicleSchema.plugin(abstract);
+
+VehicleSchema.plugin(autoIncrement.plugin,{model:Vehicle,field:'vehicleUid',startAt: 1, incrementBy: 1});
 
 module.exports = Vehicle;
 

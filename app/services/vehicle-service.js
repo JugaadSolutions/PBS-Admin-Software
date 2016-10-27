@@ -18,7 +18,7 @@ exports.addBicycle=function (record, callback) {
                 return callback(err,null);
             }
 
-            if(result.VehicleCapacity==result.vehicles.length)
+            if(result.VehicleCapacity==result.vehicleId.length)
             {
                 return callback(new Error(Messages.FLEET_FULL));
             }
@@ -31,7 +31,7 @@ exports.addBicycle=function (record, callback) {
                 fleetId:fleetRecord._id,
                 vehicleNumber:record.vehicleNumber,
                 vehicleRFID:record.vehicleRFID,
-                currentAssociationId:fleetRecord
+                currentAssociationId:fleetRecord._id
 
             };
             //record.push(addAssociation);
@@ -49,16 +49,17 @@ exports.addBicycle=function (record, callback) {
             });
         },
         function (callback) {
-        Fleet.findById(vehicleRecord.fleetId,function (err,result) {
+            Port.findById(vehicleRecord.fleetId,function (err,result) {
            if(err)
            {
                return callback(err,null);
            }
            var vehicleDetails={
-               vehicleId:vehicleRecord._id
+               vehicleid:vehicleRecord._id,
+               vehicleUid:vehicleRecord.vehicleUid
            };
-           result.vehicles.push(vehicleDetails);
-            Fleet.findByIdAndUpdate(result._id,result,function (err,result) {
+           result.vehicleId.push(vehicleDetails);
+                Port.findByIdAndUpdate(result._id,result,function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
