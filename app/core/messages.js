@@ -21,7 +21,7 @@ module.exports={
     FLEET_FULL:"Fleet is full",
 
 
-    FETCH_RECORD_SUCCESSFUL:"Fleet record fetched successfully",
+    FETCH_RECORD_SUCCESSFUL:"Record fetched successfully",
 
 
     INVALID_USERNAME_OR_PASSWORD:"Invalid username or password",

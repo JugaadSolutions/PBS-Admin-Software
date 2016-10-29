@@ -35,9 +35,10 @@ exports.Role={
 };
 
 exports.AvailabilityStatus={
-    FULL:0,
-    EMPTY:1,
-    NORMAL:2
+    ERROR:-1,
+    FULL:1,
+    EMPTY:2,
+    NORMAL:3
 };
 
 exports.FleetStatus={
@@ -45,9 +46,9 @@ exports.FleetStatus={
     DECOMMISSIONED:-1
 };
 
-exports.VehicleStatus = {
-    OPERATIONAL: 0,
-    NON_OPERATIONAL: 1,
+exports.OperationStatus = {
+    OPERATIONAL: 1,
+    NON_OPERATIONAL: 2,
     DECOMMISSIONED: -1
 };
 
