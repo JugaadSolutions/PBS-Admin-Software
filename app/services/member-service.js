@@ -2,12 +2,16 @@ var Member = require('../models/member'),
     fs = require('fs'),
     UploadHandler = require('../handlers/upload-handler'),
     uuid = require('node-uuid'),
+    random = require("node-random"),
+    swig = require('swig'),
     async=require('async'),
     MembershipService=require('../services/membership-service'),
     PaymentTransaction=require('../services/payment-transaction'),
     Messages = require('../core/messages'),
     Constants =require('../core/constants'),
-    Transaction = require('../models/payment-transactions'),
+    TemplatesMessage = require('../../templates/text-messages'),
+    EmailNotificationHandler = require('../handlers/email-notification-handler'),
+    Payments = require('../models/payment-transactions'),
     Card = require('../models/card'),
     CardService = require('../services/card-service'),
     User=require('../models/user');
@@ -26,10 +30,30 @@ exports.createMember=function (record,callback) {
     var memberDetails;
     var filesArray = [];
     var filesArrayToWrite = [];
+    var password;
  async.series([
+     function (callback) {
+
+         if (record.password) {
+             password = record.password;
+             return callback(null, null);
+         } else {
+             random.strings({"length": 6, "number": 1, "upper": true, "digits": true}, function (err, data) {
+
+                 if (err) {
+                     return callback(err, null);
+                 }
+
+                 password = data;
+                 return callback(null, data);
+             });
+         }
+
+     },
      function (callback) {
          documents = record.documents;
          record.documents = [];
+         record.password=password;
          Member.create(record,function (err,result) {
              if(err)
              {
@@ -155,6 +179,26 @@ exports.createMember=function (record,callback) {
              });
 
          });
+     },
+     function (callback) {
+
+         var data = {
+             profileName: memberDetails.Name,
+             password: password
+         };
+
+         var htmlString = swig.renderFile('./templates/member-registered.html', data);
+
+         var emailMessage = {
+             "subject": Messages.SIGN_UP_SUCCESSFUL,
+             "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+             "html": htmlString,
+             "to": [memberDetails.email]
+         };
+
+         EmailNotificationHandler.sendMail(emailMessage);
+
+         return callback(null, null);
      }
 
 
@@ -309,7 +353,8 @@ exports.updateMember = function (record,callback) {
 exports.assignMembership=function (memberId, membershipId,callback) {
 
    // var validity;
-
+    var memberObject;
+    var paymentObject;
     async.series([
 
            /* // Step 1: Method to calculate balance and validity
@@ -326,24 +371,61 @@ exports.assignMembership=function (memberId, membershipId,callback) {
                 });
             },*/
 
+
+
             // Step 2: Method to update Member validity
             function (callback) {
 
                 Member.findByIdAndUpdate(memberId, {
                     $set: {
                         //'validity': validity,
-                        'membershipId': membershipId
+                        'membershipId': membershipId,
+                        'status':Constants.MemberStatus.REGISTERED
                     }
-                }, function (err, result) {
+                },{new:true}, function (err, result) {
 
                     if (err) {
                         return callback(err, null);
                     }
-
+                    memberObject = result;
                     return callback(null, result);
 
                 });
+            },
+            function (callback) {
+                if(Number(memberObject.creditBalance)>0 && memberObject.processingFeesDeducted==false) {
+                    Payments.findOne({'memberId':memberObject._id,'paymentDescription':'Credit note'},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        paymentObject=result;
+                        return callback(null,result);
+                    });
+
+                }
             }
+
+            ,
+        function (callback) {
+            if(Number(memberObject.creditBalance)>0 && memberObject.processingFeesDeducted==false)
+            {
+                var rec = {
+                    transactionNumber:paymentObject.gatewayTransactionId,
+                    comments:paymentObject.comments,
+                    credit:paymentObject.credit,
+                    creditMode:paymentObject.paymentMode
+                };
+                PaymentTransaction.signedUp(rec,memberObject,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+
+                    return callback(null,result);
+                });
+            }
+        }
 
         ],
 
@@ -501,49 +583,80 @@ exports.creditMember=function (id,record,callback) {
         },
         function (callback) {
            /* var orderId = 'PBS'+ new Date().getTime();*/
-            if(isProcessingFeeDeducted)
-            {
-                PaymentTransaction.existingMember(memberObject,record,function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    updatedMemberObject=result;
-                    return callback(null,result);
-                });
-/*
-                   transObject={
-                       memberId:memberObject._id,
-                       invoiceNo: orderId,
-                       paymentDescription:Constants.PayDescription.CREDIT_NOTE,
-                       paymentMode:record.creditMode,
-                       paymentThrough:Constants.PayThrough.POS,
-                       gatewayTransactionId:record.transactionNumber,
-                       comments:record.comments,
-                       credit:record.credit,
-                       balance:record.credit
-                   };
-                   Transaction.create(transObject,function (err,result) {
+           if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
+           {
+               var userfeeDeposit;
+               var uf = 'PBS'+ new Date().getTime();
+               userfeeDeposit={
+                   memberId:memberObject._id,
+                   invoiceNo: uf,
+                   paymentDescription:Constants.PayDescription.CREDIT_NOTE,
+                   paymentMode:record.creditMode,
+                   paymentThrough:Constants.PayThrough.PAYMENT_GATEWAY,
+                   gatewayTransactionId:record.transactionNumber,
+                   comments:record.comments,
+                   credit:record.credit,
+                   balance:record.credit
+               };
+
+               Payments.create(userfeeDeposit,function (err,result) {
+                   if(err)
+                   {
+                       return callback(err,null);
+                   }
+                   memberObject.creditBalance = record.credit;
+                   Member.findByIdAndUpdate(memberObject._id,memberObject,{new:true},function (err,result) {
                        if(err)
                        {
                            return callback(err,null);
                        }
-                       transactionDetails=result;
-                       return callback(null,result);
-                   });*/
-            }
-            else
-            {
-                PaymentTransaction.newMember(memberObject,record,function (err,result) {
+                       memberObject=result;
+                   });
+
+                   return callback(null,result);
+               });
+           }
+           else {
+               if (isProcessingFeeDeducted) {
+                   PaymentTransaction.existingMember(memberObject, record, function (err, result) {
+                       if (err) {
+                           return callback(err, null);
+                       }
+                       updatedMemberObject = result;
+                       return callback(null, result);
+                   });
+                   /*
+                    transObject={
+                    memberId:memberObject._id,
+                    invoiceNo: orderId,
+                    paymentDescription:Constants.PayDescription.CREDIT_NOTE,
+                    paymentMode:record.creditMode,
+                    paymentThrough:Constants.PayThrough.POS,
+                    gatewayTransactionId:record.transactionNumber,
+                    comments:record.comments,
+                    credit:record.credit,
+                    balance:record.credit
+                    };
+                    Transaction.create(transObject,function (err,result) {
                     if(err)
                     {
-                        return callback(err,null);
+                    return callback(err,null);
                     }
-                    updatedMemberObject=result;
+                    transactionDetails=result;
                     return callback(null,result);
-                });
+                    });*/
+               }
+               else {
+                   PaymentTransaction.newMember(memberObject, record, function (err, result) {
+                       if (err) {
+                           return callback(err, null);
+                       }
+                       updatedMemberObject = result;
+                       return callback(null, result);
+                   });
 
-            }
+               }
+           }
 
         }/*,
         function (callback) {

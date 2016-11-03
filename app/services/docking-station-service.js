@@ -6,6 +6,8 @@ var async = require('async')
     /*config = require('config'),
     request = require('request')*/;
 var DockStation=require('../models/dock-station'),
+    Messages = require('../core/messages'),
+    Constants = require('../core/constants'),
     DockPort= require('../models/dock-port');
 
 var DockService = require('../services/docking-port-service');
@@ -182,6 +184,62 @@ exports.createDS = function (record,callback) {
 
 };
 
+exports.getAllStations = function (record,callback) {
+
+    var allstations=[];
+
+    DockStation.find({"stationType": "dock-station"}).deepPopulate('portIds portIds.dockingPortId').lean().exec(function (err,result) {
+        if(err)
+        {
+           return callback(err,null);
+        }
+        for(var i=0;i<result.length;i++)
+        {
+            var data = result[i];
+           var details = {
+               _id:'',
+               StationID:'',
+               stationType:'',
+               name:'',
+               ipAddress:'',
+               stationNumber:'',
+               noofUnits:'',
+               noofPorts:'',
+               gpsCoordinates:'',
+               portIds:'',
+               stationStatus:'',
+               operationStatus:'',
+               bicycleCapacity:0,
+               bicycleCount:0
+           };
+           details._id=data._id;
+            details.StationID=data.StationID;
+            details.stationType=data.stationType;
+            details.name=data.name;
+            details.ipAddress=data.ipAddress;
+            details.stationNumber=data.stationNumber;
+            details.noofUnits=data.noofUnits;
+            details.noofPorts=data.noofPorts;
+            details.gpsCoordinates=data.gpsCoordinates;
+            details.portIds=data.portIds;
+            details.stationStatus=data.stationStatus;
+            details.operationStatus=data.operationStatus;
+            details.bicycleCapacity=data.portIds.length;
+                for(var j=0;j<data.portIds.length;j++)
+                {
+                    var ports=data.portIds[j];
+                    if(ports.dockingPortId.portStatus==Constants.AvailabilityStatus.FULL)
+                    {
+                        details.bicycleCount = details.bicycleCount+1;
+                    }
+                }
+            allstations.push(details);
+        }
+        return callback(null,allstations);
+
+    });
+
+};
 
 
 

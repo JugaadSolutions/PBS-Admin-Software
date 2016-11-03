@@ -9,7 +9,8 @@ var async = require('async'),
     User = require('../models/user'),
     Member = require('../models/member'),
     DockPort=require('../models/dock-port'),
-    Port = require('../models/port');
+    Port = require('../models/port'),
+MemberTransaction = require('../models/transaction');
  var fleet = require('../models/fleet');
 
 var TransactionReconciliation = require('./transaction-reconciliation');
@@ -75,6 +76,31 @@ var details=0;
 
 
 };*/
+
+exports.getFewRecordsWRTMember = function (id, callback) {
+    MemberTransaction.find({'user': id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
+
+        if (err) {
+            return callback(err, null);
+        }
+        var result = [];
+        res.forEach(function(r){
+
+                    result.push({
+                        'checkOutTime': moment((r.checkOutTime == null) ? 'undefined' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                        'FromStation': (r.fromPort.Name == null) ? 'undefined' : (r.fromPort.Name),
+                        'ToStation': (r.toPort.Name == null) ? 'undefined' : (r.toPort.Name),
+                        'checkInTime':  moment((r.checkInTime == null) ? 'undefined' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                        'balance': (r.creditBalance == null) ? 'undefined' : (r.creditBalance),
+                        'fare': (r.creditsUsed == null) ? 'undefined' : (r.creditsUsed),
+                        'duration': (r.duration == null) ? 'undefined' : (r.duration)
+                    });
+
+            });
+        return callback(null, result);
+        });
+
+    };
 
 exports.checkout=function (record,callback) {
     var vehiclesDetails;

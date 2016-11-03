@@ -1,5 +1,6 @@
 var express = require('express'),
 TransactionService = require('../services/transaction-service'),
+    UserService = require('../services/user-service'),
 Messages = require('../core/messages');
 var router = express.Router();
 
@@ -24,6 +25,54 @@ router
 
   });
 })
+
+    .put('/:id/password/change', function (req, res, next) {
+
+      UserService.changePassword(req.params.id, req.body, function (err) {
+
+        if (err) {
+
+          next(err);
+
+        } else {
+
+          res.json({
+            error: false,
+            message: Messages.RECORD_UPDATED_SUCCESSFUL,
+            description: null,
+            data: true
+          });
+
+        }
+
+      });
+
+    })
+
+    .put('/forgotpassword', function (req, res, next) {
+
+        UserService.forgotPassword(req.body.email, function (err) {
+
+            if (err) {
+
+                next(err);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.RECORD_UPDATED_SUCCESSFUL,
+                    description: null,
+                    data: true
+                });
+
+            }
+
+        });
+
+    })
+
+
 ;
 
 module.exports = router;

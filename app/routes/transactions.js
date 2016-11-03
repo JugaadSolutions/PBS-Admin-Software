@@ -13,6 +13,31 @@ var router = express.Router();
 // Router Methods
 router
 
+    .get('/myrides/member/:memberId', function (req, res, next) {
+
+        TransactionService.getFewRecordsWRTMember(req.params.memberId, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                res.json(response);
+
+            }
+
+        });
+
+    })
+
 /*    .post('/', function (req, res, next) {
         TransactionService.createUser(req.body,function (err,result) {
             if(err)
@@ -82,5 +107,8 @@ router
             }
         });
     })
+
+
+
 ;
 module.exports=router;

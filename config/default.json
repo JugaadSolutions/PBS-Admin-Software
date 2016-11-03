@@ -18,5 +18,27 @@
     "secret": "rideonallends",
     "enabled": false,
     "tokenExpiryHours": 2
+  },
+  "emailConfig": {
+    "fromEmail": "admin@mytrintrin.com",
+    "fromName": "My Trin Trin",
+    "replyTo": "admin@mytrintrin.com"
+  },
+  "emailNotification": {
+    "enabled": true
+  },
+  "pbsMemberPortal": {
+    "url": "https://www.mytrintrin.com/portal/",
+    "emailVerifySuccessful": "public/email-verification-success",
+    "emailVerificationFailed": "public/email-verification-failed",
+    "paymentSuccessful": "payment-successful",
+    "paymentFailed": "payment-failed"
+  },
+  "mandrill": {
+    "apiKey": "RTD5yV_ntMX5sJzDRWduCw"
+  },
+  "mailgun": {
+    "apiKey": "key-10f974336dd886c88080e600ed855639",
+    "domain": "mytrintrin.com"
   }
 }

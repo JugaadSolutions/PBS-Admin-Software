@@ -37,7 +37,7 @@ var UserSchema = mongoose.Schema({
     fatherName: {type: String, required: false},
     email: {type: String, required: false, unique: true, validate: [ValidationHandler.validateEmail, 'Invalid email']},
     emailVerified: {type: Boolean, required: false, default: true},
-    password: {type: String, required: false,default:'member@123'},
+    password: {type: String, required: false},
     phoneNumber: {type: String, required: false, unique: true},
     age: {type: Number, required: false, min: 5, max: 100},
     sex: {type: Sex, required: false},

@@ -25,8 +25,8 @@ var PaymentTransactionSchema = mongoose.Schema({
 }, { collection : 'payment-transactions'});
 
 
-var Station = mongoose.model('payment-transaction', PaymentTransactionSchema);
+var PaymentTransaction = mongoose.model('payment-transaction', PaymentTransactionSchema);
 
 PaymentTransactionSchema.plugin(abstract);
 
-module.exports = Station;
+module.exports = PaymentTransaction;

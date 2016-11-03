@@ -7,7 +7,7 @@ var mongoose = require('mongoose'),
 
 
 var RegistrationStaffSchema = require('mongoose').model('user').schema.extend({
-    employeeId:{type:String,required:false,unique:true},
+    employeeId:{type:String,required:false},
     position:{type:String,required:false},
     experiance:{type:Number,required:false},
     joiningDate:{type:Date,required:false},

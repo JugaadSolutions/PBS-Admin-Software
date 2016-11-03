@@ -37,10 +37,15 @@ module.exports={
     NO_DOCKING_UNIT_FOUND: "No docking unit found!",
     NO_PORT_FOUND: "No docking port found!",
     NO_CARD_FOUND:"No card found for this ID",
+    NO_USER_EXISTS_WITH_THIS_INFO:"No user exists with this information",
+    PASSWORD_CANNOT_BE_EMPTY:"Password Cannot be empty",
+    PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD: "Please enter the correct current password",
 
     RECORD_CREATED_SUCCESS:"Record creation successful",
-
+    RECORD_UPDATED_SUCCESSFUL:"Record updation successful",
     RECORD_EXISTS:"Record already exists",
+
+    SIGN_UP_SUCCESSFUL:"Sign Up Successful",
 
     THIS_CARD_HAS_ALREADY_BEEN_ASSIGNED_TO_A_USER:"This card has already been assigned to a user",
 
@@ -54,5 +59,6 @@ module.exports={
     VEHICLE_NOT_FOUND:"Vehicle with that RFID not found",
     VEHICLE_CHECKIN_NOT_CREATED:"Vehicle checkin not done, it is with the port",
 
-    YOUR_PAYMENT_HAS_BEEN_SUCCESSFULLY_PROCESSED: "Your payment has been successfully processed"
+    YOUR_PAYMENT_HAS_BEEN_SUCCESSFULLY_PROCESSED: "Your payment has been successfully processed",
+    YOUR_PASSWORD_HAS_BEEN_RESET_SUCCESSFULLY:"Your Password has been reset successfully, Please check your mail"
 };

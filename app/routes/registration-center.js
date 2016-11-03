@@ -16,7 +16,7 @@ router
 
 
     .get('/',function (req,res,next) {
-        RegistrationCenter.find({'stationType':'registration-center'},function (err,result) {
+        RegistrationCenter.find({'stationType':'registration-center'}).deepPopulate('assignedTo').lean().exec(function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

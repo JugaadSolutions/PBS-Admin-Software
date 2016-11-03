@@ -15,16 +15,15 @@ var router = express.Router();
 router
 
     .get('/',function (req,res,next) {
-        DockingStation.find({"stationType": "dock-station"},function (err,result) {
+        DockingStationService.getAllStations(req.body,function (err,result) {
             if(err)
             {
                 next(err, req, res, next);
             }
             else {
+
                 res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
             }
-
-
         });
 
     })
