@@ -14,12 +14,25 @@ var router = express.Router();
 // Router Methods
 router
 
+    .get('/:id',function (req,res,next) {
+        Card.findOne({'_id':req.params.id},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
+
     .get('/', function (req, res, next) {
 
         //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
        // Card.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
-            Card.find({}, function (err, result) {
+            Card.find({}).deepPopulate('assignedTo').lean().exec(function (err, result) {
             if (err) {
 
                 next(err, req, res, next);
@@ -56,6 +69,27 @@ router
         });
 
     })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        Card.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
 
 ;
 

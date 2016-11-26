@@ -14,6 +14,18 @@ var router = express.Router();
 // Router Methods
 router
 
+    .get('/:id',function (req,res,next) {
+        Stations.findOne({'_id':req.params.id},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
 
     .get('/', function (req, res, next) {
 

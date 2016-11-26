@@ -5,14 +5,13 @@
     "port": 27017,
     "username": "",
     "password": "",
-    "database": "pbs-inherit"
+    "database": "pbs-production"
   },
   "fleet":{
     "mysore":{
      "name":"mysore",
       "size":500
     }
-
   },
   "security": {
     "secret": "rideonallends",
@@ -20,7 +19,7 @@
     "tokenExpiryHours": 2
   },
   "emailConfig": {
-    "fromEmail": "admin@mytrintrin.com",
+    "fromEmail": "Trin Trin<admin@mytrintrin.com>",
     "fromName": "My Trin Trin",
     "replyTo": "admin@mytrintrin.com"
   },

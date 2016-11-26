@@ -14,8 +14,8 @@ var router = express.Router();
 // Router Methods
 router
 
-/*    .get('/',function (req,res,next) {
-    Membership.find({},function (err,result) {
+    .get('/:id',function (req,res,next) {
+    Membership.findOne({'_id':req.params.id},function (err,result) {
         if(err)
         {
             next(err, req, res, next);
@@ -25,7 +25,7 @@ router
         }
 
     });
-    })*/
+    })
 
     .get('/', function (req, res, next) {
 
@@ -63,6 +63,44 @@ router
             } else {
 
                 res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        Membership.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .delete('/:id', function (req, res, next) {
+
+        Membership.findByIdAndRemove(req.params.id, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
 
             }
 

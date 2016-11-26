@@ -12,7 +12,7 @@ var router = express.Router();
 router
 
 
-.post('/', function (req, res, next) {
+/*.post('/', function (req, res, next) {
   TransactionService.createUser(req.body,function (err,result) {
     if(err)
     {
@@ -24,7 +24,7 @@ router
     }
 
   });
-})
+})*/
 
     .put('/:id/password/change', function (req, res, next) {
 

@@ -1,5 +1,6 @@
 var async = require('async'),
     User = require('../models/user'),
+    moment = require('moment-timezone'),
     vehicle = require('../models/vehicle');
 
 var MemberService = require('../services/transaction-service');
@@ -84,11 +85,16 @@ exports.checkinApp=function (record,callback) {
         function (callback) {
             if(details!=0)
             {
+               /* var format = 'YYYY/MM/DD HH:mm:ss ZZ';
+                record.checkInTime =  moment(record.checkInTime, format).tz("Asia/Kolkata").format(format);
+                console.log(record.checkInTime.toString());*/
                 requestDetails ={
                     vehicleId:details.vehicleRFID,
                     toPort:record.toPort,
                     checkInTime:record.checkInTime
                 };
+                /*console.log(record.checkInTime);
+                console.log(record.checkInTime.toString());*/
                 MemberService.checkin(requestDetails,function (err,result) {
                     if(err)
                     {

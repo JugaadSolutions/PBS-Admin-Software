@@ -4,6 +4,8 @@
 var async = require('async'),
     fs = require('fs'),
     uuid = require('node-uuid'),
+    random = require("node-random"),
+    swig = require('swig'),
     UploadHandler = require('../handlers/upload-handler'),
     RegEmployee = require('../models/registration-staff');
 
@@ -22,10 +24,30 @@ exports.createEmployee=function (record,callback) {
     var memberDetails;
     var filesArray = [];
     var filesArrayToWrite = [];
+    var password;
     async.series([
+        function (callback) {
+
+            if (record.password) {
+                password = record.password;
+                return callback(null, null);
+            } else {
+                random.strings({"length": 6, "number": 1, "upper": true, "digits": true}, function (err, data) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    password = data;
+                    return callback(null, data);
+                });
+            }
+
+        },
         function (callback) {
             documents = record.documents;
             record.documents = [];
+            record.password=password;
             RegEmployee.create(record,function (err,result) {
                 if(err)
                 {

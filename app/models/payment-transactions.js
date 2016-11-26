@@ -20,8 +20,8 @@ var PaymentTransactionSchema = mongoose.Schema({
     location:{type:Loc,required:true,default:Loc.REG_CENTRE},
     debit:{type:Number,required:false,default:0},
     credit:{type:Number,required:false,default:0},
-    balance:{type:Number,required:true}
-
+    balance:{type:Number,required:true},
+    createdAt:{type:Date,required: false, default:Date.now()}
 }, { collection : 'payment-transactions'});
 
 

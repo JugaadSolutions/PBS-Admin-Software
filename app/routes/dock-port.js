@@ -15,7 +15,7 @@ var router = express.Router();
 router
 
     .get('/',function (req,res,next) {
-        DockPorts.find({"_type":"Docking-port"},function (err,result) {
+        DockPorts.find({"_type":"Docking-port"}).deepPopulate('vehicleId.vehicleid').lean().exec(function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

@@ -6,6 +6,9 @@ exports.PayDescription={
     SECURITY_DEPOSIT:"Security Deposit",
     PROCESSING_FEE:"Processing Fee",
     SMART_CARD_FEE:"Smart Card Fee",
+    REGISTRATION:"Registration",
+    REPLENISHMENT:"Replenishment",
+    REFUND:"Refund",
     //USAGE_FEE:"Usage Fee",
     DEBIT_NOTE:"Debit note",
     CREDIT_NOTE:"Credit note"
@@ -19,8 +22,9 @@ exports.PayMode={
 };
 
     exports.PayThrough={
-    POS:"Pos",
-    PAYMENT_GATEWAY:"Payment Gateway"
+    POS:"POS",
+    PAYMENT_GATEWAY:"Payment Gateway",
+        CASH:"Cash"
 };
 
 exports.Loc={

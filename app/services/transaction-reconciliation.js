@@ -68,6 +68,10 @@ exports.ReconcileTransaction=function (record,callback) {
 
               });
           }
+          else
+          {
+              return callback(null,null);
+          }
           //return callback(null,null);
         },
         /*function (callback) {
@@ -134,7 +138,9 @@ exports.ReconcileTransaction=function (record,callback) {
                     if (err) {
                         return callback();
                     }
-                    checkOutDetails = result;
+                    if(result) {
+                        checkOutDetails = result;
+                    }
                     return callback(null, result);
                 });
             },
@@ -149,7 +155,7 @@ exports.ReconcileTransaction=function (record,callback) {
              },*/
 
             function (callback) {
-                if(ismember)
+                if(ismember && checkOutDetails!=0)
                 {
                     var checkInTime = moment(record.checkInTime);
                     var checkOutTime = moment(checkOutDetails.checkOutTime);
@@ -166,10 +172,14 @@ exports.ReconcileTransaction=function (record,callback) {
                         return callback(null, result);
                     });
                 }
+                else
+                {
+                    return callback(null,null);
+                }
 
             },
         function (callback) {
-                if(ismember) {
+                if(ismember && checkOutDetails!=0) {
                      balance = Number(memberObject.creditBalance) - creditUsed;
                     Member.findByIdAndUpdate(memberObject._id, {
                         $set:{'creditBalance': balance}
@@ -183,6 +193,9 @@ exports.ReconcileTransaction=function (record,callback) {
                         return callback(null, result);
 
                     });
+                }
+                else {
+                    return callback(null,null);
                 }
         },
 
@@ -199,58 +212,72 @@ exports.ReconcileTransaction=function (record,callback) {
             transAssociation = result;
             return callback(null, result);
         });
+    }else
+    {
+        return callback(null,null);
     }
 
  },
             function (callback) {
-                CheckIn.findByIdAndUpdate(transAssociation.checkInEntry,{$set:{'status':'Close'}},{new:true},function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    checkInDetails=result;
-                    return callback(null,result);
-                });
+     if(transAssociation) {
+         CheckIn.findByIdAndUpdate(transAssociation.checkInEntry, {$set: {'status': 'Close'}}, {new: true}, function (err, result) {
+             if (err) {
+                 return callback(err, null);
+             }
+             checkInDetails = result;
+             return callback(null, result);
+         });
+     }
+     else
+     {
+         return callback(null,null);
+     }
 
             },
         function (callback) {
-            CheckOut.findByIdAndUpdate(transAssociation.checkOutEntry,{$set:{'status':'Close'}},function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                return callback(null,result);
-            });
+            if(transAssociation) {
+                CheckOut.findByIdAndUpdate(transAssociation.checkOutEntry, {$set: {'status': 'Close'}}, function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
             ,
  function (callback) {
-     var transaction;
-                if(ismember){
+     if(transAssociation) {
+         var transaction;
+         if (ismember) {
 
-                    transaction = {
-                        user: record.user,
-                        vehicle:record.vehicleId,
-                        fromPort: checkOutDetails.fromPort,
-                        toPort: record.toPort,
-                        checkOutTime: checkOutDetails.checkOutTime,
-                        checkInTime: record.checkInTime,
-                        duration:duration,
-                        creditsUsed:creditUsed,
-                        creditBalance:balance,
-                        status: 'Close'
-                    };
-                }
-                else {
-                    transaction = {
-                        user: record.user,
-                        vehicle:record.vehicleId,
-                        fromPort: checkOutDetails.fromPort,
-                        toPort: record.toPort,
-                        checkOutTime: checkOutDetails.checkOutTime,
-                        checkInTime: record.checkInTime,
-                        status: 'Close'
-                    };
-                }
+             transaction = {
+                 user: record.user,
+                 vehicle: record.vehicleId,
+                 fromPort: checkOutDetails.fromPort,
+                 toPort: record.toPort,
+                 checkOutTime: checkOutDetails.checkOutTime,
+                 checkInTime: record.checkInTime,
+                 duration: duration,
+                 creditsUsed: creditUsed,
+                 creditBalance: balance,
+                 status: 'Close'
+             };
+         }
+         else {
+             transaction = {
+                 user: record.user,
+                 vehicle: record.vehicleId,
+                 fromPort: checkOutDetails.fromPort,
+                 toPort: record.toPort,
+                 checkOutTime: checkOutDetails.checkOutTime,
+                 checkInTime: record.checkInTime,
+                 status: 'Close'
+             };
+         }
 
          Transaction.create(transaction, function (err, result) {
              if (err) {
@@ -258,6 +285,11 @@ exports.ReconcileTransaction=function (record,callback) {
              }
              return callback(null, result);
          });
+     }
+     else
+     {
+         return callback(null,null);
+     }
 
  }],
         function (err,result) {

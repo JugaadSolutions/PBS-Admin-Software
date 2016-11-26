@@ -1,15 +1,16 @@
 var async = require('async'),
-MembershipService=require('../services/membership-service'),
-    Transaction=require('../services/payment-transaction'),
+    moment = require('moment'),
+    MembershipService=require('../services/membership-service'),
     Membership  = require('../models/membership'),
     Stations = require('../models/station'),
     Member = require('../models/member'),
+    Deposits = require('../models/deposits'),
     Payments = require('../models/payment-transactions'),
     Constants=require('../core/constants');
 
 exports.signedUp = function (record,memberObject,callback) {
-    var memberShipObject=0;
-    var finalTransaction=0;
+    var memberShipObject;
+    var finalTransaction;
     var transactionList=[];
     var validity;
     var updatedMember;
@@ -21,11 +22,16 @@ exports.signedUp = function (record,memberObject,callback) {
                     return callback(err,null);
                 }
                 memberShipObject = result;
+                var payValue = Number(memberShipObject.userFees+memberShipObject.securityDeposit+memberShipObject.smartCardFees+memberShipObject.processingFees);
+                if(record.credit<payValue)
+                {
+                    return callback(new Error('Amount you entered is less than Minimum Amount'),null);
+                }
                 return callback(null,result);
             });
         },
         function (callback) {
-            if(memberShipObject!=0)
+            if(memberShipObject)
             {
 
                 var securityObject;
@@ -36,7 +42,7 @@ exports.signedUp = function (record,memberObject,callback) {
                     invoiceNo: sd,
                     paymentDescription:Constants.PayDescription.SECURITY_DEPOSIT,
                     paymentMode:record.creditMode,
-                    paymentThrough:Constants.PayThrough.POS,
+                    paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.PAYMENT_GATEWAY,
                     gatewayTransactionId:record.transactionNumber,
                     comments:record.comments,
                     debit:memberShipObject.securityDeposit,
@@ -90,19 +96,30 @@ exports.signedUp = function (record,memberObject,callback) {
         function (callback) {
             if(transactionList.length>0)
             {
-                for(var i=0;i<transactionList.length;i++)
-                {
-                    Payments.create(transactionList[i],function (err,result) {
-                        if(err)
-                        {
-                            return callback(err,null);
-                        }
-                        finalTransaction=result;
-                    });
-                }
+                /* var i;
+                 for(i=0;i<transactionList.length;i++)
+                 {*/
+                Payments.create(transactionList,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    finalTransaction=result;
+                    /*console.log(i);
+                     if(i==transactionList.length-1)
+                     {*/
+                    return callback(null,result);
+                    //}
+                });
+                // }
+
             }
-            return callback(null,null);
-        },
+            else
+            {
+                return callback(null,memberObject);
+            }
+
+        }/*,
         function (callback) {
             if(finalTransaction!=0)
             {
@@ -119,21 +136,22 @@ exports.signedUp = function (record,memberObject,callback) {
             {
                 return callback(null,null);
             }
-        }
+        }*/
         ,
         function (callback) {
-            if(finalTransaction!=0)
+            if(finalTransaction)
             {
+                var len = finalTransaction.length-1;
                 Member.findByIdAndUpdate(memberObject._id,{
                     $set: {
                         'validity': validity,
                         'processingFeesDeducted':true,
-                        'creditBalance':finalTransaction.balance,
+                        'creditBalance':finalTransaction[len].balance,
                         'securityDeposit':memberShipObject.securityDeposit,
                         'smartCardFees': memberShipObject.smartCardFees,
                         'processingFees':memberShipObject.processingFees
                     }
-                },function (err,result) {
+                },{new:true},function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -222,10 +240,11 @@ exports.existingMember = function (memberObject,record,callback) {
 };
 
 exports.newMember = function (memberObject,record,callback) {
-    var memberShipObject=0;
-    var finalTransaction=0;
+    var memberShipObject;
+    var finalTransaction;
+    var paymentBalance;
     var transactionList=[];
-    var validity;
+
     var updatedMember;
     async.series([
         function (callback) {
@@ -235,11 +254,16 @@ exports.newMember = function (memberObject,record,callback) {
                     return callback(err,null);
                 }
                 memberShipObject = result;
+                var payValue = Number(memberShipObject.userFees+memberShipObject.securityDeposit+memberShipObject.smartCardFees+memberShipObject.processingFees);
+                if(record.credit<payValue)
+                {
+                    return callback(new Error('Amount you entered is less than Minimum Amount'),null);
+                }
                 return callback(null,result);
             });
         },
         function (callback) {
-            if(memberShipObject!=0)
+            if(memberShipObject)
             {
                     var userfeeDeposit;
                     var uf = 'PBS'+ new Date().getTime();
@@ -248,7 +272,7 @@ exports.newMember = function (memberObject,record,callback) {
                         invoiceNo: uf,
                         paymentDescription:Constants.PayDescription.CREDIT_NOTE,
                         paymentMode:record.creditMode,
-                        paymentThrough:Constants.PayThrough.POS,
+                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         credit:record.credit,
@@ -263,7 +287,7 @@ exports.newMember = function (memberObject,record,callback) {
                         invoiceNo: sd,
                         paymentDescription:Constants.PayDescription.SECURITY_DEPOSIT,
                         paymentMode:record.creditMode,
-                        paymentThrough:Constants.PayThrough.POS,
+                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.securityDeposit,
@@ -278,7 +302,7 @@ exports.newMember = function (memberObject,record,callback) {
                         invoiceNo: cd,
                         paymentDescription:Constants.PayDescription.SMART_CARD_FEE,
                         paymentMode:record.creditMode,
-                        paymentThrough:Constants.PayThrough.POS,
+                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.smartCardFees,
@@ -297,7 +321,7 @@ exports.newMember = function (memberObject,record,callback) {
                             invoiceNo: ps,
                             paymentDescription:Constants.PayDescription.PROCESSING_FEE,
                             paymentMode:record.creditMode,
-                            paymentThrough:Constants.PayThrough.POS,
+                            paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
                             gatewayTransactionId:record.transactionNumber,
                             comments:record.comments,
                             debit:memberShipObject.processingFees,
@@ -317,50 +341,66 @@ exports.newMember = function (memberObject,record,callback) {
         function (callback) {
             if(transactionList.length>0)
             {
-                for(var i=0;i<transactionList.length;i++)
-                {
-                    Payments.create(transactionList[i],function (err,result) {
+               /* var i;
+                for(i=0;i<transactionList.length;i++)
+                {*/
+                    Payments.create(transactionList,function (err,result) {
                         if(err)
                         {
                             return callback(err,null);
                         }
                         finalTransaction=result;
+                        /*console.log(i);
+                        if(i==transactionList.length-1)
+                        {*/
+                            return callback(null,result);
+                        //}
                     });
-                }
-            }
-            return callback(null,null);
-        },
-        function (callback) {
-            if(finalTransaction!=0)
-            {
-                MembershipService.calculateValidity(memberObject.membershipId, memberObject._id, function (err, result) {
+               // }
 
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    validity = result;
-                    return callback(null, result);
-                });
             }
             else
             {
-                return callback(null,null);
+                return callback(null,memberObject);
             }
-        }
-        ,
+
+        }/*,
         function (callback) {
-            if(finalTransaction!=0)
+            if(finalTransaction)
             {
+                Payments.find({'invoiceNo':finalTransaction[0].invoiceNo},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    paymentBalance=result[0].balance;
+                    for(var i=1;i<result.length;i++)
+                    {
+                        if(paymentBalance>result[i].balance)
+                        {
+                            paymentBalance = result[i].balance;
+                        }
+                    }
+
+                    return callback(null,result);
+                });
+            }
+        }*/
+        ,
+
+        function (callback) {
+            if(finalTransaction)
+            {
+                var len = finalTransaction.length-1;
                 Member.findByIdAndUpdate(memberObject._id,{
                     $set: {
-                        'validity': validity,
                         'processingFeesDeducted':true,
-                        'creditBalance':finalTransaction.balance,
+                        'creditBalance':finalTransaction[len].balance,
                         'securityDeposit':memberShipObject.securityDeposit,
                         'smartCardFees': memberShipObject.smartCardFees,
                         'processingFees':memberShipObject.processingFees
                     }
-                },function (err,result) {
+                },{new:true},function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -386,8 +426,255 @@ exports.newMember = function (memberObject,record,callback) {
 };
 
 exports.daywiseCollection = function (record,callback) {
-   // Payments.find({});
+
+   /* var trans = [];
+    async.series([*/
+/*        function (callback) {
+            var dateArray = [];
+            //console.log(moment(record.fromdate));
+            //console.log(moment(record.todate));
+            var currentDate = moment(record.fromdate);
+            while (currentDate <= moment(record.todate)) {
+                var details={
+                    date:'',
+                    cash:0,
+                    pos:0,
+                    gateway:0
+                };
+                details.date=moment(currentDate).format('YYYY-MM-DD');
+                trans.push(details);
+                //trans.push(dateArray);
+                currentDate = moment(currentDate).add(1, 'days');
+            }
+            return callback(null,dateArray);
+        },
+        function (callback) {*/
+            var payDetails;
+            var ldate = moment(record.todate).add(1, 'days');
+            ldate=ldate.format('YYYY-MM-DD');
+            //console.log(ldate);
+            Payments.find({'createdAt':{$gte:moment(record.fromdate),$lte:moment(ldate)},"paymentDescription": record.transactionType,'location':record.location}).sort('-createdAt').deepPopulate('memberId').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                payDetails = result;
+                //trans.push(result);
+                return callback(null,result);
+            });
+/*        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });*/
+/*
+    var daywiseDetails=[];
+    var daywise={
+        date:[],
+        alldetails:[]
+    };
+
+    async.series([
+        function (callback) {
+            console.log('From date = '+record.fromDateTime+' To date = '+record.toDateTime);
+            console.log(!moment(record.fromDateTime).isAfter(moment(record.toDateTime)));
+            console.log(!moment(record.fromDateTime).isAfter(moment()));
+            console.log(!moment(record.toDateTime).isAfter(moment()));
+            if(!moment(record.fromDateTime).isAfter(record.toDateTime)&& !moment(record.fromDateTime).isAfter(moment()) && !moment(record.toDateTime).isAfter(moment()))
+            {
+
+                var durationMin = moment.duration(moment(record.toDateTime).diff(moment(record.fromDateTime)));
+                //console.log(durationMin);
+                var days = durationMin.asDays();
+                console.log(days);
+                var fday = moment(record.fromDateTime);
+                for(var i=0;i<days+1;i++)
+                {
+
+                    Payments.find({'createdAt':{$eq:moment(fday)},'paymentDescription':Constants.PayDescription.CREDIT_NOTE}).lean().exec(function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        daywise.alldetails.push(result);
+
+                        var eachData={
+                            day:'',
+                            cash:0,
+                            creditCard:0,
+                            gateway:0
+                        };
+                        eachData.day=fday;
+                        for(var i=0;i<result.length;i++)
+                        {
+                            var data = result[i];
+                            if(data.paymentMode==Constants.PayMode.CASH)
+                            {
+                                eachData.cash=Number(eachData.cash+result.balance);
+                            }
+                            else if(data.paymentMode==Constants.PayMode.CREDIT_CARD||data.paymentMode==Constants.PayMode.DEBIT_CARD)
+                            {
+                                eachData.creditCard=Number(eachData.creditCard+result.balance);
+                            }
+                            else
+                            {
+                                eachData.gateway=Number(eachData.gateway+result.balance);
+                            }
+                        }
+                        daywise.date.push(eachData);
+                        // return callback(null,result);
+                    });
+                    if(moment(fday).isSameOrBefore(moment(record.toDateTime)))
+                    {
+                        fday.add(1,'days');
+                    }
+
+                }
+                return callback(null,daywise);
+            }
+            else
+            {
+                return callback(new Error('From Date cannot be greater than today and To Date'),null);
+            }
+        }
+
+    ],function (err,result) {
+       if(err)
+       {
+           return callback(err,null);
+       }
+       return callback(null,result);
+    });
+
+   // Payments.find({});*/
 };
+
+exports.cashCollection = function (record,callback) {
+
+    var allDetails;
+    var payDetails;
+    var temp=[];
+    async.series([
+        function (callback) {
+            Payments.find({'createdAt':{$gte:moment(record.fromDateTime),$lte:moment(record.toDateTime)},'location':record.location},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                payDetails = result;
+                return callback(null,result);
+            });
+        }/*,
+        function (callback) {
+            if(payDetails)
+            {
+                for(var i=0;i<payDetails.length;i++)
+                {
+                    if(payDetails[i].location==record.location && payDetails[i].paymentDescription=='Credit note')
+                    {
+                        temp.push(payDetails[i]);
+                    }
+                }
+                return callback(null,payDetails);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }*/
+/*        function (callback) {
+            Payments.find({'location':record.location},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }*/
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
+/*
+exports.cashCollection = function (record,callback) {
+    var payments;
+    var registrationCenter=[];
+    var total={amount:0};
+    async.series([
+        function (callback) {
+            Payments.find({},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                payments=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(payments)
+            {
+                Stations.find({'stationType':'registration-center'},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    var regDetails={};
+                    for(var k=0;k<result.length;k++)
+                    {
+                        var a = result[k];
+                        regDetails[a.location]=0;
+                    }
+                    for(var i=0;i<result.length;i++)
+                    {
+                        var data = result[i];
+
+                        for(var j=0;j<payments.length;j++)
+                        {
+                            var d2 = payments[j];
+                            if(data.location==d2.location)
+                            {
+                                regDetails[data.location]=Number(regDetails[data.location]+d2.credit);
+                                // regDetails['amount']=regDetails['amount']+payments.credit;
+                                total.amount=total.amount+d2.credit;
+                            }
+                        }
+
+                    }
+                    registrationCenter.push(regDetails);
+                    registrationCenter.push(total);
+                    return callback(null,result);
+                });
+            }
+        },
+        function (callback) {
+            Payments.find({'createdAt':{$gte:moment(record.fromDateTime),$lte:moment(record.toDateTime)},"paymentDescription": "Credit note"},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                var alldetails={};
+                alldetails['transactions']=result;
+                registrationCenter.push(alldetails);
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+       if(err)
+       {
+           return callback(err,null);
+       }
+       return callback(null,registrationCenter);
+    });
+};
+*/
 
 exports.dashboardDetails=function (callback) {
     var dasboardDetails = {
@@ -519,5 +806,124 @@ exports.dashboardDetails=function (callback) {
             return callback(err,null);
         }
         return callback(null,dasboardDetails);
+    });
+};
+
+exports.depositCash = function (record,callback) {
+    Deposits.create(record,function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
+
+exports.depositInfo = function (record,callback) {
+    Deposits.find({'depositDate':{$gte:moment(record.fromdate),$lte:moment(record.todate)}},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
+
+exports.totalCollection = function (record,callback) {
+
+    var dates;
+
+    var trans = [];
+    var cash=0,pos=0,gateway=0;
+    var payDetails;
+    async.series([
+        function (callback) {
+            /*for(var i=moment(record.fromdate).format('YYYY-MM-DD');i<=moment(record.todate).format('YYYY-MM-DD');i.add('days',1))
+            {
+                details.date=i;
+                trans.push(details);
+            }*/
+            var dateArray = [];
+            //console.log(moment(record.fromdate));
+            //console.log(moment(record.todate));
+            var currentDate = moment(record.fromdate);
+            while (currentDate <= moment(record.todate)) {
+                var details={
+                    date:'',
+                    cash:0,
+                    pos:0,
+                    gateway:0
+                };
+                details.date=moment(currentDate).format('YYYY-MM-DD');
+                trans.push(details);
+                //trans.push(dateArray);
+                currentDate = moment(currentDate).add(1, 'days');
+            }
+            return callback(null,dateArray);
+        },
+       function (callback) {
+           var ldate = moment(record.todate).add(1, 'days');
+           ldate=ldate.format('YYYY-MM-DD');
+           //console.log(ldate);
+            Payments.find({'createdAt':{$gte:moment(record.fromdate),$lte:moment(ldate)},"paymentDescription": "Credit note"}).sort('createdAt').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                payDetails = result;
+                //trans.push(result);
+                return callback(null,result);
+            });
+        } ,
+        function (callback) {
+                if(payDetails)
+                {
+                    for(var i=0;i<trans.length;i++)
+                    {
+                        var data = trans[i];
+                        for(var j=0;j<payDetails.length;j++)
+                        {
+                            if(moment(data.date).format('YYYY-MM-DD')==moment(payDetails[j].createdAt).format('YYYY-MM-DD'))
+                            {
+
+                                if(payDetails[j].paymentThrough==Constants.PayThrough.PAYMENT_GATEWAY)
+                                {
+                                    data.gateway= data.gateway+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentThrough==Constants.PayThrough.CASH)
+                                {
+                                    data.cash= data.cash+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentThrough==Constants.PayThrough.POS)
+                                {
+                                    data.pos= data.pos+Number(payDetails[j].credit);
+                                }
+                            }
+                        }
+                    }
+                    return callback(null,null);
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,trans);
+    });
+
+};
+
+exports.getAllDeposits = function (callback) {
+    Deposits.find({}).sort('-depositDate').exec(function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
     });
 };

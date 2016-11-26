@@ -15,6 +15,7 @@ module.exports={
     COULD_NOT_SANITIZE_THE_USER_COLLECTION: "Could not sanitize the user collection!",
     COULD_NOT_INITIALIZE_THE_USER_COLLECTION: "Could not initialize the user collection!",
 
+    DELETING_RECORD_SUCCESSFUL:"Deleting record successful",
 
     FETCHING_RECORDS_SUCCESSFUL: "Fetching records successful",
     FLEET_ENTRY_CREATED_SUCCESSFUL:"Fleet has been created successfully",

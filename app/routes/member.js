@@ -17,7 +17,7 @@ router
        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
-        Member.find({'_type':'member'},function (err, result) {
+        Member.find({'_type':'member'}).sort('-createdAt').deepPopulate('membershipId').exec(function (err, result) {
             if (err) {
 
                 next(err, req, res, next);

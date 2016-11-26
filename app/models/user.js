@@ -14,6 +14,7 @@ const ProofType = Constants.ProofType;
 
 const EmergencyContact = {
     contactName: {type: String, required: false},
+    countryCode : {type: String, required: false,default:'91'},
     contactNumber: {type: String, required: false}
 };
 
@@ -35,10 +36,10 @@ var UserSchema = mongoose.Schema({
     Name: {type: String, required: false},
     lastName: {type: String, required: false},
     fatherName: {type: String, required: false},
-    email: {type: String, required: false, unique: true, validate: [ValidationHandler.validateEmail, 'Invalid email']},
+    email: {type: String, required: false, validate: [ValidationHandler.validateEmail, 'Invalid email']},
     emailVerified: {type: Boolean, required: false, default: true},
     password: {type: String, required: false},
-    phoneNumber: {type: String, required: false, unique: true},
+    phoneNumber: {type: String, required: false},
     age: {type: Number, required: false, min: 5, max: 100},
     sex: {type: Sex, required: false},
     address: {type: String, required: false},
@@ -53,7 +54,7 @@ var UserSchema = mongoose.Schema({
     cardNum:{type: Number, required: false},
     smartCardNumber: {type: String, required: false},
     smartCardId: {type: Schema.ObjectId, required: false, ref: 'card'},
-    smartCardKey:{type: String, required: false},
+    smartCardKey:{type: String, required: false,default:'FFFFFFFFFFFF0000'},
     vehicleId:{type:[vehicleIds], required:false,default:[]},
     emergencyContact: {type: EmergencyContact, required: false},
     assignedUser: {type: Schema.ObjectId, required: false},

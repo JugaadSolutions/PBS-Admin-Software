@@ -5,7 +5,9 @@ var express = require('express'),
 
     config = require('config'),
     Messages = require('../core/messages'),
+    Transaction = require('../models/transaction'),
     MobileService = require('../services/mobile-request'),
+    BridgeService = require('../services/bridge-service'),
     TransactionService = require('../services/transaction-service');
 
 var router = express.Router();
@@ -38,6 +40,29 @@ router
 
     })
 
+    .get('/',function (req,res,next) {
+        TransactionService.getAllTransactions(function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                res.json(response);
+
+            }
+
+        });
+    })
+
 /*    .post('/', function (req, res, next) {
         TransactionService.createUser(req.body,function (err,result) {
             if(err)
@@ -61,6 +86,34 @@ router
             else
             {
                 res.json({error: false, message: Messages.CHECK_OUT_ENTRY_CREATED, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/checkout/bridge', function (req, res, next) {
+        BridgeService.BridgeCheckout(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.CHECK_OUT_ENTRY_CREATED, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/checkin/bridge', function (req, res, next) {
+        BridgeService.BridgeCheckin(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.CHECK_IN_ENTRY_CREATED, description: '', data: result});
             }
 
         });
@@ -109,6 +162,43 @@ router
     })
 
 
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        Transaction.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .delete('/:id', function (req, res, next) {
+
+        Transaction.findByIdAndRemove(req.params.id, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
 
 ;
 module.exports=router;

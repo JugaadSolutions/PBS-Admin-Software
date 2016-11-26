@@ -188,7 +188,7 @@ exports.getAllStations = function (record,callback) {
 
     var allstations=[];
 
-    DockStation.find({"stationType": "dock-station"}).deepPopulate('portIds portIds.dockingPortId').lean().exec(function (err,result) {
+    DockStation.find({"stationType": "dock-station"}).deepPopulate('portIds portIds.dockingPortId portIds.dockingPortId.vehicleId.vehicleid').lean().exec(function (err,result) {
         if(err)
         {
            return callback(err,null);

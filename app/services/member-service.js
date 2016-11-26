@@ -325,7 +325,7 @@ exports.updateMember = function (record,callback) {
                 }
                 //result.documents = docArray;
 
-                Member.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                Member.findByIdAndUpdate(record._id, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -404,6 +404,10 @@ exports.assignMembership=function (memberId, membershipId,callback) {
                     });
 
                 }
+                else
+                {
+                    return callback(null,null);
+                }
             }
 
             ,
@@ -424,6 +428,10 @@ exports.assignMembership=function (memberId, membershipId,callback) {
 
                     return callback(null,result);
                 });
+            }
+            else
+            {
+                return callback(null,null);
             }
         }
 
@@ -447,6 +455,7 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
     var cardObject;
     var memberObject;
     var memberName;
+    var validity;
 
     async.series([
         /*function (callback) {
@@ -511,12 +520,25 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
 
                 });
             },
+            function (callback) {
 
+                    MembershipService.calculateValidity(membershipId, memberId, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        validity = result;
+                        return callback(null, result);
+                    });
+
+            }
+            ,
             // Step 3: Method to update member card details
             function (callback) {
 
                 Member.findByIdAndUpdate(memberId, {
                     $set: {
+                        'validity': validity,
                         'cardNum':cardObject.cardNumber,
                         'smartCardId': cardObject._id,
                         'smartCardNumber': cardObject.cardRFID
@@ -555,7 +577,7 @@ exports.creditMember=function (id,record,callback) {
     var isProcessingFeeDeducted = false;
     var amount = 0;
     var transObject;
-    var transactionDetails=0;
+    var transactionDetails;
     var validity;
 
     async.series([
@@ -581,40 +603,63 @@ exports.creditMember=function (id,record,callback) {
             })
 
         },
+            function (callback) {
+                if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
+                {
+                    Payments.findOne({'gatewayTransactionId':record.transactionNumber},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+
+                            transactionDetails = result;
+                        return callback(null,result);
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+            }
+        ,
         function (callback) {
            /* var orderId = 'PBS'+ new Date().getTime();*/
            if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
            {
-               var userfeeDeposit;
-               var uf = 'PBS'+ new Date().getTime();
-               userfeeDeposit={
-                   memberId:memberObject._id,
-                   invoiceNo: uf,
-                   paymentDescription:Constants.PayDescription.CREDIT_NOTE,
-                   paymentMode:record.creditMode,
-                   paymentThrough:Constants.PayThrough.PAYMENT_GATEWAY,
-                   gatewayTransactionId:record.transactionNumber,
-                   comments:record.comments,
-                   credit:record.credit,
-                   balance:record.credit
-               };
+               if(transactionDetails)
+               {
+                   return callback(null,null);
+               }
+               else {
+                   var userfeeDeposit;
+                   var uf = 'PBS' + new Date().getTime();
+                   userfeeDeposit = {
+                       memberId: memberObject._id,
+                       invoiceNo: uf,
+                       paymentDescription: Constants.PayDescription.CREDIT_NOTE,
+                       paymentMode: record.creditMode,
+                       paymentThrough: Constants.PayThrough.PAYMENT_GATEWAY,
+                       gatewayTransactionId: record.transactionNumber,
+                       comments: record.comments,
+                       credit: record.credit,
+                       balance: record.credit
+                   };
 
-               Payments.create(userfeeDeposit,function (err,result) {
-                   if(err)
-                   {
-                       return callback(err,null);
-                   }
-                   memberObject.creditBalance = record.credit;
-                   Member.findByIdAndUpdate(memberObject._id,memberObject,{new:true},function (err,result) {
-                       if(err)
-                       {
-                           return callback(err,null);
+                   Payments.create(userfeeDeposit, function (err, result) {
+                       if (err) {
+                           return callback(err, null);
                        }
-                       memberObject=result;
-                   });
+                       memberObject.creditBalance = record.credit;
+                       Member.findByIdAndUpdate(memberObject._id, memberObject, {new: true}, function (err, result) {
+                           if (err) {
+                               return callback(err, null);
+                           }
+                           memberObject = result;
+                       });
 
-                   return callback(null,result);
-               });
+                       return callback(null, result);
+                   });
+               }
            }
            else {
                if (isProcessingFeeDeducted) {
@@ -679,6 +724,10 @@ exports.creditMember=function (id,record,callback) {
         if(err)
         {
             return callback(err,null);
+        }
+        if(!updatedMemberObject)
+        {
+            return callback(new Error('Amount you entered is less than Minimum Amount'),null);
         }
         return callback(null,updatedMemberObject);
     });

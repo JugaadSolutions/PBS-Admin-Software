@@ -16,7 +16,7 @@ var schema = {
    user: {type: Schema.ObjectId, required: false, ref: 'user'},
  vehicleId: {type: Schema.ObjectId, required: true, ref: 'vehicle'},
     toPort: {type: Schema.ObjectId, required: true, ref: 'port'},
-    checkInTime: {type: Date, required: false,default: Date.now},
+    checkInTime: {type: Date, required: false},
     status: {type: String, required: true, default: 'Open'},
     errorStatus:{type: Number, required: false,default:0},
     errorMsg:{type: String, required: false}

@@ -3,6 +3,7 @@ var express = require('express'),
     moment = require('moment'),
     config = require('config'),
     Messages = require('../core/messages'),
+    Deposits = require('../models/deposits'),
     RequestDataHandler = require('../handlers/request-data-handler'),
     PaymentTransaction = require('../models/payment-transactions'),
     PaymentTransactionService = require('../services/payment-transaction');
@@ -62,9 +63,10 @@ router
 
     .get('/', function (req, res, next) {
 
-        var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+        //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
-        PaymentTransaction.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
+        //PaymentTransaction.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
+            PaymentTransaction.find({},function (err,result) {
 
             if (err) {
 
@@ -76,7 +78,7 @@ router
                     error: false,
                     message: Messages.FETCHING_RECORDS_SUCCESSFUL,
                     description: '',
-                    data: result.docs
+                    data: result
                 });
 
             }
@@ -89,14 +91,14 @@ router
 
         // var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
-        PaymentTransaction.find({'memberId':req.params.id,'paymentDescription':'Credit note'},function (err, result) {
+        PaymentTransaction.find({'memberId':req.params.id,'paymentDescription':'Credit note'}).lean().exec(function (err, result) {
 
             if (err) {
 
                 next(err, req, res, next);
 
             } else {
-                var response;
+               /* var response;
                 var allPayments=[];
                 var details={
                     createdAt:'',
@@ -132,14 +134,13 @@ router
                     {
                         response= {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
                 }
-
-              /*  var response = result != null ? {
+*/
+                var response = result != null ? {
                     error: false,
                     message: Messages.FETCHING_RECORDS_SUCCESSFUL,
                     description: '',
                     data: result
                 } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
-*/
                 res.json(response);
 
             }
@@ -147,6 +148,22 @@ router
         });
 
     })
+/*
+
+    .get('/asdf',function (req,res,next) {
+        PaymentTransactionService.getAllDeposits(function (err,result) {
+            if (err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+    })
+*/
+
 
     .post('/daywisecollection',function (req,res,next) {
         PaymentTransactionService.daywiseCollection(req.body,function (err,result) {
@@ -163,6 +180,66 @@ router
                     data: result
                 });
             }
+        });
+    })
+
+    .post('/cashcollection',function (req,res,next) {
+        PaymentTransactionService.cashCollection(req.body,function (err,result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+            }
+        });
+    })
+
+    .post('/deposit', function (req, res, next) {
+        PaymentTransactionService.depositCash(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/depositinfo', function (req, res, next) {
+        PaymentTransactionService.depositInfo(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/totalcollection', function (req, res, next) {
+        PaymentTransactionService.totalCollection(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
         });
     })
 
