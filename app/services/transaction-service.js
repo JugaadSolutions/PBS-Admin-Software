@@ -5,6 +5,8 @@ var async = require('async'),
     moment = require('moment'),
     CheckOut=require('../models/checkout'),
     CheckIn=require('../models/checkin'),
+    CheckOutError=require('../models/checkoutError'),
+    CheckInError=require('../models/checkinError'),
     vehicle = require('../models/vehicle'),
     User = require('../models/user'),
     Member = require('../models/member'),
@@ -93,8 +95,6 @@ exports.getAllTransactions = function (callback) {
                     {
                         if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area'))
                         {
-
-                        }
                         var details={
                             user:'',
                             vehicle:'',
@@ -113,6 +113,7 @@ exports.getAllTransactions = function (callback) {
                         details.checkOutTime=result[i].checkOutTime;
                         details.status=result[i].status;
                         alltrans.push(details);
+                        }
 
                     }
                 }
@@ -129,7 +130,9 @@ exports.getAllTransactions = function (callback) {
                 {
                     for(var i=0;i<result.length;i++)
                     {
-                        alltrans.push(result[i]);
+                        if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area')&& (result[i].toPort._type=='Docking-port' || result[i].toPort._type=='Redistribution-area')) {
+                            alltrans.push(result[i]);
+                        }
                     }
                 }
                 return callback(null,result);
@@ -182,7 +185,7 @@ exports.checkout=function (record,callback) {
     var errormsg='';
 
     async.series([
-        function (callback) {
+       /* function (callback) {
             Member.findOne({'smartCardNumber':record.cardId},function (err,result) {
             if(err)
             {
@@ -236,32 +239,42 @@ exports.checkout=function (record,callback) {
                 return callback(null,result);
             });
 
-        },
-        function (callback) {
-            Member.findById(vehiclesDetails.currentAssociationId,function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                if(!result)
-                {
-                    return callback(null,null);
-                }
-                errorstatus=1;
-                errormsg=errormsg+':'+'vehicle is with the member';
-                vehicleLocationStatus = Constants.VehicleLocationStatus.WITH_MEMBER;
-                return callback(null,result);
-            });
         }
-        ,
+        ,*/
+       function (callback) {
+           CheckOut.findOne(record,function (err,result) {
+               if(err)
+               {
+                   errorstatus=1;
+                   errormsg=errormsg+':'+err;
+                   return callback(null,null);
+               }
+               if(!result)
+               {
+                   return callback(null,null);
+               }
+               errorstatus=1;
+               errormsg=errormsg+': Duplicate record';
+               return callback(null,null);
+           });
+       },
         function (callback) {
             if(errorstatus==0) {
-                checkoutDetails={
+/*                checkoutDetails={
                     user:userDetails._id,
                     vehicleId:vehiclesDetails._id,
                     fromPort:fromPortDetails._id,
-                    checkOutTime:record.checkOutTime
-                };
+                    checkOutTime:record.checkOutTime,
+                    errorStatus:errorstatus,
+                    errorMsg:errormsg
+                };*/
+                CheckOut.create(record, function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    checkoutResultDetails = result;
+                    return callback(null, result);
+                });
             }
             else
             {
@@ -273,116 +286,18 @@ exports.checkout=function (record,callback) {
                     errorStatus:errorstatus,
                     errorMsg:errormsg
                 };
-            }
-            CheckOut.create(checkoutDetails, function (err, result) {
-                if (err) {
-                    return callback(err, null);
-                }
-                checkoutResultDetails = result;
-                return callback(null, result);
-            });
-        }
-        ,
-        function (callback) {
-            Port.findById(vehiclesDetails.currentAssociationId,function (err,result) {
-                if(err)
-                {
-                    errorstatus=1;
-                    return callback(err,null);
-                }
-                if(!result)
-                {
-                    errorstatus=1;
-                    return callback(null,null);
-                }
-                //if(result.portType=='dock-port'){
-                /*    vehicleLocationStatus = Constants.VehicleLocationStatus.WITH_FLEET;
-                }else {*/
-                    vehicleLocationStatus = Constants.VehicleLocationStatus.WITH_PORT;
-                //}
-
-                return callback(null,result);
-            });
-        }
-        ,
-       /* function (callback) {
-            if(vehicleLocationStatus==Constants.VehicleLocationStatus.WITH_FLEET || vehicleLocationStatus==Constants.VehicleLocationStatus.WITH_PORT)
-            {
-
-                    checkoutDetails={
-                        member:userDetails._id,
-                        vehicleId:vehiclesDetails._id,
-                        fromPort:fromPortDetails._id,
-                        checkOutTime:record.checkOutTime
-                    };
-                    return callback(null,null);
-            }
-            else
-            {
-                return callback(new Error(Messages.CHECK_OUT_ENTRY_NOT_CREATED));
-            }
-
-        },*/
-
-        function (callback) {
-            if(errorstatus==0) {
-                vehicle.findByIdAndUpdate(vehiclesDetails._id, {
-                    $set: {
-                        'currentAssociationId': userDetails._id,
-                        'vehicleCurrentStatus': Constants.VehicleLocationStatus.WITH_MEMBER
-                    }
-                }, function (err, result) {
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    return callback(null, result);
-                });
-            }
-            else
-            {
-                return callback(null,null);
-            }
-        },
-
-        function (callback) {
-            if(errorstatus==0) {
-                var vehicleDetails = {
-                    vehicleid: vehiclesDetails._id,
-                    vehicleUid: vehiclesDetails.vehicleUid
-
-                };
-                userDetails.vehicleId.push(vehicleDetails);
-                Member.findByIdAndUpdate(userDetails._id,userDetails,{new:true},function (err,result) {
+                CheckOutError.create(checkoutDetails,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
-                    userDetails=result;
+                    checkoutResultDetails = result;
                     return callback(null,result);
                 });
             }
-            else {
-                return callback(null,null);
-            }
-        }, function (callback) {
-            if(errorstatus==0) {
-            fromPortDetails.vehicleId=[];
-            fromPortDetails.portStatus=Constants.AvailabilityStatus.EMPTY;
-            Port.findByIdAndUpdate(fromPortDetails._id,fromPortDetails,function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                return callback(null,result);
-            });
-        }
-    else
-    {
-        return callback(null,null);
-    }
+
         }
 
-        
     ],function (err,result) {
        if(err)
        {
@@ -427,7 +342,7 @@ exports.checkin=function (record,callback) {
         }
         return callback();
         },*/
-        function (callback) {
+        /*function (callback) {
             vehicle.findOne({'vehicleRFID':record.vehicleId},function (err,result) {
                 if (err)
                 {
@@ -441,10 +356,10 @@ exports.checkin=function (record,callback) {
                     errormsg=errormsg+':'+Messages.VEHICLE_NOT_FOUND;
                     return callback(new Error(Messages.VEHICLE_NOT_FOUND));
                 }
-                /*if(result.vehicleCurrentStatus==Constants.VehicleLocationStatus.WITH_PORT)
+                /!*if(result.vehicleCurrentStatus==Constants.VehicleLocationStatus.WITH_PORT)
                 {
                     return callback(new Error(Messages.VEHICLE_CHECKIN_NOT_CREATED));
-                }*/
+                }*!/
                 vehiclesDetails=result;
                 return callback(null,result);
             });
@@ -468,28 +383,35 @@ exports.checkin=function (record,callback) {
                 return callback(null,result);
             });
 
+        },*/
+        function (callback) {
+            CheckIn.findOne(record,function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    return callback(null,null);
+                }
+                errorstatus=1;
+                errormsg=errormsg+': Duplicate record';
+                return callback(null,null);
+            });
         },
         function (callback) {
                 if(errorstatus==0) {
-                    if(userDetails!=0) {
-                        checkinEntry = {
-                            user: userDetails._id,
-                            vehicleId: vehiclesDetails._id,
-                            toPort: dockingPortDetails._id,
-                            checkInTime: record.checkInTime
 
-                        };
-                    }
-                    else
-                    {
-                        checkinEntry = {
-
-                            vehicleId: vehiclesDetails._id,
-                            toPort: dockingPortDetails._id,
-                            checkInTime: record.checkInTime
-
-                        };
-                    }
+                    CheckIn.create(record,function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        checkInDetails=result;
+                        return callback(null,result);
+                    });
                 }
                 else
                 {
@@ -501,6 +423,14 @@ exports.checkin=function (record,callback) {
                         errorStatus:errorstatus,
                         errorMsg:errormsg
                     };
+                    CheckInError.create(checkinEntry,function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        checkInDetails=result;
+                        return callback(null,result);
+                    });
                 }
             /* }
              else {
@@ -510,14 +440,7 @@ exports.checkin=function (record,callback) {
              checkInTime: record.checkInTime
              };
              }*/
-            CheckIn.create(checkinEntry,function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                checkInDetails=result;
-                return callback(null,result);
-            });
+
         }
     ],function (err,result) {
         if(err)
@@ -529,31 +452,471 @@ exports.checkin=function (record,callback) {
 
 };
 
-exports.timelyCheckin = function (callback) {
-    var checkinData;
-    var userDetails=0;
+exports.timelyCheckout = function (callback) {
+
     var vehiclesDetails;
-    var dockingPortDetails=0;
-    var checkInDetails;
+    var userDetails;
+    var vehicleLocationStatus;
+    var checkoutResultDetails;
+    var checkoutDetails;
+    var fromPortDetails;
     var errorstatus=0;
     var errormsg='';
+
     async.series([
         function (callback) {
-            CheckIn.findOne({'status':'Open'}).deepPopulate('vehicleId toPort').sort({'checkInTime': 'ascending'}).exec(function (err,result) {
+            CheckOut.find({'status':'Open','errorStatus':0,'updateStatus':0}).sort({'checkOutTime': 'ascending'}).exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
                 }
                 if(result)
                 {
-                    checkinData = result;
-                    console.log(result.vehicleId.currentAssociationId);
+                    checkoutDetails = result;
+                    //console.log(result.vehicleId.currentAssociationId);
+                }
+
+                return callback(null,result);
+            });
+
+        },
+            function (callback) {
+            if(checkoutDetails.length>0)
+            {
+                async.forEach(checkoutDetails,function (checkoutDetail) {
+/*                    async.series([
+                        function (callback) {
+
+                        }
+                    ],function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });*/
+                    vehicle.findOne(checkoutDetail.vehicleId,function (err,result) {
+                        if(err)
+                        {
+                            return console.error('Error : '+err);
+                        }
+                        if(result)
+                        {
+                            vehiclesDetails = result;
+                            result.currentAssociationId = checkoutDetail.user;
+                            result.vehicleCurrentStatus = Constants.VehicleLocationStatus.WITH_MEMBER;
+                            vehicle.findByIdAndUpdate(result._id,result,function (err,result) {
+                                if(err)
+                                {
+                                    return console.error('Error : '+err);
+                                }
+                            });
+                        }
+                    });
+                    Port.findOne(checkoutDetail.fromPort,function (err,result) {
+                        if(err)
+                        {
+                            return console.error('Error : '+err);
+                        }
+                        if(result)
+                        {
+                            if(result._type=='Docking-port')
+                            {
+                                //if(result.vehicleId.length>0) {
+                                    result.vehicleId = [];
+                                    result.portStatus = Constants.AvailabilityStatus.EMPTY;
+                               // }
+                            }
+                            else if(checkoutDetails.fromPort._type=='Fleet')
+                            {
+
+                            }
+                            else
+                            {
+                                if(result.vehicleId.length>0)
+                                {
+                                    for(var i=0;i<result.vehicleId.length;i++)
+                                    {
+                                        if(result.vehicleId[i].vehicleid.equals(checkoutDetail.vehicleId))
+                                        {
+                                            result.vehicleId.splice(i,1);
+                                        }
+                                    }
+                                }
+
+                            }
+                           Port.findByIdAndUpdate(result._id,result,function (err,result) {
+                               if(err)
+                               {
+                                   return console.error('Error : '+err);
+                               }
+                           });
+                        }
+                    });
+                    User.findOne(checkoutDetail.user,function (err,result) {
+                        if(err)
+                        {
+                            return console.error('Error : '+err);
+                        }
+                        if(result)
+                        {
+                            var vehicleDetails = {
+                                vehicleid: checkoutDetail.vehicleId,
+                                vehicleUid: vehiclesDetails.vehicleUid
+                            };
+                            result.vehicleId.push(vehicleDetails);
+                            User.findByIdAndUpdate(result._id,result,function (err,result) {
+                                if (err)
+                                {
+                                    return console.error('Error : '+err);
+                                }
+                            });
+                        }
+                    });
+
+                    CheckOut.findByIdAndUpdate(checkoutDetail._id,{$set:{'updateStatus':1}},function (err,result) {
+                        if(err)
+                        {
+                            console.error('Error : '+err);
+                        }
+                        console.log('Checkout Success : '+result);
+                    });
+
+                },function (err) {
+                    console.error('Error : '+err);
+                    //callback();
+                });
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+            }
+        /*,
+
+        function (callback) {
+            if(checkoutDetails) {
+                console.log(checkoutDetails.user._id);
+                User.findById(checkoutDetails.user._id, function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    userDetails = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        },
+        function (callback) {
+            Port.findById(vehiclesDetails.fromPort._id,function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    return callback(null,null);
+                }
+                //if(result.portType=='dock-port'){
+                /!*    vehicleLocationStatus = Constants.VehicleLocationStatus.WITH_FLEET;
+                 }else {*!/
+                vehicleLocationStatus = Constants.VehicleLocationStatus.WITH_PORT;
+                //}
+
+                return callback(null,result);
+            });
+        }
+        ,*/
+        /* function (callback) {
+         if(vehicleLocationStatus==Constants.VehicleLocationStatus.WITH_FLEET || vehicleLocationStatus==Constants.VehicleLocationStatus.WITH_PORT)
+         {
+
+         checkoutDetails={
+         member:userDetails._id,
+         vehicleId:vehiclesDetails._id,
+         fromPort:fromPortDetails._id,
+         checkOutTime:record.checkOutTime
+         };
+         return callback(null,null);
+         }
+         else
+         {
+         return callback(new Error(Messages.CHECK_OUT_ENTRY_NOT_CREATED));
+         }
+
+         },*/
+
+       /* function (callback) {
+            if(checkoutDetails) {
+                vehicle.findByIdAndUpdate(checkoutDetails.vehicleId._id, {
+                    $set: {
+                        'currentAssociationId': checkoutDetails.user._id,
+                        'vehicleCurrentStatus': Constants.VehicleLocationStatus.WITH_MEMBER
+                    }
+                },{new:true}, function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    vehiclesDetails = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+
+        function (callback) {
+            if(vehiclesDetails) {
+
+
+                //checkoutDetails.user.vehicleId.push(vehicleDetails);
+                if(checkoutDetails.user._type=='member' && checkoutDetails.user.vehicleId.length<1) {
+                    User.findOne(checkoutDetails.user._id,function (err,result) {
+                        if(err)
+                        {
+                            console.log('Checkout User error');
+                            return callback(null,null);
+                        }
+                        var vehicledetail = {
+                            vehicleid: checkoutDetails.vehicleId._id,
+                            vehicleUid: checkoutDetails.vehicleId.vehicleUid
+                        };
+                        result.vehicleId.push(vehicledetail);
+                        User.findByIdAndUpdate(checkoutDetails.user._id, result, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            userDetails = result;
+                        });
+                        return callback(null, result);
+                    });
+
+
+                }
+            }
+            else {
+                return callback(null,null);
+            }
+        }, function (callback) {
+            if(userDetails) {
+                Port.findOne(checkoutDetails.fromPort._id,function (err,result) {
+                    if(err)
+                    {
+                        return callback(null,null);
+                    }
+
+                if(result._type=='Docking-port')
+                {
+                    if(result.vehicleId.length>0) {
+                        result.vehicleId = [];
+                        result.portStatus = Constants.AvailabilityStatus.EMPTY;
+                    }
+                }
+                else if(checkoutDetails.fromPort._type=='Fleet')
+                {
+
+                }
+                else
+                {
+                    if(result.vehicleId.length>0)
+                    {
+                        for(var i=0;i<result.vehicleId.length;i++)
+                        {
+                            if(result.vehicleId[i].vehicleid.equals(checkoutDetails.vehicleId._id))
+                            {
+                                result.vehicleId.splice(i,1);
+                            }
+                        }
+                    }
+
+                }
+
+                Port.findByIdAndUpdate(result._id,result,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                   // return callback(null,result);
+                });
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }*/
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+
+};
+
+exports.timelyCheckin = function (callback) {
+    var checkinDetails;
+    var userDetails;
+    var vehiclesDetails;
+    var dockingPortDetails;
+    var checkInDetails;
+    var errorstatus=0;
+    var errormsg='';
+    async.series([
+        function (callback) {
+            CheckIn.find({'status':'Open','errorStatus':0,'updateStatus':0}).sort({'checkInTime': 'ascending'}).exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result)
+                {
+                    checkinDetails = result;
+                    //console.log(result.vehicleId.currentAssociationId);
                 }
 
                 return callback(null,result);
             });
         },
         function (callback) {
+            if(checkinDetails.length>0)
+            {
+                async.forEach(checkinDetails,function (checkinDetail) {
+                    /*                    async.series([
+                     function (callback) {
+
+                     }
+                     ],function (err,result) {
+                     if(err)
+                     {
+                     return callback(err,null);
+                     }
+                     return callback(null,result);
+                     });*/
+                    vehicle.findOne(checkinDetail.vehicleId,function (err,result) {
+                        if(err)
+                        {
+                            return console.error('Error : '+err);
+                        }
+                        if(result)
+                        {
+                            vehiclesDetails = result;
+                            if(result.vehicleCurrentStatus == Constants.VehicleLocationStatus.WITH_MEMBER)
+                            {
+                                User.findOne(result.currentAssociationId, function (err, result) {
+                                    if (err) {
+                                        return console.error('Checkin Time User Error : ' + err);
+                                    }
+                                    if (result) {
+                                        userDetails = result;
+                                        if (result._type == 'member') {
+                                            //if(result.vehicleId.length>0) {
+                                            result.vehicleId = [];
+                                            // }
+                                        }
+                                        else {
+                                            if (result.vehicleId.length > 0) {
+                                                for (var i = 0; i < result.vehicleId.length; i++) {
+                                                    if (result.vehicleId[i].vehicleid.equals(checkinDetail.vehicleId)) {
+                                                        result.vehicleId.splice(i, 1);
+                                                    }
+                                                }
+                                            }
+
+                                        }
+                                        User.findByIdAndUpdate(result._id, result, function (err, result) {
+                                            if (err) {
+                                                return console.error('Error : ' + err);
+                                            }
+                                        });
+                                    }
+                                });
+                            }
+                            result.currentAssociationId = checkinDetail.toPort;
+                            result.vehicleCurrentStatus = Constants.VehicleLocationStatus.WITH_PORT;
+                            vehicle.findByIdAndUpdate(result._id,result,function (err,result) {
+                                if(err)
+                                {
+                                    return console.error('Error : '+err);
+                                }
+                            });
+                        }
+                    });
+                    Port.findOne(checkinDetail.toPort,function (err,result) {
+                        if(err)
+                        {
+                            return console.error('Error : '+err);
+                        }
+                        if(result)
+                        {
+                            var vehicleDetails = {
+                                vehicleid: checkinDetail.vehicleId,
+                                vehicleUid: vehiclesDetails.vehicleUid
+                            };
+                            if(result._type=='Docking-port')
+                            {
+                                //if(result.vehicleId.length>0) {
+                                result.vehicleId=[];
+                                // }
+                            }
+                            result.vehicleId.push(vehicleDetails);
+                            result.portStatus = Constants.AvailabilityStatus.FULL;
+                            Port.findByIdAndUpdate(result._id,result,function (err,result) {
+                                if(err)
+                                {
+                                    return console.error('Error : '+err);
+                                }
+                            });
+                        }
+                    });
+
+                    CheckIn.findByIdAndUpdate(checkinDetail._id,{$set:{'updateStatus':1}},function (err,result) {
+                        if(err)
+                        {
+                            console.error('Error : '+err);
+                        }
+                        console.log('Checkin Success : '+result);
+                    });
+                   /* if(vehiclesDetails) {
+
+                        if (vehiclesDetails.vehicleCurrentStatus == Constants.VehicleLocationStatus.WITH_MEMBER) {*/
+
+/*                        }
+                    }*/
+                    if(userDetails)
+                    {
+                        CheckIn.findByIdAndUpdate(checkinDetail._id,{$set:{'user':userDetails._id}},function (err,result) {
+                            if(err)
+                            {
+                                console.error('Error : '+err);
+                            }
+                            console.log('Checkin Success : '+result);
+                        });
+                    }
+
+                },function (err) {
+                    console.error('Error : '+err);
+                    //callback();
+                });
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+ /*       function (callback) {
             if(checkinData) {
                 console.log(checkinData.vehicleId.currentAssociationId);
                 User.findById(checkinData.vehicleId.currentAssociationId, function (err, result) {
@@ -589,7 +952,7 @@ exports.timelyCheckin = function (callback) {
         }
         ,
         function (callback) {
-            if(userDetails!=0)
+            if(userDetails)
             {
                 CheckIn.findByIdAndUpdate(checkinData._id,{$set:{'user':userDetails._id}},{new: true},function (err,result) {
                     if(err)
@@ -605,10 +968,10 @@ exports.timelyCheckin = function (callback) {
         }
         ,
         function (callback) {
-            if(checkInDetails) {
+            if(userDetails) {
                 vehicle.findByIdAndUpdate(checkinData.vehicleId._id, {
                     $set: {
-                        'currentAssociationId': checkinData.toPort._id,
+                        'currentAssociationId': dockingPortDetails._id,
                         'vehicleCurrentStatus': Constants.VehicleLocationStatus.WITH_PORT
                     }
                 }, function (err, result) {
@@ -623,7 +986,7 @@ exports.timelyCheckin = function (callback) {
                 return callback(null,null);
             }
         },
-           /* function (callback) {
+           /!* function (callback) {
                 Port.findOne({'_id':checkinData.toPort._id},function (err,result) {
                     if (err)
                     {
@@ -633,12 +996,12 @@ exports.timelyCheckin = function (callback) {
                     return callback(null,result);
                 });
             }
-        ,*/
+        ,*!/
 
         function (callback) {
             if(userDetails) {
                 userDetails.vehicleId = [];
-                User.findByIdAndUpdate(userDetails._id, userDetails, {new: true}, function (err, result) {
+                User.findByIdAndUpdate(userDetails._id, userDetails,{new:true}, function (err, result) {
                     if (err) {
                         return callback(err, null);
                     }
@@ -653,19 +1016,22 @@ exports.timelyCheckin = function (callback) {
         },
         function (callback) {
             if(checkinData) {
-                var vehicleDetails = {
-                    vehicleid: checkinData.vehicleId._id,
-                    vehicleUid: checkinData.vehicleId.vehicleUid
+                if(dockingPortDetails.portStatus!=1) {
 
-                };
-                dockingPortDetails.vehicleId.push(vehicleDetails);
-                dockingPortDetails.portStatus = Constants.AvailabilityStatus.FULL;
-                Port.findByIdAndUpdate(dockingPortDetails._id, dockingPortDetails,{new:true}, function (err, result) {
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    return callback(null, result);
-                });
+                    var vehicleDetails = {
+                        vehicleid: checkinData.vehicleId._id,
+                        vehicleUid: checkinData.vehicleId.vehicleUid
+
+                    };
+                    dockingPortDetails.vehicleId.push(vehicleDetails);
+                    dockingPortDetails.portStatus = Constants.AvailabilityStatus.FULL;
+                    Port.findByIdAndUpdate(dockingPortDetails._id, dockingPortDetails, {new: true}, function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        return callback(null, result);
+                    });
+                }
             }
             else
             {
@@ -688,7 +1054,7 @@ exports.timelyCheckin = function (callback) {
                 return callback(null,null);
             }
         }
-
+*/
     ],function (err,result) {
         if(err)
         {

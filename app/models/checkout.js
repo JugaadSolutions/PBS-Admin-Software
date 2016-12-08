@@ -20,7 +20,8 @@ var schema = {
     checkOutTime: {type: Date, required: false},
     status: {type: String, required: true,default:'Open'},
     errorStatus:{type: Number, required: false,default:0},
-    errorMsg:{type: String, required: false}
+    errorMsg:{type: String, required: false},
+    updateStatus:{type: Number, required: false,default:0}
 };
 
 var model = new Schema(schema);

@@ -37,8 +37,8 @@ exports.checkoutApp=function (record,callback) {
             if(details!=0)
             {
                 requestDetails ={
-                    cardId:userDetails.smartCardNumber,
-                    vehicleId:details.vehicleRFID,
+                    user:userDetails._id,
+                    vehicleId:details._id,
                     fromPort:record.fromPort,
                     checkOutTime:record.checkOutTime
                 };
@@ -89,7 +89,7 @@ exports.checkinApp=function (record,callback) {
                 record.checkInTime =  moment(record.checkInTime, format).tz("Asia/Kolkata").format(format);
                 console.log(record.checkInTime.toString());*/
                 requestDetails ={
-                    vehicleId:details.vehicleRFID,
+                    vehicleId:details._id,
                     toPort:record.toPort,
                     checkInTime:record.checkInTime
                 };
