@@ -9,6 +9,7 @@ var Member = require('../models/member'),
     PaymentTransaction=require('../services/payment-transaction'),
     Messages = require('../core/messages'),
     Constants =require('../core/constants'),
+    PoolAccount = require('../models/poolingaccount'),
     TemplatesMessage = require('../../templates/text-messages'),
     EmailNotificationHandler = require('../handlers/email-notification-handler'),
     Payments = require('../models/payment-transactions'),
@@ -636,7 +637,7 @@ exports.creditMember=function (id,record,callback) {
                    userfeeDeposit = {
                        memberId: memberObject._id,
                        invoiceNo: uf,
-                       paymentDescription: Constants.PayDescription.CREDIT_NOTE,
+                       paymentDescription: Constants.PayDescription.REGISTRATION,
                        paymentMode: record.creditMode,
                        paymentThrough: Constants.PayThrough.PAYMENT_GATEWAY,
                        gatewayTransactionId: record.transactionNumber,
@@ -730,6 +731,235 @@ exports.creditMember=function (id,record,callback) {
             return callback(new Error('Amount you entered is less than Minimum Amount'),null);
         }
         return callback(null,updatedMemberObject);
+    });
+
+};
+
+exports.cancelMembershiprequest = function (id,record,callback) {
+
+    var userObject;
+    var obj = {
+        message:''
+    };
+    async.series([
+        function (callback) {
+            User.findOne({'_id':id},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error('User with this id does not exist'),null);
+                }
+                userObject=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(userObject)
+            {
+
+                if(userObject.creditBalance<0)
+                {
+                    var sum = userObject.creditBalance+userObject.securityDeposit;
+                    obj.message="You have Negative balance of Rs."+userObject.creditBalance+", Negative balance will be recovered from your Security deposit of Rs."+userObject.securityDeposit+". Your Refund amount will be "+sum;
+                }
+                else if(userObject.creditBalance>0)
+                {
+                    obj.message="You are going to lose Rs."+userObject.creditBalance+", Your Refund amount from your Security deposit is Rs."+userObject.securityDeposit;
+                }
+                else
+                {
+                    obj.message="Your Refund amount from your Security deposit is Rs."+userObject.securityDeposit;
+                }
+            }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,obj);
+    });
+};
+
+exports.cancelMembership = function (memberId,record,callback) {
+
+    var memberObject;
+
+    async.series([
+        function (callback) {
+          Member.findOne({'_id':memberId},function (err,result) {
+              if(err)
+              {
+                  return callback(err,null);
+              }
+              memberObject=result;
+              return callback(null,result);
+          });
+        },
+        function (callback) {
+            var cancelmembership;
+            var cancelmembership2;
+            var unusedBalance;
+            var poolDetails;
+            if(memberObject) {
+                if(memberObject.creditBalance>0)
+                {
+                    var uf = 'PBS' + new Date().getTime();
+
+                    unusedBalance = {
+                        memberId: memberId,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
+                        paymentMode: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayMode.OTHERS,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        debit: memberObject.creditBalance,
+                        balance: Number(memberObject.creditBalance-memberObject.creditBalance)
+                    };
+                    cancelmembership = {
+                        memberId: memberId,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.REFUND,
+                        paymentMode: record.creditMode,
+                        paymentThrough: (record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        credit: memberObject.securityDeposit,
+                        balance: memberObject.securityDeposit
+                    };
+                    cancelmembership2 = {
+                        memberId: memberId,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
+                        paymentMode: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayMode.OTHERS,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        debit: memberObject.securityDeposit,
+                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
+                    };
+                }
+                else if(memberObject.creditBalance<0)
+                {
+                    memberObject.securityDeposit = memberObject.securityDeposit+memberObject.creditBalance;
+                    var uf = 'PBS' + new Date().getTime();
+                    cancelmembership = {
+                        memberId: memberId,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.REFUND,
+                        paymentMode: record.creditMode,
+                        paymentThrough: (record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        credit: memberObject.securityDeposit,
+                        balance: memberObject.securityDeposit
+                    };
+                    cancelmembership2 = {
+                        memberId: memberId,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
+                        paymentMode: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayMode.OTHERS,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        debit: memberObject.securityDeposit,
+                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
+                    };
+                }
+
+                Payments.create(cancelmembership, function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                });
+
+                poolDetails={
+                    memberId:memberId,
+                    timestamp:new Date().getTime(),
+                    amount:memberObject.creditBalance
+                };
+
+               /* PoolAccount.create(poolDetails,function (err,result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                });
+                return callback(null,null);*/
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function (callback) {
+
+            Member.findByIdAndUpdate(memberId, {
+                $unset: {
+                    'membershipId': '',
+                    'status':Constants.MemberStatus.CANCELLED,
+                    'smartCardNumber':'',
+                    'cardNum':'',
+                    'smartCardId':'',
+                    'validity':''
+                }
+            },{new:true}, function (err, result) {
+
+                if (err) {
+                    return callback(err, null);
+                }
+                memberObject = result;
+                return callback(null, result);
+
+            });
+        },
+        function (callback) {
+            Card.findOne(record.smartCardId,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                result.status=Constants.CardStatus.INACTIVE;
+                result.assignedTo='';
+                result.membershipId='';
+                Card.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            });
+        }
+
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,memberObject);
+    })
+
+};
+
+exports.suspendMembership = function (memberId,record,callback) {
+
+    Member.findByIdAndUpdate(memberId, {
+        $set: {
+            //'validity': validity,
+            'comments': record.comments,
+            'status':Constants.MemberStatus.SUSPENDED
+        }
+    },{new:true}, function (err, result) {
+
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, result);
+
     });
 
 };

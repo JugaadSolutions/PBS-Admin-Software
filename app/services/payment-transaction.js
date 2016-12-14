@@ -270,7 +270,7 @@ exports.newMember = function (memberObject,record,callback) {
                     userfeeDeposit={
                         memberId:memberObject._id,
                         invoiceNo: uf,
-                        paymentDescription:Constants.PayDescription.CREDIT_NOTE,
+                        paymentDescription:Constants.PayDescription.REGISTRATION,
                         paymentMode:record.creditMode,
                         paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,

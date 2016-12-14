@@ -119,6 +119,75 @@ router
 
     })
 
+    .post('/:id/cancelmemberrequest', function (req, res, next) {
+
+        MemberService.cancelMembershiprequest(req.params.id,req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.UPDATING_RECORD_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .post('/:id/cancelmembership', function (req, res, next) {
+
+        MemberService.cancelMembership(req.params.id,req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.UPDATING_RECORD_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .post('/:id/suspendmembership', function (req, res, next) {
+
+        MemberService.suspendMembership(req.params.id,req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.UPDATING_RECORD_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
     .post('/:id/credit', function (req, res, next) {
 
         MemberService.creditMember(req.params.id, req.body, function (err, result) {

@@ -9,6 +9,7 @@ exports.PayDescription={
     REGISTRATION:"Registration",
     REPLENISHMENT:"Replenishment",
     REFUND:"Refund",
+    UNUSED_AMOUNT:"Unused Balance",
     //USAGE_FEE:"Usage Fee",
     DEBIT_NOTE:"Debit note",
     CREDIT_NOTE:"Credit note"
@@ -18,13 +19,15 @@ exports.PayMode={
     CASH:"Cash",
     CREDIT_CARD:"Credit Card",
     DEBIT_CARD:"Debit Card",
-    NET_BANKING:"Net Banking"
+    NET_BANKING:"Net Banking",
+    OTHERS:"Others"
 };
 
     exports.PayThrough={
     POS:"POS",
     PAYMENT_GATEWAY:"Payment Gateway",
-        CASH:"Cash"
+        CASH:"Cash",
+        OTHERS:"Others"
 };
 
 exports.Loc={
@@ -70,9 +73,10 @@ exports.ProofType = {
 exports.MemberStatus = {
     PROSPECTIVE: 0,
     REGISTERED: 1,
-    //RENEWED: 2,
+    RENEWED: 2,
     CANCELLED: -1,
-    SUSPENDED: -2
+    SUSPENDED: -2,
+    EXPIRED:-3
 };
 exports.MembershipStatus = {
     ACTIVE: 0,

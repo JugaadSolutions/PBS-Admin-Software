@@ -479,7 +479,52 @@ exports.timelyCheckout = function (callback) {
                 return callback(null,result);
             });
 
-        },
+        }/*,
+        function (callback) {
+            if(checkoutDetails.length>0)
+            {
+                async.forEach(checkoutDetails,function (checkoutDetail) {
+                    DockPort.find({'portStatus':Constants.AvailabilityStatus.FULL},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
+                            return callback(null,null);
+                        }
+                        for(var i=0;i<result.length;i++)
+                        {
+                            if(!result[i]._id.equals(checkoutDetail.fromPort))
+                            {
+                                if(checkoutDetail.vehicleId.equals(result[i].vehicleId[0].vehicleid))
+                                {
+                                    result[i].vehicleId=[];
+                                    result[i].portStatus=Constants.AvailabilityStatus.EMPTY;
+                                    DockPort.findByIdAndUpdate(result[i]._id,result[i],{new:true},function (err,result) {
+                                        if(err)
+                                        {
+                                            return callback(err,null);
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+
+                },function (err) {
+                    console.error('Error : '+err);
+                    //callback();
+                });
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }*/
+        ,
             function (callback) {
             if(checkoutDetails.length>0)
             {
@@ -527,7 +572,7 @@ exports.timelyCheckout = function (callback) {
                                     result.portStatus = Constants.AvailabilityStatus.EMPTY;
                                // }
                             }
-                            else if(checkoutDetails.fromPort._type=='Fleet')
+                            else if(result._type=='Fleet')
                             {
 
                             }
@@ -760,7 +805,7 @@ exports.timelyCheckout = function (callback) {
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,null);
     });
 
 };
@@ -789,6 +834,50 @@ exports.timelyCheckin = function (callback) {
                 return callback(null,result);
             });
         },
+           /* function (callback) {
+                if(checkinDetails.length>0)
+                {
+                    async.forEach(checkinDetails,function (checkinDetail) {
+                        DockPort.find({'portStatus':Constants.AvailabilityStatus.FULL},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                return callback(null,null);
+                            }
+                            for(var i=0;i<result.length;i++)
+                            {
+                                if(!result[i]._id.equals(checkinDetail.fromPort))
+                                {
+                                    if(checkinDetail.vehicleId.equals(result[i].vehicleId[0].vehicleid))
+                                    {
+                                        result[i].vehicleId=[];
+                                        result[i].portStatus=Constants.AvailabilityStatus.EMPTY;
+                                        DockPort.findByIdAndUpdate(result[i]._id,result[i],{new:true},function (err,result) {
+                                            if(err)
+                                            {
+                                                return callback(err,null);
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        });
+
+                    },function (err) {
+                        console.error('Error : '+err);
+                        //callback();
+                    });
+                   return callback(null,null);
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+            }
+        ,*/
         function (callback) {
             if(checkinDetails.length>0)
             {
@@ -872,11 +961,38 @@ exports.timelyCheckin = function (callback) {
                             }
                             result.vehicleId.push(vehicleDetails);
                             result.portStatus = Constants.AvailabilityStatus.FULL;
-                            Port.findByIdAndUpdate(result._id,result,function (err,result) {
+                            Port.findByIdAndUpdate(result._id,result,function (err,portUpdated) {
                                 if(err)
                                 {
                                     return console.error('Error : '+err);
                                 }
+                                DockPort.find({'portStatus':Constants.AvailabilityStatus.FULL},function (err,result) {
+                                    if(err)
+                                    {
+                                        return console.error('Error : '+err);
+                                    }
+                                    if(!result)
+                                    {
+                                        return console.log('No port found');
+                                    }
+                                    for(var i=0;i<result.length;i++)
+                                    {
+                                        if(!result[i]._id.equals(portUpdated._id))
+                                        {
+                                            if(checkinDetail.vehicleId.equals(result[i].vehicleId[0].vehicleid))
+                                            {
+                                                /*result[i].vehicleId=[];
+                                                result[i].portStatus=Constants.AvailabilityStatus.EMPTY;*/
+                                                DockPort.findByIdAndUpdate(result[i]._id,{$set:{'vehicleId':[],'portStatus':Constants.AvailabilityStatus.EMPTY}},{new:true},function (err,result) {
+                                                    if(err)
+                                                    {
+                                                        return console.error('Error : '+err);
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
                             });
                         }
                     });

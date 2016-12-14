@@ -305,6 +305,8 @@ var TransactionAssociation = require('../models/transaction-association'),
 
 exports.ReconcileTransaction=function () {
 var checkinDetails;
+    var balance;
+    var comments = '-';
     async.series([
         function (callback) {
             CheckIn.find({'status':'Open','errorStatus':0,'updateStatus':1}).sort({'checkInTime': 'ascending'}).exec(function (err,result) {
@@ -364,8 +366,14 @@ var checkinDetails;
                                         if (err) {
                                             return console.log('Error Fare plan calculation'+err);
                                         }
-                                        var balance = Number(userdetails.creditBalance) - creditUsed;
-                                        Member.findByIdAndUpdate(result.user,{$set: {'creditBalance': balance}}, {new: true},function (err, updatedUser) {
+                                        balance = Number(userdetails.creditBalance) - creditUsed;
+                                        /*if(balance<0)
+                                        {
+                                            userdetails.comments = 'Your balance was :'+balance+' on '+moment().format('DD-MM-YYYY')+'. Negative balance recovered from security deposit on the last bicycle checkin';
+                                            userdetails.securityDeposit=userdetails.securityDeposit+balance;
+                                            balance = 0;
+                                        }*/
+                                        Member.findByIdAndUpdate(result.user,{$set: {'creditBalance': balance/*,'securityDeposit':userdetails.securityDeposit,'comments':userdetails.comments*/}}, {new: true},function (err, updatedUser) {
                                             if (err) {
                                                 return console.error('Error '+err);
                                             }

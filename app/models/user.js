@@ -58,7 +58,8 @@ var UserSchema = mongoose.Schema({
     vehicleId:{type:[vehicleIds], required:false,default:[]},
     emergencyContact: {type: EmergencyContact, required: false},
     assignedUser: {type: Schema.ObjectId, required: false},
-    documents: {type: [Document], required: false}
+    documents: {type: [Document], required: false},
+    comments:{type: String, required: false}
 
 
 

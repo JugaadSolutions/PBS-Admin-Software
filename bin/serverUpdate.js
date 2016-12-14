@@ -25,6 +25,7 @@ setInterval(function () {
 
 },10000);
 */
+/*
 setInterval(function () {
 //setTimeout(function () {
     //console.log('Timeout');
@@ -35,9 +36,9 @@ setInterval(function () {
             return;
         }
         //console.log('checkin');
-        /*if(result) {
+        /!*if(result) {
          console.log(result);
-         }*/
+         }*!/
     });
 },1000);
 
@@ -51,9 +52,10 @@ setInterval(function () {
             return;
         }
         //console.log('checkin');
-        /*if(result) {
+        /!*if(result) {
             console.log(result);
-        }*/
+        }*!/
         TransactionReconciliation.ReconcileTransaction();
     });
 },3000);
+*/

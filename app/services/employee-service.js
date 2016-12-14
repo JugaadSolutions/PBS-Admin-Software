@@ -5,12 +5,20 @@ var async = require('async'),
     fs = require('fs'),
     uuid = require('node-uuid'),
     random = require("node-random"),
+    Messages = require('../core/messages'),
+    EmailNotificationHandler = require('../handlers/email-notification-handler'),
+    TemplatesMessage = require('../../templates/text-messages'),
     swig = require('swig'),
+    User = require('../models/user'),
+    Card = require('../models/card'),
+    CardService = require('../services/card-service'),
+    Constants = require('../core/constants'),
     UploadHandler = require('../handlers/upload-handler'),
-    RegEmployee = require('../models/registration-staff');
+    RegEmployee = require('../models/registration-staff'),
+    MaintenanceEmployee = require('../models/maintanancecentre-staff');
 
 
-exports.createEmployee=function (record,callback) {
+exports.createEmployee=function (record,id,callback) {
 
     /*   var memberData={
      name:record.Name,
@@ -48,14 +56,28 @@ exports.createEmployee=function (record,callback) {
             documents = record.documents;
             record.documents = [];
             record.password=password;
-            RegEmployee.create(record,function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                memberDetails=result;
-                return callback(null,result);
-            });
+            if(id==1)
+            {
+                RegEmployee.create(record,function (err,result) {
+                    if(err)
+                    {
+                     return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==2)
+            {
+                MaintenanceEmployee.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
         },
         function (callback) {
             if (documents) {
@@ -173,6 +195,26 @@ exports.createEmployee=function (record,callback) {
                 });
 
             });
+        },
+        function (callback) {
+
+            var data = {
+                profileName: memberDetails.Name,
+                password: password
+            };
+
+            var htmlString = swig.renderFile('./templates/member-registered.html', data);
+
+            var emailMessage = {
+                "subject": Messages.SIGN_UP_SUCCESSFUL,
+                "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+                "html": htmlString,
+                "to": [memberDetails.email]
+            };
+
+            EmailNotificationHandler.sendMail(emailMessage);
+
+            return callback(null, null);
         }
 
 
@@ -298,15 +340,29 @@ exports.updateEmployee = function (record,callback) {
             }
             //result.documents = docArray;
 
-            RegEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+            if(record._type=='maintenancecentre-employee')
+            {
+                MaintenanceEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
 
-                if (err) {
-                    return callback(err, null);
-                }
+                    if (err) {
+                        return callback(err, null);
+                    }
 
-                memberDetails = result;
-                return callback(null, result);
-            });
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
+            if(record._type=='registration-employee') {
+                RegEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
 
             //});
         }
@@ -320,5 +376,111 @@ exports.updateEmployee = function (record,callback) {
         return callback(null,memberDetails);
     });
 
+
+};
+
+exports.addCard = function (memberId, cardNumber, callback) {
+
+    var cardObject;
+    var memberObject;
+    var memberName;
+    var validity;
+
+    async.series([
+            /*function (callback) {
+
+             },*/
+
+            // Step 1: Method to check for any assigned cards
+            function (callback) {
+
+                User.findById(memberId, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    memberName = result.Name;
+                    if (result.cardNum) {
+
+                        CardService.deactivateCard(result.cardNum, function (err, result) {
+
+                            if (err) {
+                                return callback(null, null);
+                            }
+
+                            return callback(null, result);
+                        });
+
+                    } else {
+                        return callback(null, null);
+                    }
+                });
+
+            },
+
+            // Step 2: Method to verify and update card
+            function (callback) {
+
+                CardService.cardAvailableForMember(cardNumber, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    result.status = Constants.CardStatus.ACTIVE;
+                    result.assignedTo = memberId;
+                    result.assignedToName = memberName;
+
+                    Card.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        cardObject = result;
+                        return callback(null, result);
+                    });
+
+                });
+            }
+            ,
+            // Step 3: Method to update member card details
+            function (callback) {
+
+                User.findByIdAndUpdate(memberId, {
+                    $set: {
+                        'cardNum':cardObject.cardNumber,
+                        'smartCardId': cardObject._id,
+                        'smartCardNumber': cardObject.cardRFID
+                    }
+                }, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberObject = result;
+                    return callback(null, result);
+                });
+
+            }
+
+        ],
+
+        function (err) {
+
+            if (err) {
+                return callback(err, null);
+            }
+
+            return callback(null, memberObject);
+
+        }
+    );
 
 };

@@ -2,6 +2,7 @@ var express = require('express'),
     RegStaff = require('../models/registration-staff'),
     RequestDataHandler = require('../handlers/request-data-handler'),
     EmployeeService = require('../services/employee-service'),
+    User = require('../models/user'),
     Messages = require('../core/messages');
 var router = express.Router();
 
@@ -11,6 +12,56 @@ var router = express.Router();
  });*/
 
 router
+
+    .get('/', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_type':{$ne:'member'}},function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .get('/:id', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_id':req.params.id},function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
 
     .get('/registrationstaff', function (req, res, next) {
 
@@ -38,7 +89,7 @@ router
     })
 
     .post('/registrationstaff', function (req, res, next) {
-        EmployeeService.createEmployee(req.body,function (err,result) {
+        EmployeeService.createEmployee(req.body,1,function (err,result) {
             if(err)
             {
                 next(err, req, res, next);
@@ -49,6 +100,38 @@ router
             }
 
         });
+    })
+
+    .post('/mcstaff', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,2,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/:id/assigncard', function (req, res, next) {
+
+        EmployeeService.addCard(req.params.id, req.body.cardNumber, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+
     })
 
     .put('/:id', function (req, res, next) {

@@ -1,24 +1,50 @@
 var async = require('async'),
     User = require('../models/user'),
-    moment = require('moment-timezone'),
+    Port = require('../models/port'),
+    Checkout = require('../models/checkout'),
+    Checkin = require('../models/checkin'),
+    CheckoutError = require('../models/checkoutError'),
+    CheckinError = require('../models/checkinError'),
     vehicle = require('../models/vehicle');
 
 var MemberService = require('../services/transaction-service');
 
 
 exports.checkoutApp=function (record,callback) {
-    var details=0;
+    var vehicleDetails;
     var requestDetails;
     var userDetails;
+    var portDetails;
     var checkoutDetails;
+    var errorstatus=0;
+    var errormsg='';
+    var details = {user :'',
+        vehicleId : '',
+        fromPort:'',
+        checkOutTime:'',
+        status:'',
+        errorStatus:0,
+        errorMsg:''};
+
     async.series([
         function (callback) {
             User.findOne({'cardNum':record.cardId},function (err,result) {
                 if(err)
                 {
-                    return callback(err,null);
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.user=record.cardId;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No user found by this id';
+                    details.vehicleId = record.cardId;
+                    return callback(null,null);
                 }
                 userDetails=result;
+                details.user=result.UserID;
                 return callback(null,result);
             });
         }
@@ -27,22 +53,71 @@ exports.checkoutApp=function (record,callback) {
             vehicle.findOne({'vehicleNumber':record.vehicleId},function (err,result) {
                 if(err)
                 {
-                    return callback(err,null);
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
                 }
-                details=result;
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No vehicle found by this id';
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
+                }
+                vehicleDetails=result;
+                details.vehicleId = result.vehicleUid;
                 return callback(null,result);
             });
         },
         function (callback) {
-            if(details!=0)
+            Port.findOne({'_id':record.fromPort},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.fromPort = record.fromPort;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No port found by this id';
+                    details.vehicleId = record.fromPort;
+                    return callback(null,null);
+                }
+                portDetails = result;
+                details.fromPort = result.PortID;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            if(errorstatus==0)
             {
                 requestDetails ={
                     user:userDetails._id,
-                    vehicleId:details._id,
-                    fromPort:record.fromPort,
+                    vehicleId:vehicleDetails._id,
+                    fromPort:portDetails._id,
                     checkOutTime:record.checkOutTime
                 };
                 MemberService.checkout(requestDetails,function (err,result) {
+                    if(err)
+                    {
+                        errorstatus=1;
+                        errormsg=errormsg+':'+err;
+                        return callback(null,null);
+                    }
+                    checkoutDetails= result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                details.checkOutTime = record.checkOutTime;
+                details.errorStatus = errorstatus;
+                details.errorMsg = errormsg;
+                CheckoutError.create(details,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -51,6 +126,20 @@ exports.checkoutApp=function (record,callback) {
                     return callback(null,result);
                 });
             }
+
+        },
+        function (callback) {
+
+            /*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
+             if (err) {
+             return callback(err, null);
+             }*/
+            details.checkOutTime=checkoutDetails.checkOutTime;
+            details.status=checkoutDetails.status;
+            details.errorStatus = checkoutDetails.errorStatus;
+            details.errorMsg = checkoutDetails.errorMsg+" : "+errormsg;
+            return callback(null, null);
+            /* });*/
 
         }
     ],function (err,result) {
@@ -66,36 +155,89 @@ exports.checkoutApp=function (record,callback) {
 };
 
 exports.checkinApp=function (record,callback) {
-
-    var details=0;
+    var vehicleDetails;
     var requestDetails;
+    var portDetails;
     var userDetails;
     var checkinDetails;
+    var errorstatus=0;
+    var errormsg='';
+    var details = {user :'',
+        vehicleId : '',
+        toPort:'',
+        checkInTime:'',
+        status:'',
+        errorStatus:0,
+        errorMsg:''};
+
     async.series([
         function (callback) {
             vehicle.findOne({'vehicleNumber':record.vehicleId},function (err,result) {
                 if(err)
                 {
-                    return callback(err,null);
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
                 }
-                details=result;
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No vehicle found by this id';
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
+                }
+                vehicleDetails=result;
+                details.vehicleId = result.vehicleUid;
                 return callback(null,result);
             });
         },
         function (callback) {
-            if(details!=0)
+            Port.findOne({'_id':record.toPort},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.fromPort = record.toPort;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No port found by this id';
+                    details.vehicleId = record.toPort;
+                    return callback(null,null);
+                }
+                portDetails = result;
+                details.toPort = result.PortID;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            if(errorstatus==0)
             {
-               /* var format = 'YYYY/MM/DD HH:mm:ss ZZ';
-                record.checkInTime =  moment(record.checkInTime, format).tz("Asia/Kolkata").format(format);
-                console.log(record.checkInTime.toString());*/
                 requestDetails ={
-                    vehicleId:details._id,
-                    toPort:record.toPort,
+                    vehicleId:vehicleDetails._id,
+                    toPort:portDetails._id,
                     checkInTime:record.checkInTime
                 };
-                /*console.log(record.checkInTime);
-                console.log(record.checkInTime.toString());*/
                 MemberService.checkin(requestDetails,function (err,result) {
+                    if(err)
+                    {
+                        errorstatus=1;
+                        errormsg=errormsg+':'+err;
+                        return callback(null,null);
+                    }
+                    checkinDetails= result;
+                    return callback(null,result);
+                });
+            }
+            else {
+                details.checkInTime = record.checkInTime;
+                details.errorStatus = errorstatus;
+                details.errorMsg = errormsg;
+                CheckinError.create(details,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -103,6 +245,32 @@ exports.checkinApp=function (record,callback) {
                     checkinDetails= result;
                     return callback(null,result);
                 });
+            }
+        },
+        function (callback) {
+            if (checkinDetails && errorstatus==0 && checkinDetails.errorStatus==0) {
+                /*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
+                 if (err) {
+                 return callback(err, null);
+                 }*/
+                details.checkInTime=checkinDetails.checkInTime;
+                details.status=checkinDetails.status;
+                if(checkinDetails.user) {
+                    User.findOne({'_id': checkinDetails.user}, function (err, result) {
+                        if (err) {
+                            return callback(null, null);
+                        }
+                        details.user = result.UserID;
+                        return callback(null, result);
+                    });
+                }
+
+
+                return callback(null,null);
+                /* });*/
+            }
+            else {
+                return callback(null, null);
             }
 
         }
