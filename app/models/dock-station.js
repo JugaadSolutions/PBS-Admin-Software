@@ -23,7 +23,8 @@ var DockStationSchema = require('mongoose').model('station').schema.extend({
     stationNumber:{type:String,required:false},
     noofUnits:{type:Number,required:false},
     noofPorts:{type:Number,required:false},
-    portIds:{type:[DockingPorts],required:false}
+    portIds:{type:[DockingPorts],required:false},
+    commissioneddate:{type:Date,required:false}
     //noOfPorts:{type:Number,required:false}
 
 });

@@ -8,7 +8,7 @@ var mongoose = require('mongoose'),
 
 
 var DockPortSchema = require('mongoose').model('port').schema.extend({
-    StationId:{type:Schema.ObjectId, required:false, ref:'Station'},
+    StationId:{type:Schema.ObjectId, required:false, ref:'station'},
     FPGA:{type:Number,required:false},
     ePortNumber:{type:Number,required:false}
 

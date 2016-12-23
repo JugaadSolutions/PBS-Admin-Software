@@ -63,12 +63,36 @@ router
 
     })
 
-    .get('/registrationstaff', function (req, res, next) {
+    .get('/registrationstaff/emp', function (req, res, next) {
 
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
          Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
         RegStaff.find({'_type':'registration-employee'},function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+    .get('/mcstaff/emp', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_type':'maintenancecentre-employee'}).lean().exec(function (err, result) {
             if (err) {
 
                 next(err, req, res, next);

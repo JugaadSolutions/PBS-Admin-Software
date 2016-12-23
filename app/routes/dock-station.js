@@ -28,6 +28,34 @@ router
 
     })
 
+    .get('/:id/cleanstation',function (req,res,next) {
+        DockingStationService.getcleanStationsById(req.params.id,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
+
+    .get('/cleanstation',function (req,res,next) {
+        DockingStationService.getCleanedstatrec(function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
+
     .post('/', function (req, res, next) {
 
         DockingStationService.createDS(req.body, function (err, result) {
@@ -45,6 +73,22 @@ router
         });
     })
 
+    .post('/cleanstation', function (req, res, next) {
+
+        DockingStationService.createCleanedEntry(req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+    })
 ;
 
 module.exports = router;

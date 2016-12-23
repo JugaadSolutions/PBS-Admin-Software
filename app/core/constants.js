@@ -2,6 +2,11 @@
  * Created by root on 4/10/16.
  */
 
+exports.StationType={
+    MAJOR:"Major",
+    MINOR:"Minor"
+};
+
 exports.PayDescription={
     SECURITY_DEPOSIT:"Security Deposit",
     PROCESSING_FEE:"Processing Fee",

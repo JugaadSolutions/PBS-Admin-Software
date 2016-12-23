@@ -10,6 +10,7 @@ var async = require('async'),
     vehicle = require('../models/vehicle'),
     User = require('../models/user'),
     Member = require('../models/member'),
+    kpiservice = require('../services/kpi-dockstation-service'),
     DockPort=require('../models/dock-port'),
     Port = require('../models/port'),
 MemberTransaction = require('../models/transaction');
@@ -296,7 +297,18 @@ exports.checkout=function (record,callback) {
                 });
             }
 
-        }
+        }/*,
+        function (callback) {
+            if(checkoutResultDetails.errorStatus==0)
+            {
+                kpiservice.kpistat(checkoutResultDetails.fromPort);
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }*/
 
     ],function (err,result) {
        if(err)
@@ -441,7 +453,18 @@ exports.checkin=function (record,callback) {
              };
              }*/
 
-        }
+        }/*,
+        function (callback) {
+            if(checkInDetails.errorStatus==0)
+            {
+                kpiservice.kpistat(checkInDetails.toPort);
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }*/
     ],function (err,result) {
         if(err)
         {
@@ -625,6 +648,7 @@ exports.timelyCheckout = function (callback) {
                             console.error('Error : '+err);
                         }
                         console.log('Checkout Success : '+result);
+                        kpiservice.kpistat(result.fromPort,result.checkOutTime,2);
                     });
 
                 },function (err) {
@@ -1003,6 +1027,7 @@ exports.timelyCheckin = function (callback) {
                             console.error('Error : '+err);
                         }
                         console.log('Checkin Success : '+result);
+                        kpiservice.kpistat(result.toPort,result.checkInTime,1);
                     });
                    /* if(vehiclesDetails) {
 

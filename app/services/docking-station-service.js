@@ -2,13 +2,16 @@
  * Created by root on 6/10/16.
  */
 // Third Party Dependencies
-var async = require('async')
+var async = require('async'),
+    moment = require('moment')
     /*config = require('config'),
     request = require('request')*/;
 var DockStation=require('../models/dock-station'),
     Messages = require('../core/messages'),
     Constants = require('../core/constants'),
     DockPort= require('../models/dock-port');
+
+var cleanstation = require('../models/stationcleaning');
 
 var DockService = require('../services/docking-port-service');
 // Application Level Dependencies
@@ -106,7 +109,7 @@ exports.createStation = function (record, callback) {
 exports.createDS = function (record,callback) {
     var stationDetails;
     var stationDetailsUpdated;
-    var portInfo=[];
+    var allportInfo=[];
     
     async.series([
         function (callback) {
@@ -149,7 +152,12 @@ exports.createDS = function (record,callback) {
                         var portInfo = {
                             dockingPortId: result._id
                         };
-                        stationDetails.portIds.push(portInfo);
+                        allportInfo.push(portInfo);
+                        if(allportInfo.length==stationDetails.noofPorts)
+                        {
+                            callback(null,allportInfo);
+                        }
+/*                        stationDetails.portIds.push(portInfo);
                         DockStation.findByIdAndUpdate(stationDetails._id, stationDetails, function (err, records) {
                             if (err) {
                                 return callback(err, null);
@@ -157,7 +165,7 @@ exports.createDS = function (record,callback) {
                             //stationDetails=records;
                             stationDetailsUpdated = records;
                             // return callback(null,records);
-                        });
+                        });*/
 
 
                         //});
@@ -166,12 +174,25 @@ exports.createDS = function (record,callback) {
                 // j = j + 1;
             }
 
-            callback(null,null);
-        }/*,
+            //callback(null,allportInfo);
+        },
          function (callback) {
-
-
-         }*/
+            if(allportInfo.length>0)
+            {
+                for(var i=0;i<allportInfo.length;i++)
+                {
+                    stationDetails.portIds.push(allportInfo[i]);
+                }
+                DockStation.findByIdAndUpdate(stationDetails._id, stationDetails,{new:true}, function (err, records) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    //stationDetails=records;
+                    stationDetailsUpdated = records;
+                    return callback(null,records);
+                });
+            }
+         }
         
     ],function (err,result) {
         if(err)
@@ -241,12 +262,63 @@ exports.getAllStations = function (record,callback) {
 
 };
 
+exports.getstationdetail = function (id,callback) {
 
+    var details ={
+        _id:'',
+        bicycleCapacity:'',
+        bicycleCount:0
+    };
+    DockStation.findOne({'_id': id}).deepPopulate('portIds portIds.dockingPortId portIds.dockingPortId.vehicleId.vehicleid').lean().exec(function (err,result) {
+        if (err) {
+            return callback(err, null);
+        }
+        details.bicycleCapacity=result.portIds.length;
+        details._id = result._id;
+        for(var j=0;j<result.portIds.length;j++)
+        {
+            var ports=result.portIds[j];
+            if(ports.dockingPortId.portStatus==Constants.AvailabilityStatus.FULL)
+            {
+                details.bicycleCount = details.bicycleCount+1;
+            }
+        }
+        return callback(null,details);
+    });
+};
 
+exports.createCleanedEntry = function (record,callback) {
+    record.cleaneddate = moment(record.cleaneddate);
+    record.fromtime=moment(record.fromtime);
+    record.totime=moment(record.totime);
+    cleanstation.create(record,function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
 
+exports.getcleanStationsById = function (id,callback) {
+    cleanstation.findOne({'_id':id}).deepPopulate('stationId empId').lean().exec(function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
 
-
-
+exports.getCleanedstatrec = function (callback) {
+  cleanstation.find({}).sort('-cleaneddate').deepPopulate('stationId empId').lean().exec(function (err,result) {
+      if(err)
+      {
+          return callback(err,null);
+      }
+      return callback(null,result);
+  });
+};
 
 
 

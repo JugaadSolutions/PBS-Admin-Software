@@ -12,6 +12,7 @@ var async = require('async'),
 var fleet = require('../models/fleet');
 
 var TransactionAssociation = require('../models/transaction-association'),
+    Constants = require('../core/constants'),
     FarePlanService = require('../services/fare-plan-service'),
     Transaction = require('../models/transaction');
 
@@ -346,7 +347,7 @@ var checkinDetails;
                                 {
                                     return console.log('User id not found : '+result.user);
                                 }
-                                if(userdetails._type=='member')
+                                if(userdetails._type=='member'&& (userdetails.status==Constants.MemberStatus.REGISTERED || userdetails.status==Constants.MemberStatus.RENEWED))
                                 {
                                     var checkInTime = moment(checkinDetail.checkInTime);
                                     var checkOutTime = moment(result.checkOutTime);

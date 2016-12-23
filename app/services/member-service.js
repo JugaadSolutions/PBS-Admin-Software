@@ -7,6 +7,7 @@ var Member = require('../models/member'),
     async=require('async'),
     MembershipService=require('../services/membership-service'),
     PaymentTransaction=require('../services/payment-transaction'),
+    CardService = require('../services/card-service'),
     Messages = require('../core/messages'),
     Constants =require('../core/constants'),
     PoolAccount = require('../models/poolingaccount'),
@@ -735,7 +736,7 @@ exports.creditMember=function (id,record,callback) {
 
 };
 
-exports.cancelMembershiprequest = function (id,record,callback) {
+exports.cancelMembershiprequest = function (id,callback) {
 
     var userObject;
     var obj = {
@@ -773,6 +774,11 @@ exports.cancelMembershiprequest = function (id,record,callback) {
                 {
                     obj.message="Your Refund amount from your Security deposit is Rs."+userObject.securityDeposit;
                 }
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
             }
         }
     ],function (err,result) {
@@ -787,15 +793,18 @@ exports.cancelMembershiprequest = function (id,record,callback) {
 exports.cancelMembership = function (memberId,record,callback) {
 
     var memberObject;
-
+    var transactionList=[];
+    var finalTransaction;
+    var smartCardId;
     async.series([
         function (callback) {
-          Member.findOne({'_id':memberId},function (err,result) {
+          User.findOne({'_id':memberId},function (err,result) {
               if(err)
               {
                   return callback(err,null);
               }
               memberObject=result;
+              smartCardId=result.smartCardId;
               return callback(null,result);
           });
         },
@@ -807,83 +816,117 @@ exports.cancelMembership = function (memberId,record,callback) {
             if(memberObject) {
                 if(memberObject.creditBalance>0)
                 {
-                    var uf = 'PBS' + new Date().getTime();
+                    var ub = 'PBS' + new Date().getTime();
 
                     unusedBalance = {
                         memberId: memberId,
-                        invoiceNo: uf,
+                        invoiceNo: ub,
                         paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
                         paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayThrough.OTHERS,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.creditBalance,
                         balance: Number(memberObject.creditBalance-memberObject.creditBalance)
                     };
+                    transactionList.push(unusedBalance);
+                    var cm = 'PBS' + new Date().getTime();
                     cancelmembership = {
                         memberId: memberId,
-                        invoiceNo: uf,
+                        invoiceNo: cm,
                         paymentDescription: Constants.PayDescription.REFUND,
-                        paymentMode: record.creditMode,
-                        paymentThrough: (record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
+                        paymentMode: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayThrough.OTHERS,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         credit: memberObject.securityDeposit,
                         balance: memberObject.securityDeposit
                     };
+                    transactionList.push(cancelmembership);
+                    var cm2 = 'PBS' + new Date().getTime();
                     cancelmembership2 = {
                         memberId: memberId,
-                        invoiceNo: uf,
-                        paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
-                        paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayMode.OTHERS,
+                        invoiceNo: cm2,
+                        paymentDescription: Constants.PayDescription.REFUND,
+                        paymentMode: record.creditMode,
+                        paymentThrough: (record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.securityDeposit,
                         balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
                     };
+                    transactionList.push(cancelmembership2);
                 }
                 else if(memberObject.creditBalance<0)
                 {
                     memberObject.securityDeposit = memberObject.securityDeposit+memberObject.creditBalance;
-                    var uf = 'PBS' + new Date().getTime();
+                    var cm = 'PBS' + new Date().getTime();
                     cancelmembership = {
                         memberId: memberId,
-                        invoiceNo: uf,
+                        invoiceNo: cm,
                         paymentDescription: Constants.PayDescription.REFUND,
-                        paymentMode: record.creditMode,
-                        paymentThrough: (record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
+                        paymentMode: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayThrough.OTHERS,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         credit: memberObject.securityDeposit,
                         balance: memberObject.securityDeposit
                     };
+                    transactionList.push(cancelmembership);
+                    var cm2 = 'PBS' + new Date().getTime();
                     cancelmembership2 = {
                         memberId: memberId,
-                        invoiceNo: uf,
-                        paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
-                        paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayMode.OTHERS,
+                        invoiceNo: cm2,
+                        paymentDescription: Constants.PayDescription.REFUND,
+                        paymentMode: record.creditMode,
+                        paymentThrough: (record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.securityDeposit,
                         balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
                     };
+                    transactionList.push(cancelmembership2);
+                }
+                else
+                {
+                    var cm = 'PBS' + new Date().getTime();
+                    cancelmembership = {
+                        memberId: memberId,
+                        invoiceNo: cm,
+                        paymentDescription: Constants.PayDescription.REFUND,
+                        paymentMode: Constants.PayMode.OTHERS,
+                        paymentThrough: Constants.PayThrough.OTHERS,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        credit: memberObject.securityDeposit,
+                        balance: memberObject.securityDeposit
+                    };
+                    transactionList.push(cancelmembership);
+                    var cm2 = 'PBS' + new Date().getTime();
+                    cancelmembership2 = {
+                        memberId: memberId,
+                        invoiceNo: cm2,
+                        paymentDescription: Constants.PayDescription.REFUND,
+                        paymentMode: record.creditMode,
+                        paymentThrough:(record.creditMode == 'Cash') ? record.creditMode : Constants.PayThrough.PAYMENT_GATEWAY,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        debit: memberObject.securityDeposit,
+                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
+                    };
+                    transactionList.push(cancelmembership2);
                 }
 
-                Payments.create(cancelmembership, function (err, result) {
-                    if (err) {
-                        return callback(err, null);
-                    }
-                });
 
+                return callback(null,null);
+                /*
                 poolDetails={
                     memberId:memberId,
                     timestamp:new Date().getTime(),
                     amount:memberObject.creditBalance
                 };
 
-               /* PoolAccount.create(poolDetails,function (err,result) {
+                PoolAccount.create(poolDetails,function (err,result) {
                     if (err) {
                         return callback(err, null);
                     }
@@ -896,44 +939,112 @@ exports.cancelMembership = function (memberId,record,callback) {
             }
         },
         function (callback) {
-
-            Member.findByIdAndUpdate(memberId, {
-                $unset: {
-                    'membershipId': '',
-                    'status':Constants.MemberStatus.CANCELLED,
-                    'smartCardNumber':'',
-                    'cardNum':'',
-                    'smartCardId':'',
-                    'validity':''
-                }
-            },{new:true}, function (err, result) {
-
-                if (err) {
-                    return callback(err, null);
-                }
-                memberObject = result;
-                return callback(null, result);
-
-            });
-        },
-        function (callback) {
-            Card.findOne(record.smartCardId,function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                result.status=Constants.CardStatus.INACTIVE;
-                result.assignedTo='';
-                result.membershipId='';
-                Card.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+            if(transactionList.length>0)
+            {
+                /* var i;
+                 for(i=0;i<transactionList.length;i++)
+                 {*/
+                Payments.create(transactionList,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
+                    finalTransaction=result;
+                    /*console.log(i);
+                     if(i==transactionList.length-1)
+                     {*/
                     return callback(null,result);
+                    //}
                 });
-            });
+                // }
+
+            }
+            else
+            {
+                return callback(null,memberObject);
+            }
+
         }
+        ,
+        function (callback) {
+            if(finalTransaction)
+            {
+                Member.findByIdAndUpdate(memberId, {
+                    $unset: {
+                        membershipId: memberObject.membershipId,
+                        validity:memberObject.validity
+                    }
+                },{new:true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    memberObject = result;
+                    var len = finalTransaction.length-1;
+                    Member.findByIdAndUpdate(memberId,{$set:{'status':Constants.MemberStatus.CANCELLED,'creditBalance':finalTransaction[len].balance,'securityDeposit':memberObject.securityDeposit,'processingFeesDeducted':false}},{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err, null);
+                        }
+                        memberObject = result;
+                        return callback(null, result);
+                    });
+
+
+                });
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        },
+            function (callback) {
+                if(memberObject)
+                {
+                    CardService.deactivateCard(memberObject.cardNum,function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+            }
+        /*,
+        function (callback) {
+            if(smartCardId)
+            {
+                Card.findOne({'_id':smartCardId},{$unset:{'status':Constants.CardStatus.INACTIVE,'assignedTo':'','membershipId':''}},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    /!*result.status=Constants.CardStatus.INACTIVE;
+                    result.assignedTo='';
+                    result.membershipId='';
+                    Card.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }*!/
+                        return callback(null,result);
+                   // });
+                });
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }*/
 
     ],function (err,result) {
         if(err)

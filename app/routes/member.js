@@ -64,6 +64,29 @@ router
 
     })
 
+    .get('/:id/cancelmemberrequest', function (req, res, next) {
+
+        MemberService.cancelMembershiprequest(req.params.id, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
     .post('/', function (req, res, next) {
         MemberService.createMember(req.body,function (err,result) {
             if(err)
@@ -119,28 +142,7 @@ router
 
     })
 
-    .post('/:id/cancelmemberrequest', function (req, res, next) {
 
-        MemberService.cancelMembershiprequest(req.params.id,req.body, function (err, result) {
-
-            if (err) {
-
-                next(err, req, res, next);
-
-            } else {
-
-                res.json({
-                    error: false,
-                    message: Messages.UPDATING_RECORD_SUCCESSFUL,
-                    description: '',
-                    data: result
-                });
-
-            }
-
-        });
-
-    })
 
     .post('/:id/cancelmembership', function (req, res, next) {
 

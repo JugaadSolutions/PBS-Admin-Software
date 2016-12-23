@@ -11,7 +11,7 @@ exports.calculateFarePlan = function (id, duration, callback) {
     FarePlan.findById(id, function (err, result) {
 
         if (err) {
-            return callback(err, null);
+            return console.error('Calculate Fare plan error : '+err);
         }
 
         fee = 250;

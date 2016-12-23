@@ -71,8 +71,9 @@ exports.deactivateCard = function (id, callback) {
             function (callback) {
 
                 Card.findByIdAndUpdate(cardObject._id, {
-                    $unset: {assignedTo: assignedToId},
-                    status: Constants.CardStatus.INACTIVE
+                    $unset: {assignedTo: assignedToId,
+                        membershipId:memberObject.membershipId,
+                        status: Constants.CardStatus.INACTIVE}
                 }, {new: true}, function (err, result) {
 
                     if (err) {
