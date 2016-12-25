@@ -43,5 +43,24 @@ router
         });
     })
 
+    .put('/:id/location', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        RedistributionPortService.updateLocation(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
 ;
 module.exports = router;

@@ -2,20 +2,59 @@
 var async = require('async');
 
 // Application Level Dependencies
-var
-    RedistributionPort = require('../models/redistribution-port'),
+var RedistributionPort = require('../models/redistribution-port'),
+    RedistributionVehicle = require('../models/redistribution-vehicle'),
     Messages = require('../core/messages');
 
 
 
 exports.createPort=function (record,callback) {
-    RedistributionPort.create(record,function (err,result) {
+    var redistributionDetails;
+    async.series([
+        function (callback) {
+            RedistributionPort.create(record,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                redistributionDetails=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(redistributionDetails)
+            {
+                RedistributionVehicle.findOne({'_id':redistributionDetails.StationId},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    var portDetails = {
+                        RvvehicleId:redistributionDetails._id
+                    };
+                    result.portIds.push(portDetails);
+                    RedistributionVehicle.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });
+                });
+            }
+            else
+                {
+                return callback(null,null);
+            }
+        }
+    ],function (err,result) {
         if(err)
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,redistributionDetails);
     });
+
 };
 
 exports.getAllRecords=function (record,callback) {
@@ -26,4 +65,25 @@ exports.getAllRecords=function (record,callback) {
       }
       return callback(null,result);
   });
+};
+
+exports.updateLocation=function (id,record,callback) {
+    RedistributionPort.findOne({'assignedTo':id},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        if(result)
+        {
+            result.gpsCoordinates.latitude=Number(record.latitude);
+            result.gpsCoordinates.longitude=Number(record.longitude);
+            RedistributionPort.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+    });
 };

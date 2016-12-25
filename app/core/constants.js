@@ -112,6 +112,12 @@ exports.DockingPortStatus = {
     PORT_LOCKED: 3,
     PORT_ERROR: 4
 };
+
+exports.ComplaintValidation={
+    VALID:1,
+    INVALID:2
+};
+
 /** Card **/
 
 exports.CardType = {

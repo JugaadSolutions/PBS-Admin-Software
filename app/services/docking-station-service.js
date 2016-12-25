@@ -288,9 +288,9 @@ exports.getstationdetail = function (id,callback) {
 };
 
 exports.createCleanedEntry = function (record,callback) {
-    record.cleaneddate = moment(record.cleaneddate);
-    record.fromtime=moment(record.fromtime);
-    record.totime=moment(record.totime);
+    //record.cleaneddate = moment(record.cleaneddate);
+    //record.fromtime=moment(record.fromtime);
+    //record.totime=moment(record.totime);
     cleanstation.create(record,function (err,result) {
         if(err)
         {

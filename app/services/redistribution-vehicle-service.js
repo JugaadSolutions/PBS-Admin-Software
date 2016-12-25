@@ -12,15 +12,16 @@ var RedistributionVehicle=require('../models/redistribution-vehicle');
 
 exports.createDS = function (record,callback) {
     var redistributionDetails;
+    //var redistributionportDetails;
 
 
     async.series([
 
         function (callback) {
             var rv= {
-                name:record.name,
-                vehiclePlate:record.vehiclePlate,
-                driverId:record.driverId
+                name:record.name
+                /*vehiclePlate:record.vehiclePlate,
+                driverId:record.driverId*/
             };
             RedistributionVehicle.create(rv,function (err,result) {
                 if(err)
@@ -30,7 +31,7 @@ exports.createDS = function (record,callback) {
                 redistributionDetails=result;
                 return callback(null,result);
             });
-        },
+        }/*,
         function (callback) {
             var rp={
                 StationId:redistributionDetails._id,
@@ -42,12 +43,12 @@ exports.createDS = function (record,callback) {
                 {
                     return callback(err,null);
                 }
-                redistributionDetails=result;
+                redistributionportDetails=result;
                 return callback(null,result);
             });
 
         }
-
+*/
 
     ],function (err,result) {
         if(err)

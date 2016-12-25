@@ -5,13 +5,22 @@ var mongoose = require('mongoose'),
 
 //const MemberStatus = Constants.MemberStatus;
 
+const GPS = {
+    longitude: {type: Number, required: false},
+    latitude: {type: Number, required: false}
+};
+
 
 var RedistributionPortSchema = require('mongoose').model('port').schema.extend({
-    StationId:{type:Schema.ObjectId, required:false, ref:'Station'}
-
+    StationId:{type:Schema.ObjectId, required:false, ref:'Station'},
+    assignedTo:{type:Schema.ObjectId,required:false,ref:'user'},
+    vehiclePlate: {type: String, required: true, unique: true},
+    driverId: {type: String, required: false},
+    gpsCoordinates: {type: GPS, required: false},
+    assignedBy:{type:Schema.ObjectId,required:false,ref:'user'}
 });
 
-var RedistributionPort = mongoose.model('Redistribution-area', RedistributionPortSchema);
+var RedistributionPort = mongoose.model('Redistribution-vehicle', RedistributionPortSchema);
 
 
 module.exports=RedistributionPort;

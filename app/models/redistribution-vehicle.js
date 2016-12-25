@@ -5,14 +5,18 @@ var mongoose = require('mongoose'),
 
 //const MemberStatus = Constants.MemberStatus;
 
+const RVvehicles ={
+    RvvehicleId: {type: Schema.ObjectId, required: true, ref: 'port'}
+};
 
 var RedistributionVehicleSchema = require('mongoose').model('station').schema.extend({
     name:{type:String,required:false,unique:true},
-    vehiclePlate: {type: String, required: true, unique: true},
-    driverId: {type: String, required: false}
+    portIds:{type:[RVvehicles],required:false}
+    /*vehiclePlate: {type: String, required: true, unique: true},
+    driverId: {type: String, required: false}*/
 });
 
-var RedistributionVehicle = mongoose.model('redistribution-vehicle', RedistributionVehicleSchema);
+var RedistributionVehicle = mongoose.model('redistribution-area', RedistributionVehicleSchema);
 
 
 module.exports=RedistributionVehicle;

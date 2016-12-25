@@ -62,5 +62,31 @@ router
         });
 
     })
+
+    .post('/ticketsinfo', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        kpidsservice.kpiTicketsinfo(req.body,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
 ;
 module.exports = router;

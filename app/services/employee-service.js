@@ -15,6 +15,7 @@ var async = require('async'),
     Constants = require('../core/constants'),
     UploadHandler = require('../handlers/upload-handler'),
     RegEmployee = require('../models/registration-staff'),
+    RedistributionEmployee =require('../models/redistribution-staff'),
     MaintenanceEmployee = require('../models/maintanancecentre-staff');
 
 
@@ -70,6 +71,17 @@ exports.createEmployee=function (record,id,callback) {
             if(id==2)
             {
                 MaintenanceEmployee.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==3)
+            {
+                RedistributionEmployee.create(record,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -157,7 +169,7 @@ exports.createEmployee=function (record,id,callback) {
 
             var docArray = [];
 
-            RegEmployee.findById(memberDetails._id, function (err, result) {
+            User.findById(memberDetails._id, function (err, result) {
 
                 if (err) {
                     return callback(err, null);
@@ -184,7 +196,7 @@ exports.createEmployee=function (record,id,callback) {
                 }
                 result.documents = docArray;
 
-                RegEmployee.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                User.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
 
                     if (err) {
                         return callback(err, null);

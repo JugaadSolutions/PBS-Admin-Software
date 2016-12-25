@@ -6,7 +6,9 @@ var async = require('async'),
     station = require('../services/docking-station-service'),
     moment = require('moment'),
     Station = require('../models/station'),
+    Tickets = require('../models/tickets'),
     cleanstation = require('../models/stationcleaning'),
+
     kpids = require('../models/kpi-dockstation'),
     Port = require('../models/port');
 
@@ -437,4 +439,30 @@ exports.kpicleaninfo = function (record,callback) {
         }
         return callback(null,result);
     });
+};
+
+exports.kpiTicketsinfo = function (record,callback) {
+    var ldate = moment(record.todate).add(1, 'days');
+    ldate=ldate.format('YYYY-MM-DD');
+    if(record.complaintType==0)
+    {
+        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)}}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.userid transactions.assignedEmp').lean().exec(function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)},'complaintType':Number(record.complaintType)}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.userid transactions.assignedEmp').lean().exec(function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
 };

@@ -140,6 +140,20 @@ router
         });
     })
 
+    .post('/rvstaff', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,3,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+
     .post('/:id/assigncard', function (req, res, next) {
 
         EmployeeService.addCard(req.params.id, req.body.cardNumber, function (err, result) {

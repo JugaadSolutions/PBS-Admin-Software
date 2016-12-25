@@ -440,6 +440,10 @@ var checkinDetails;
         {
             return console.log(err);
         }
-       return console.log(result);
+        if(result[0].length>0)
+        {
+            return console.log(result);
+        }
+
     });
 };
