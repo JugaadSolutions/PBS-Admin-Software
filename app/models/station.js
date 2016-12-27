@@ -11,9 +11,15 @@ var autoIncrement = require('mongoose-auto-increment');
 
 const status = Constants.OperationStatus;
 
+const GPS = {
+    longitude: {type: Number, required: false},
+    latitude: {type: Number, required: false}
+};
+
 var StationSchema = mongoose.Schema({
     StationID : Number,
-    operationStatus:{type:status,required:false,default:status.OPERATIONAL}
+    operationStatus:{type:status,required:false,default:status.OPERATIONAL},
+    gpsCoordinates: {type: GPS, required: false}
 
 }, { collection : 'stations', discriminatorKey : 'stationType' });
 

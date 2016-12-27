@@ -3,7 +3,7 @@ var async = require('async');
 
 // Application Level Dependencies
 var RedistributionPort = require('../models/redistribution-port'),
-    RedistributionVehicle = require('../models/redistribution-vehicle'),
+    RedistributionVehicle = require('../models/redistribution-area'),
     Messages = require('../core/messages');
 
 
@@ -30,7 +30,7 @@ exports.createPort=function (record,callback) {
                         return callback(err,null);
                     }
                     var portDetails = {
-                        RvvehicleId:redistributionDetails._id
+                        dockingPortId:redistributionDetails._id
                     };
                     result.portIds.push(portDetails);
                     RedistributionVehicle.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
@@ -58,13 +58,23 @@ exports.createPort=function (record,callback) {
 };
 
 exports.getAllRecords=function (record,callback) {
-  RedistributionPort.find({'_type':'Redistribution-area'},function (err,result) {
+  RedistributionPort.find({'_type':'Redistribution-vehicle'},function (err,result) {
       if(err)
       {
           return callback(err,null);
       }
       return callback(null,result);
   });
+};
+
+exports.getOneRecord = function (id,callback) {
+    RedistributionPort.findOne({'_id':id},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
 };
 
 exports.updateLocation=function (id,record,callback) {
@@ -86,4 +96,14 @@ exports.updateLocation=function (id,record,callback) {
             });
         }
     });
+};
+
+exports.updateRedistributionport = function (id,record,callback) {
+  RedistributionPort.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+      if(err)
+      {
+          return callback(err,null);
+      }
+      return callback(null,result);
+  });
 };

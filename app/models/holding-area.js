@@ -5,13 +5,17 @@ var mongoose = require('mongoose'),
 
 //const MemberStatus = Constants.MemberStatus;
 
+const Holdingports ={
+    dockingPortId: {type: Schema.ObjectId, required: true, ref: 'port'}
+};
 
 var HoldingAreaSchema = require('mongoose').model('station').schema.extend({
-    name:{type:String,required:false,unique:true}
+    name:{type:String,required:false,unique:true},
+    portIds:{type:[Holdingports],required:false}
 
 });
 
-var HoldingArea = mongoose.model('holdingarea', HoldingAreaSchema);
+var HoldingArea = mongoose.model('holding-area', HoldingAreaSchema);
 
 
 module.exports=HoldingArea;

@@ -9,6 +9,7 @@ var mongoose = require('mongoose'),
 //const MemberStatus = Constants.MemberStatus;
 
 
+
 var RedistributionStaffSchema = require('mongoose').model('user').schema.extend({
     employeeId:{type:String,required:false},
     position:{type:String,required:false},

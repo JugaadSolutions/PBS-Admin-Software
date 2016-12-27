@@ -153,6 +153,59 @@ router
 
         });
     })
+    .post('/operator', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,4,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+    .post('/accountstaff', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,5,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+    .post('/monitorgrp', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,6,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/hastaff', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,7,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
 
     .post('/:id/assigncard', function (req, res, next) {
 

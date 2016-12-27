@@ -26,6 +26,18 @@ router
         });
     })
 
+    .get('/:id',function (req,res,next) {
+
+        RedistributionPortService.getOneRecord(req.params.id,function(err,result) {
+            if (err) {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+    })
+
     .post('/', function (req, res, next) {
 
         RedistributionPortService.createPort(req.body, function (err, result) {
@@ -48,6 +60,26 @@ router
         var existingRecord = req.body;
 
         RedistributionPortService.updateLocation(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        RedistributionPortService.updateRedistributionport(req.params.id,existingRecord, function (err, result) {
 
             if (err) {
 

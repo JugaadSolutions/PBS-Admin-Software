@@ -19,3 +19,13 @@ exports.createDS = function (record,callback) {
         return callback(null,result);
     });
 };
+
+exports.updateMaintenancecenter = function (id,record,callback) {
+    MaintenanceCenter.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};

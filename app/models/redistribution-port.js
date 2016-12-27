@@ -12,7 +12,7 @@ const GPS = {
 
 
 var RedistributionPortSchema = require('mongoose').model('port').schema.extend({
-    StationId:{type:Schema.ObjectId, required:false, ref:'Station'},
+    StationId:{type:Schema.ObjectId, required:false, ref:'station'},
     assignedTo:{type:Schema.ObjectId,required:false,ref:'user'},
     vehiclePlate: {type: String, required: true, unique: true},
     driverId: {type: String, required: false},

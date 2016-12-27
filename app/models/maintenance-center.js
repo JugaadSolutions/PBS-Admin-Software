@@ -5,9 +5,13 @@ var mongoose = require('mongoose'),
 
 //const MemberStatus = Constants.MemberStatus;
 
+const MCports ={
+    dockingPortId: {type: Schema.ObjectId, required: true, ref: 'port'}
+};
 
 var MaintenanceCenterSchema = require('mongoose').model('station').schema.extend({
-    name:{type:String,required:false,unique:true}
+    name:{type:String,required:false,unique:true},
+    portIds:{type:[MCports],required:false}
 
 });
 

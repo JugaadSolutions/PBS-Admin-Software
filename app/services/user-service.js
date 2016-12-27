@@ -31,7 +31,7 @@ exports.loginUser = function (loginData, callback) {
      memId = data._id;
      });
      }*/
-    User.findOne({$or: [{phoneNumber: username}, {email: username}]}, function (err, record) {
+    User.findOne({$or: [{phoneNumber: username}, {email: username}, {smartCardNumber: username}]}, function (err, record) {
 
 
         if (err) {

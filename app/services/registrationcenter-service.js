@@ -12,3 +12,13 @@ exports.createRC=function (record,callback) {
         return callback(null,result);
     });
 };
+
+exports.updateRegistrationcenter = function (id,record,callback) {
+    RegistrationCenter.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};

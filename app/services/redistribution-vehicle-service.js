@@ -6,7 +6,7 @@ var async = require('async'),
     RedistributionPort = require('../models/redistribution-port')
     /*config = require('config'),
      request = require('request')*/;
-var RedistributionVehicle=require('../models/redistribution-vehicle');
+var RedistributionVehicle=require('../models/redistribution-area');
 
 
 
@@ -59,4 +59,14 @@ exports.createDS = function (record,callback) {
     });
 
 
+};
+
+exports.updateRedistributionVehicle =function (id,record,callback) {
+  RedistributionVehicle.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+      if(err)
+      {
+          return callback(err,null);
+      }
+      return callback(null,result);
+  });
 };

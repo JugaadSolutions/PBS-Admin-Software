@@ -108,3 +108,13 @@ exports.createDS = function (record,callback) {
         return callback(null,result);
     });
 };
+
+exports.updateHoldingarea = function (id,record,callback) {
+    HoldingArea.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};

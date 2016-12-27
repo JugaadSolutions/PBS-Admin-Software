@@ -26,6 +26,18 @@ router
         });
     })
 
+    .get('/:id',function (req,res,next) {
+
+        HoldingPortService.getOneRecord(req.params.id,function(err,result) {
+            if (err) {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+    })
+
     .post('/', function (req, res, next) {
 
         HoldingPortService.createPort(req.body, function (err, result) {
@@ -41,6 +53,26 @@ router
             }
 
         });
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        HoldingPortService.updateHoldingport(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
     })
 
 ;

@@ -45,6 +45,26 @@ router
         });
     })
 
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        Ports.findByIdAndUpdate(req.params.id,existingRecord,{new:true}, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
 ;
 
 module.exports = router;

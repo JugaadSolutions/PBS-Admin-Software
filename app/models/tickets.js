@@ -8,9 +8,10 @@ var abstract = require('./abstract');
 var Constants = require('../core/constants');
 
 const trans = {
-    userid:{type:Schema.ObjectId,required:false,ref:'user'},
-    assignedEmp:{type:Schema.ObjectId,required:false,ref:'user'},
-    description:{type:String,required:false}
+    //userid:{type:Schema.ObjectId,required:false,ref:'user'},
+    replierId:{type:Schema.ObjectId,required:false,ref:'user'},
+    description:{type:String,required:false},
+    replydate:{type:Date,required:true,default:Date.now}
 };
 
 const comType = Constants.ComplaintValidation;

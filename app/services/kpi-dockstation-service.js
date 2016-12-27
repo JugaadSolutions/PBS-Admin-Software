@@ -446,7 +446,7 @@ exports.kpiTicketsinfo = function (record,callback) {
     ldate=ldate.format('YYYY-MM-DD');
     if(record.complaintType==0)
     {
-        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)}}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.userid transactions.assignedEmp').lean().exec(function (err,result) {
+        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)}}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
             if(err)
             {
                 return callback(err,null);
@@ -456,7 +456,7 @@ exports.kpiTicketsinfo = function (record,callback) {
     }
     else
     {
-        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)},'complaintType':Number(record.complaintType)}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.userid transactions.assignedEmp').lean().exec(function (err,result) {
+        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)},'complaintType':Number(record.complaintType)}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
             if(err)
             {
                 return callback(err,null);

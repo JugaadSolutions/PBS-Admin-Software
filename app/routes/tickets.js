@@ -17,7 +17,7 @@ var router = express.Router();
 router
 
     .get('/:id',function (req,res,next) {
-        Ticket.find({'_id':req.params.id}).deepPopulate('user assignedEmp createdBy transactions.userid transactions.assignedEmp').lean().exec(function (err, result) {
+        Ticket.find({'_id':req.params.id}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err, result) {
             if(err)
             {
                 next(err, req, res, next);
@@ -33,7 +33,7 @@ router
         //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
         // Card.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
-        Ticket.find({}).deepPopulate('user assignedEmp createdBy transactions.userid transactions.assignedEmp').lean().exec(function (err, result) {
+        Ticket.find({}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err, result) {
             if (err) {
 
                 next(err, req, res, next);

@@ -15,6 +15,10 @@ var async = require('async'),
     Constants = require('../core/constants'),
     UploadHandler = require('../handlers/upload-handler'),
     RegEmployee = require('../models/registration-staff'),
+    Operator = require('../models/operator'),
+    AccountStaff = require('../models/accounts-admin'),
+    Monitorgrp = require('../models/monitor-group'),
+    HoldingareaStaff = require('../models/holdingarea-staff'),
     RedistributionEmployee =require('../models/redistribution-staff'),
     MaintenanceEmployee = require('../models/maintanancecentre-staff');
 
@@ -82,6 +86,50 @@ exports.createEmployee=function (record,id,callback) {
             if(id==3)
             {
                 RedistributionEmployee.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==4)
+            {
+                Operator.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==5)
+            {
+                AccountStaff.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==6)
+            {
+                Monitorgrp.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==7)
+            {
+                HoldingareaStaff.create(record,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -366,6 +414,61 @@ exports.updateEmployee = function (record,callback) {
             }
             if(record._type=='registration-employee') {
                 RegEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
+            if(record._type=='redistribution-employee') {
+                RedistributionEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
+            if(record._type=='Operator') {
+                Operator.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
+            if(record._type=='Monitor-group') {
+                Monitorgrp.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
+            if(record._type=='Accounts-admin') {
+                AccountStaff.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    memberDetails = result;
+                    return callback(null, result);
+                });
+            }
+            if(record._type=='Holdingarea-employee') {
+                HoldingareaStaff.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
 
                     if (err) {
                         return callback(err, null);

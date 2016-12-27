@@ -10,16 +10,18 @@ const DockingPorts ={
     dockingPortId: {type: Schema.ObjectId, required: true, ref: 'port'}
 };
 
+/*
 const GPS = {
     longitude: {type: Number, required: false},
     latitude: {type: Number, required: false}
 };
+*/
 
 var DockStationSchema = require('mongoose').model('station').schema.extend({
     name:{type:String,required:false,unique:true},
     ipAddress:{type:String,required:false,unique:true},
     stationStatus:{type:stationStats,required:false,default:stationStats.EMPTY},
-    gpsCoordinates: {type: GPS, required: false},
+//    gpsCoordinates: {type: GPS, required: false},
     stationNumber:{type:String,required:false},
     noofUnits:{type:Number,required:false},
     noofPorts:{type:Number,required:false},

@@ -27,6 +27,18 @@ router
 
     })
 
+    .get('/:id',function (req,res,next) {
+        MaintenanceCenter.find({'_id':req.params.id},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
 
     .post('/', function (req, res, next) {
 
@@ -43,6 +55,26 @@ router
             }
 
         });
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        MaintenanceCenterService.updateMaintenancecenter(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
     })
 
 ;

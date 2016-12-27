@@ -45,6 +45,25 @@ router
         });
     })
 
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        RegistrationCenterService.updateRegistrationcenter(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
 ;
 
 module.exports = router;
