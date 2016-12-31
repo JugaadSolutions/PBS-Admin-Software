@@ -14,7 +14,7 @@ var router = express.Router();
 // Router Methods
 router
     .get('/',function (req,res,next) {
-        HoldingArea.find({'stationType':'holdingarea'},function (err,result) {
+        HoldingArea.find({'stationType':'Holding-station'},function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

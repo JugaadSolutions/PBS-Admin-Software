@@ -22,6 +22,17 @@ router
         });
 
     })
+    .get('/:id',function (req,res,next) {
+
+        FleetService.getOneRecord(req.params.id,function(err,result) {
+            if (err) {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+    })
 
     .post('/', function (req, res, next) {
         FleetService.addFleet(req.body,function (err,result) {
@@ -35,6 +46,25 @@ router
             }
 
         });
+    })
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        FleetService.updateFleetport(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
     })
 
 ;

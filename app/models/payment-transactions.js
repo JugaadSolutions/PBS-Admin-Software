@@ -21,7 +21,8 @@ var PaymentTransactionSchema = mongoose.Schema({
     debit:{type:Number,required:false,default:0},
     credit:{type:Number,required:false,default:0},
     balance:{type:Number,required:true},
-    createdAt:{type:Date,required: false, default:Date.now()}
+    createdAt:{type:Date,required: false, default:Date.now()},
+    createdBy:{type:Schema.ObjectId,required:false,ref:'user'}
 }, { collection : 'payment-transactions'});
 
 

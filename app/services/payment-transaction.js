@@ -3,6 +3,7 @@ var async = require('async'),
     MembershipService=require('../services/membership-service'),
     Membership  = require('../models/membership'),
     Stations = require('../models/station'),
+    RegCenter = require('../models/registration-center'),
     Member = require('../models/member'),
     Deposits = require('../models/deposits'),
     Payments = require('../models/payment-transactions'),
@@ -244,6 +245,7 @@ exports.newMember = function (memberObject,record,callback) {
     var finalTransaction;
     var paymentBalance;
     var transactionList=[];
+    var location;
 
     var updatedMember;
     async.series([
@@ -263,6 +265,22 @@ exports.newMember = function (memberObject,record,callback) {
             });
         },
         function (callback) {
+            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    location = 'Other Location';
+                    return callback(null,result);
+                }
+                location=result.location;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
             if(memberShipObject)
             {
                     var userfeeDeposit;
@@ -276,7 +294,10 @@ exports.newMember = function (memberObject,record,callback) {
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         credit:record.credit,
-                        balance:record.credit
+                        balance:record.credit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
+
                     };
 
                     var securityObject;
@@ -291,7 +312,9 @@ exports.newMember = function (memberObject,record,callback) {
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.securityDeposit,
-                        balance:record.credit
+                        balance:record.credit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
 
                     var cardObject;
@@ -306,7 +329,9 @@ exports.newMember = function (memberObject,record,callback) {
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.smartCardFees,
-                        balance:record.credit
+                        balance:record.credit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(userfeeDeposit);
                     transactionList.push(securityObject);
@@ -325,7 +350,9 @@ exports.newMember = function (memberObject,record,callback) {
                             gatewayTransactionId:record.transactionNumber,
                             comments:record.comments,
                             debit:memberShipObject.processingFees,
-                            balance:record.credit
+                            balance:record.credit,
+                            location:(location!=null)?location:'Other Location',
+                            createdBy:record.createdBy
                         };
                         transactionList.push(processingObject);
 

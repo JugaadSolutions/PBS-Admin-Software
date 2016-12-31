@@ -456,6 +456,7 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
 
     var cardObject;
     var memberObject;
+    var balance=0;
     var memberName;
     var validity;
 
@@ -476,7 +477,10 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
                     if (!result) {
                         return callback(new Error(Messages.NO_MEMBER_FOUND), null);
                     }
-
+                    if(result._type=='member')
+                    {
+                        balance = result.creditBalance;
+                    }
                     memberName = result.Name;
                     if (result.cardNum) {
 
@@ -509,6 +513,7 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
                     result.membershipId = membershipId;
                     result.assignedTo = memberId;
                     result.assignedToName = memberName;
+                    result.balance= (balance>0)?balance:0;
 
                     Card.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
 

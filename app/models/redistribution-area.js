@@ -16,7 +16,7 @@ var RedistributionVehicleSchema = require('mongoose').model('station').schema.ex
     driverId: {type: String, required: false}*/
 });
 
-var RedistributionVehicle = mongoose.model('redistribution-area', RedistributionVehicleSchema);
+var RedistributionVehicle = mongoose.model('Redistribution-area', RedistributionVehicleSchema);
 
 
 module.exports=RedistributionVehicle;

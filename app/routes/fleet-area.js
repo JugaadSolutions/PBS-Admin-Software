@@ -28,6 +28,20 @@ router
 
     })
 
+    .get('/:id',function (req,res,next) {
+        FleetArea.find({'_id':req.params.id,'stationType':'fleet-area'},function (err,result) {
+            if (err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
+
     .post('/', function (req, res, next) {
 
         FleetAreaService.createDS(req.body, function (err, result) {
@@ -43,6 +57,26 @@ router
             }
 
         });
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        FleetArea.findByIdAndUpdate(req.params.id,existingRecord,{new:true}, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
     })
 
 ;

@@ -15,7 +15,7 @@ var HoldingAreaSchema = require('mongoose').model('station').schema.extend({
 
 });
 
-var HoldingArea = mongoose.model('holding-area', HoldingAreaSchema);
+var HoldingArea = mongoose.model('Holding-station', HoldingAreaSchema);
 
 
 module.exports=HoldingArea;

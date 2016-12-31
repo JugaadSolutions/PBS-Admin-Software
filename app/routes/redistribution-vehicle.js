@@ -16,7 +16,7 @@ router
 
 
     .get('/',function (req,res,next) {
-        RedistributionVehicle.find({'stationType':'redistribution-vehicle'},function (err,result) {
+        RedistributionVehicle.find({'stationType':'Redistribution-area'},function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

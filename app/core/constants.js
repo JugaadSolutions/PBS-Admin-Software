@@ -7,6 +7,11 @@ exports.StationType={
     MINOR:"Minor"
 };
 
+exports.EmployeeShift={
+    MORNING:1,
+    AFTERNOON:2
+};
+
 exports.PayDescription={
     SECURITY_DEPOSIT:"Security Deposit",
     PROCESSING_FEE:"Processing Fee",

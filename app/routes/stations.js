@@ -29,7 +29,7 @@ router
 
     .get('/', function (req, res, next) {
 
-        Stations.find({}, function (err, result) {
+        Stations.find({'stationType':{$ne:'dock-station'}}).lean().exec(function (err, result) {
 
             if (err) {
 

@@ -58,7 +58,7 @@ exports.createPort=function (record,callback) {
 };
 
 exports.getAllRecords=function (record,callback) {
-  RedistributionPort.find({'_type':'Redistribution-vehicle'},function (err,result) {
+  RedistributionPort.find({'_type':'Redistribution-vehicle'}).deepPopulate('StationId').lean().exec(function (err,result) {
       if(err)
       {
           return callback(err,null);

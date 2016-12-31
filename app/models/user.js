@@ -12,6 +12,12 @@ var autoIncrement = require('mongoose-auto-increment');
 const Sex = Constants.Sex;
 const ProofType = Constants.ProofType;
 
+const Track = {
+    trackId:{type:Schema.ObjectId,required:false}
+};
+
+const shift=Constants.EmployeeShift;
+
 const EmergencyContact = {
     contactName: {type: String, required: false},
     countryCode : {type: String, required: false,default:'91'},
@@ -59,9 +65,9 @@ var UserSchema = mongoose.Schema({
     emergencyContact: {type: EmergencyContact, required: false},
     assignedUser: {type: Schema.ObjectId, required: false},
     documents: {type: [Document], required: false},
-    comments:{type: String, required: false}
-
-
+    comments:{type: String, required: false},
+    trackIds:{type:[Track],required:false},
+    shifts:{type:shift,requires:false}
 
 }, { collection : 'users', discriminatorKey : '_type' });
 
