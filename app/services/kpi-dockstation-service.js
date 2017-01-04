@@ -39,6 +39,8 @@ exports.kpistat = function (portid,time,state) {
                         stationDetails=result;
                     });*/
                 portDetails=result;
+                if(result._type=='Docking-port')
+                {
                     station.getstationdetail(result.StationId,function (err,result) {
                         if(err)
                         {
@@ -47,12 +49,21 @@ exports.kpistat = function (portid,time,state) {
                         stationDetails=result;
                         return callback(null,result);
                     });
+                }
+                else
+                {
+                    return callback(null,result);
+                }
+
                 //}
 
 
             });
         },
         function (callback) {
+            if(portDetails._type=='Docking-port')
+            {
+
             if(state==1)
             {
                 if(stationDetails.bicycleCount==1)
@@ -133,8 +144,16 @@ exports.kpistat = function (portid,time,state) {
             {
                 return callback(null,null);
             }
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
         function (callback) {
+            if(portDetails._type=='Docking-port')
+            {
+
             if(state==2)
             {
                 if(stationDetails.bicycleCount==stationDetails.bicycleCapacity-1)
@@ -180,6 +199,11 @@ exports.kpistat = function (portid,time,state) {
                         return callback(null,result);
                     });
                 }
+            }
+            else
+            {
+                return callback(null,null);
+            }
             }
             else
             {
