@@ -10,7 +10,7 @@ var router = express.Router();
 router
 
     .get('/',function (req,res,next) {
-        FleetService.getAllRecords(req.body,function (err,result) {
+        FleetService.getAllRecords(function (err,result) {
             if (err)
             {
                 next(err, req, res, next);

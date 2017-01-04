@@ -16,6 +16,8 @@ module.exports={
     COULD_NOT_INITIALIZE_THE_USER_COLLECTION: "Could not initialize the user collection!",
 
     DELETING_RECORD_SUCCESSFUL:"Deleting record successful",
+    DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE:"Debit amount cannot be greater than member credit balance",
+    DEBIT_SUCCESSFUL: "Debit successful",
 
     FETCHING_RECORDS_SUCCESSFUL: "Fetching records successful",
     FLEET_ENTRY_CREATED_SUCCESSFUL:"Fleet has been created successfully",

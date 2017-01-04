@@ -31,8 +31,8 @@ Admin.count({email: "admin@mytrintrin.com"}, function (err, count) {
             //emailVerified: "true",
             //role: "admin",
             phoneNumber:"91-80508-09988",
-            sex:"Male"
-            //status:1
+            sex:"Male",
+            status:1
         };
 
         Admin.create(defaults, function (err) {

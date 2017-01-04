@@ -25,7 +25,7 @@ exports.addFleet=function (record, callback) {
     });
 };
 
-exports.getAllRecords=function (record,callback) {
+exports.getAllRecords=function (callback) {
 
     Fleet.find({'_type':'Fleet'}).deepPopulate('StationId').lean().exec(function (err,result) {
         if(err)

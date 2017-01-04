@@ -28,6 +28,18 @@ router
 
     })
 
+    .get('/:id',function (req,res,next) {
+        DockingStation.findOne({'_id':req.params.id},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
     .get('/:id/cleanstation',function (req,res,next) {
         DockingStationService.getcleanStationsById(req.params.id,function (err,result) {
             if(err)
@@ -88,6 +100,26 @@ router
             }
 
         });
+    })
+
+    .put('/:id', function (req, res, next) {
+
+        var existingRecord = req.body;
+
+        DockingStationService.updateDockstation(req.params.id,existingRecord, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
     })
 ;
 

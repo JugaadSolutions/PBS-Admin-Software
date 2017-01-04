@@ -68,7 +68,7 @@ exports.getAllRecords=function (record,callback) {
 };
 
 exports.getOneRecord = function (id,callback) {
-    RedistributionPort.findOne({'_id':id},function (err,result) {
+    RedistributionPort.findOne({'_id':id}).deepPopulate('StationId').lean().exec(function (err,result) {
         if(err)
         {
             return callback(err,null);

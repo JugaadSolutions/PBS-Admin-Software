@@ -14,8 +14,9 @@ var Member = require('../models/member'),
     TemplatesMessage = require('../../templates/text-messages'),
     EmailNotificationHandler = require('../handlers/email-notification-handler'),
     Payments = require('../models/payment-transactions'),
+    RegCenter = require('../models/registration-center'),
     Card = require('../models/card'),
-    CardService = require('../services/card-service'),
+    //CardService = require('../services/card-service'),
     User=require('../models/user');
 
 exports.createMember=function (record,callback) {
@@ -738,6 +739,123 @@ exports.creditMember=function (id,record,callback) {
         }
         return callback(null,updatedMemberObject);
     });
+
+};
+
+exports.debitMember = function (id, record, callback) {
+
+    var memberObject;
+    var location;
+    async.series([
+
+            // Step 1: Method to check and deduct processing fee
+            function (callback) {
+
+                Member.findById(id, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    if (result.creditBalance < record.debit) {
+                        return callback(new Error(Messages.DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE), null);
+                    }
+
+                    result.creditBalance=Number(result.creditBalance- record.debit);
+                    result.comments = record.comments;
+
+                    Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        memberObject = result;
+                        return callback(null, result);
+                    })
+                });
+
+            },
+            function (callback) {
+                User.findOne({'_id':record.createdBy}).lean().exec(function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        location = 'Other Location';
+                        return callback(null,result);
+                    }
+                    if(result._type=='registration-employee')
+                    {
+                        RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                location = 'Other Location';
+                                return callback(null,result);
+                            }
+                            location=reg.location;
+                            return callback(null,result);
+                        });
+                    }
+                    else {
+                            location = 'Other Location';
+                            return callback(null,result);
+                    }
+
+                });
+            }
+            ,
+
+            // Step 3: Method to create payment transaction
+            function (callback) {
+
+                var uf = 'PBS' + new Date().getTime();
+                var paymentTransaction = {
+                    memberId: memberObject._id,
+                    invoiceNo: uf,
+                    paymentDescription: Constants.PayDescription.DEBIT_NOTE,
+                    paymentMode: Constants.PayMode.OTHERS,
+                    paymentThrough: Constants.PayThrough.OTHERS,
+                    gatewayTransactionId: Constants.PayDescription.OTHERS,
+                    comments: record.comments,
+                    debit:record.debit,
+                    balance:memberObject.creditBalance,
+                    location:(location!=null)?location:'Other Location',
+                    createdBy:record.createdBy
+                };
+
+                Payments.create(paymentTransaction, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    return callback(null, result);
+                });
+
+            }
+        ],
+
+        function (err, result) {
+
+            if (err) {
+                return callback(err, null);
+            }
+
+            return callback(err, memberObject);
+
+        }
+    );
 
 };
 

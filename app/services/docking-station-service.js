@@ -229,6 +229,12 @@ exports.getAllStations = function (record,callback) {
                gpsCoordinates:'',
                portIds:'',
                stationStatus:'',
+               subnet:0,
+               modelType:'',
+               template:'',
+               minAlert:0,
+               maxAlert:0,
+               zoneId:'',
                operationStatus:'',
                bicycleCapacity:0,
                bicycleCount:0
@@ -244,6 +250,12 @@ exports.getAllStations = function (record,callback) {
             details.gpsCoordinates=data.gpsCoordinates;
             details.portIds=data.portIds;
             details.stationStatus=data.stationStatus;
+            details.subnet=data.subnet;
+            details.modelType=data.modelType;
+            details.template=data.template;
+            details.minAlert=data.minAlert;
+            details.maxAlert=data.maxAlert;
+            details.zoneId=data.zoneId;
             details.operationStatus=data.operationStatus;
             details.bicycleCapacity=data.portIds.length;
                 for(var j=0;j<data.portIds.length;j++)
@@ -284,6 +296,16 @@ exports.getstationdetail = function (id,callback) {
             }
         }
         return callback(null,details);
+    });
+};
+
+exports.updateDockstation = function (id,record,callback) {
+    DockStation.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
     });
 };
 

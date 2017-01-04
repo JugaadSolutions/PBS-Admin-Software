@@ -2,6 +2,12 @@
  * Created by root on 4/10/16.
  */
 
+exports.EmployeeStatus={
+    ACTIVE:1,
+    INACTIVE:0,
+    BLOCKED:-1
+};
+
 exports.StationType={
     MAJOR:"Major",
     MINOR:"Minor"
@@ -67,6 +73,21 @@ exports.OperationStatus = {
     OPERATIONAL: 1,
     NON_OPERATIONAL: 2,
     DECOMMISSIONED: -1
+};
+
+exports.Zones={
+    ZONE1:1,
+    ZONE2:2,
+    ZONE3:3,
+    ZONE4:4,
+    ZONE5:5
+};
+
+exports.StationTemplate={
+    T1:1,
+    T2:2,
+    T3:3,
+    T4:4
 };
 
 exports.Sex = {

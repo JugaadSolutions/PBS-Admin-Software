@@ -32,7 +32,7 @@ router
         //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
        // Card.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
-            Card.find({}).deepPopulate('assignedTo').lean().exec(function (err, result) {
+            Card.find({}).deepPopulate('assignedTo membershipId issuedBy').lean().exec(function (err, result) {
             if (err) {
 
                 next(err, req, res, next);

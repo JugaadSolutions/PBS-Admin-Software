@@ -309,9 +309,9 @@ exports.checkVehicleAvailability = function (callback) {
     );
 };
 
-exports.updateVehicle = function (record,callback) {
+exports.updateVehicle = function (id,record,callback) {
 
-    Vehicle.findByIdAndUpdate(record._id,record,function (err,result) {
+    Vehicle.findByIdAndUpdate(id,record,{new:true},function (err,result) {
         if(err)
         {
             return callback(err,null);

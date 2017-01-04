@@ -213,6 +213,24 @@ router
 
     })
 
+    .post('/:id/debit', function (req, res, next) {
+
+        MemberService.debitMember(req.params.id, req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DEBIT_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
     .put('/:id', function (req, res, next) {
 
         var existingRecord = req.body;

@@ -28,7 +28,7 @@ router
     })
 
     .get('/:id',function (req,res,next) {
-        MaintenanceCenter.find({'_id':req.params.id},function (err,result) {
+        MaintenanceCenter.findOne({'_id':req.params.id},function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

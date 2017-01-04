@@ -15,7 +15,7 @@ var router = express.Router();
 router
 
     .get('/:id',function (req,res,next) {
-    Membership.findOne({'_id':req.params.id},function (err,result) {
+    Membership.findOne({'_id':req.params.id}).deepPopulate('farePlan').lean().exec(function (err,result) {
         if(err)
         {
             next(err, req, res, next);

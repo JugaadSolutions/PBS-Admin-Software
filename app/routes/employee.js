@@ -18,7 +18,7 @@ router
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
          Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
-        User.find({'_type':{$ne:'member'}},function (err, result) {
+        User.find({'_type':{$ne:'member'}}).lean().exec(function (err, result) {
             if (err) {
 
                 next(err, req, res, next);

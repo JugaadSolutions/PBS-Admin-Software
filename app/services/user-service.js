@@ -31,7 +31,11 @@ exports.loginUser = function (loginData, callback) {
      memId = data._id;
      });
      }*/
-    User.findOne({$or: [{phoneNumber: username}, {email: username}, {smartCardNumber: username}]}, function (err, record) {
+   /* if(isNumber(int.parse(username)))
+    {
+        username = Number(username);
+    }*/
+    User.findOne({$or: [{phoneNumber: username}, {email: username}, {smartCardNumber: username}/*,{cardNum:username}*/]}, function (err, record) {
 
 
         if (err) {

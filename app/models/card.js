@@ -19,7 +19,8 @@ var CardSchema = mongoose.Schema({
     balance: {type: Number, required: false, default: 0},
     membershipId: {type: Schema.ObjectId, required: false, ref: 'Membership'},
     status: {type: CardStatus, required: true, default: CardStatus.INACTIVE},
-    cardType: {type: CardType, required: true,default: CardType.REGISTERED_MEMBER}
+    cardType: {type: CardType, required: true,default: CardType.REGISTERED_MEMBER},
+    issuedDate:{type:Date,required: false}
 
 }, { collection : 'cards' });
 

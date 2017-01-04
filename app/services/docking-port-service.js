@@ -20,3 +20,13 @@ exports.createPort=function (record,callback) {
         return callback(null,result);
     });
 };
+
+exports.updateDockport=function (id,record,callback) {
+  DockPort.findByIdAndUpdate(id,{$set:{'portStatus':record.portStatus}},{new:true},function (err,result) {
+      if(err)
+      {
+          return callback(err,null);
+      }
+      return callback(null,result);
+  });
+};

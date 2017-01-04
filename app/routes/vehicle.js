@@ -71,7 +71,7 @@ router
 
         var existingRecord = req.body;
 
-        VehicleService.updateVehicle(existingRecord, function (err, result) {
+        VehicleService.updateVehicle(req.params.id,existingRecord, function (err, result) {
 
             if (err) {
 

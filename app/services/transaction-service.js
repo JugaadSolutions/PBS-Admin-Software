@@ -85,7 +85,7 @@ exports.getAllTransactions = function (callback) {
 
     async.series([
         function (callback) {
-            CheckOut.find({'status':'Open'}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
+            CheckOut.find({'status':'Open'}).sort({'createdAt': -1}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
