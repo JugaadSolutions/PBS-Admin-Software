@@ -9,6 +9,7 @@ var Messages = require('../core/messages'),
     async = require('async'),
     swig = require('swig'),
     random = require('node-random'),
+    moment = require('moment'),
     TemplatesMessage = require('../../templates/text-messages'),
     EmailNotificationHandler = require('../handlers/email-notification-handler'),
     User = require('../models/user');
@@ -140,7 +141,7 @@ exports.changePassword = function (userId, updatedData, callback) {
 
 exports.forgotPassword = function (email, callback) {
 
-    var password;
+    var ResetKey;
     var userObject;
 
     async.series([
@@ -148,13 +149,13 @@ exports.forgotPassword = function (email, callback) {
             // Step 1: Method generate new password
             function (callback) {
 
-                random.strings({"length": 6, "number": 1, "upper": true, "digits": true}, function (err, data) {
+                random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
 
                     if (err) {
                         return callback(err, null);
                     }
 
-                    password = data;
+                    ResetKey = data;
                     return callback(null, data);
                 });
 
@@ -175,7 +176,8 @@ exports.forgotPassword = function (email, callback) {
                         return callback(noUserError, null);
                     }
 
-                    record.password = password;
+                    record.resetPasswordKey = ResetKey;
+                    record.resetPasswordKeyValidity = moment().add(2,'hours');
                     userObject = record;
 
                     record.save(function (err) {
@@ -197,14 +199,14 @@ exports.forgotPassword = function (email, callback) {
 
                 var data = {
                     profileName: userObject.Name,
-                    password: password,
-                    link: config.get('pbsMemberPortal.url')
+                   // ResetKey: ResetKey,
+                    link: config.get('pbsMemberPortal.resetUrl')+ResetKey
                 };
 
                 var htmlString = swig.renderFile('./templates/forgot-password.html', data);
 
                 var emailMessage = {
-                    "subject": Messages.YOUR_PASSWORD_HAS_BEEN_RESET_SUCCESSFULLY,
+                    "subject": Messages.PASSWORD_RESET_REQUEST,
                     "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.forgotPassword, data),
                     "html": htmlString,
                     "to": [userObject.email]
@@ -228,4 +230,56 @@ exports.forgotPassword = function (email, callback) {
         }
     );
 
+};
+
+exports.resetPassword = function (record,callback) {
+    var user;
+    async.series([
+        function (callback) {
+            User.findOne({'resetPasswordKey':record.resetkey},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                //user=result;
+                if(!result)
+                {
+                    return callback(new Error('Your password reset link is expired'),null);
+                }
+                    var durationMin = moment.duration(moment(result.resetPasswordKeyValidity).diff(moment()));
+                    var duration = durationMin.asMinutes();
+                    if(duration<0)
+                    {
+                        return callback(new Error('Your password reset validity expired'),null);
+                    }
+                 user=result;
+                return callback(null,null);
+            });
+        },
+        function (callback) {
+            if(user)
+            {
+                user.resetPasswordKey = '';
+                user.emailVerified = true;
+                user.resetPasswordKeyValidity = '';
+                user.password = record.newPassword;
+                user.save(function (err) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    return callback(null, true);
+                });
+            }
+            else {
+                return callback(null,null);
+            }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,true);
+    })
 };

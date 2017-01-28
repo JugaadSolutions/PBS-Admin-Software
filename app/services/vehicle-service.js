@@ -3,6 +3,7 @@ var async = require('async'),
     Port = require('../models/port'),
     User = require('../models/user'),
     Constants = require('../core/constants'),
+    Station = require('../models/station'),
     DockingStation = require('../models/dock-station'),
     Messages = require('../core/messages');
 
@@ -19,7 +20,7 @@ exports.addBicycle=function (record, callback) {
                 return callback(err,null);
             }
 
-            if(result.VehicleCapacity==result.vehicleId.length)
+            if(result.portCapacity==result.vehicleId.length)
             {
                 return callback(new Error(Messages.FLEET_FULL));
             }
@@ -72,6 +73,31 @@ exports.addBicycle=function (record, callback) {
                 return callback();
             });
         });
+
+        },
+        function (callback) {
+            Station.find({stationType:'dock-station'},function (err,result) {
+                if(err)
+                {
+                    console.log('Error fetching station');
+                }
+                if(result.length>0)
+                {
+                    for(var i=0;i<result.length;i++)
+                    {
+                        vehicleRecord.unsyncedIp.push(result[i].ipAddress);
+                    }
+                    Vehicle.findByIdAndUpdate(vehicleRecord._id, vehicleRecord, {new: true}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        vehicleRecord = result;
+                        return callback(null, result);
+                    });
+                }
+            });
 
         }
 
@@ -311,7 +337,7 @@ exports.checkVehicleAvailability = function (callback) {
 
 exports.updateVehicle = function (id,record,callback) {
 
-    Vehicle.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+    Vehicle.update({_id:id},record,{new:true},function (err,result) {
         if(err)
         {
             return callback(err,null);

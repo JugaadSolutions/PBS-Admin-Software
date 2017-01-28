@@ -28,7 +28,7 @@ Admin.count({email: "admin@mytrintrin.com"}, function (err, count) {
             Name:"Mahesha",
             lastName:"siddegowda",
             //smartCardNumber:"2DR35A6B00000000",
-            //emailVerified: "true",
+            emailVerified: "true",
             //role: "admin",
             phoneNumber:"91-80508-09988",
             sex:"Male",

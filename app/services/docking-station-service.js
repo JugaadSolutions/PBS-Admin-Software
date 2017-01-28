@@ -9,7 +9,10 @@ var async = require('async'),
 var DockStation=require('../models/dock-station'),
     Messages = require('../core/messages'),
     Constants = require('../core/constants'),
-    DockPort= require('../models/dock-port');
+    Vehicle = require('../models/vehicle'),
+    Membership = require('../models/membership'),
+    Fareplan = require('../models/fare-plan'),
+    Users= require('../models/user');
 
 var cleanstation = require('../models/stationcleaning');
 
@@ -192,7 +195,49 @@ exports.createDS = function (record,callback) {
                     return callback(null,records);
                 });
             }
-         }
+         },
+
+
+        function (callback) {
+            Membership.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+                if(err)
+                {
+                    //return console.error('Unable to push data to users while creating dock-station');
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Fareplan.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+                if(err)
+                {
+                    //return console.error('Unable to push data to users while creating dock-station');
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Users.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+                if(err)
+                {
+                    //return console.error('Unable to push data to users while creating dock-station');
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Vehicle.update({},{$push:{unsyncedIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+                if(err)
+                {
+                    //return console.error('Unable to push data to users while creating dock-station');
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
         
     ],function (err,result) {
         if(err)
@@ -235,7 +280,7 @@ exports.getAllStations = function (record,callback) {
                minAlert:0,
                maxAlert:0,
                zoneId:'',
-               operationStatus:'',
+               operationStatus:0,
                bicycleCapacity:0,
                bicycleCount:0
            };
@@ -313,12 +358,41 @@ exports.createCleanedEntry = function (record,callback) {
     //record.cleaneddate = moment(record.cleaneddate);
     //record.fromtime=moment(record.fromtime);
     //record.totime=moment(record.totime);
-    cleanstation.create(record,function (err,result) {
+    record.stationId = record.stationIdnew;
+    var cleanedStation;
+    async.series([
+
+        function (callback) {
+            var fdate = moment(record.cleaneddate);
+            fdate=fdate.format('YYYY-MM-DD');
+             cleanstation.find({stationId:record.stationId,cleaneddate:fdate},function (err,result) {
+                 if(err)
+                 {
+                     return callback(err,null);
+                 }
+                 if(result.length>0)
+                 {
+                     record.cleanCount = result.length+1;
+                 }
+                 return callback(null,result);
+             });
+        },
+        function (callback) {
+            cleanstation.create(record,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                cleanedStation = result;
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
         if(err)
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,cleanedStation);
     });
 };
 
@@ -333,7 +407,7 @@ exports.getcleanStationsById = function (id,callback) {
 };
 
 exports.getCleanedstatrec = function (callback) {
-  cleanstation.find({}).sort('-cleaneddate').deepPopulate('stationId empId').lean().exec(function (err,result) {
+  cleanstation.find({}).sort('-cleaneddate').lean().exec(function (err,result) {
       if(err)
       {
           return callback(err,null);
@@ -341,10 +415,6 @@ exports.getCleanedstatrec = function (callback) {
       return callback(null,result);
   });
 };
-
-
-
-
 
 
 

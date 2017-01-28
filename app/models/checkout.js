@@ -21,7 +21,8 @@ var schema = {
     status: {type: String, required: true,default:'Open'},
     errorStatus:{type: Number, required: false,default:0},
     errorMsg:{type: String, required: false},
-    updateStatus:{type: Number, required: false,default:0}
+    updateStatus:{type: Number, required: false,default:0},
+    duration:{type: Number, required: false,default:0}
 };
 
 var model = new Schema(schema);

@@ -9,6 +9,11 @@ var async = require('async'),
     EmailNotificationHandler = require('../handlers/email-notification-handler'),
     TemplatesMessage = require('../../templates/text-messages'),
     swig = require('swig'),
+    config = require('config'),
+    moment = require('moment'),
+
+    Station = require('../models/station'),
+    LeaveTrack = require('../models/leave-tracker'),
     User = require('../models/user'),
     Card = require('../models/card'),
     CardService = require('../services/card-service'),
@@ -17,6 +22,7 @@ var async = require('async'),
     RegEmployee = require('../models/registration-staff'),
     Operator = require('../models/operator'),
     AccountStaff = require('../models/accounts-admin'),
+    DockingStation = require('../models/dock-station'),
     Monitorgrp = require('../models/monitor-group'),
     HoldingareaStaff = require('../models/holdingarea-staff'),
     RedistributionEmployee =require('../models/redistribution-staff'),
@@ -38,6 +44,8 @@ exports.createEmployee=function (record,id,callback) {
     var filesArray = [];
     var filesArrayToWrite = [];
     var password;
+    var ResetKey;
+    var IPs = [];
     async.series([
         function (callback) {
 
@@ -45,13 +53,13 @@ exports.createEmployee=function (record,id,callback) {
                 password = record.password;
                 return callback(null, null);
             } else {
-                random.strings({"length": 6, "number": 1, "upper": true, "digits": true}, function (err, data) {
+                random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
 
                     if (err) {
                         return callback(err, null);
                     }
-
-                    password = data;
+                    password=data;
+                    ResetKey = data;
                     return callback(null, data);
                 });
             }
@@ -212,6 +220,30 @@ exports.createEmployee=function (record,id,callback) {
             }
 
         },
+        function (callback) {
+            Station.find({stationType:'dock-station'},function (err,result) {
+                if(err)
+                {
+                    console.log('Error fetching station');
+                }
+                if(result.length>0)
+                {
+                    for(var i=0;i<result.length;i++)
+                    {
+                        IPs.push(result[i].ipAddress);
+                        if(i==result.length-1)
+                        {
+                            return callback(null,result);
+                        }
+                    }
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+            });
+
+        },
 
         function (callback) {
 
@@ -243,7 +275,9 @@ exports.createEmployee=function (record,id,callback) {
                     result.picture = record.profilePic;
                 }
                 result.documents = docArray;
-
+                result.unsuccessIp=IPs;
+                result.resetPasswordKey = ResetKey;
+                result.resetPasswordKeyValidity = moment().add(2,'hours');
                 User.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
 
                     if (err) {
@@ -260,7 +294,8 @@ exports.createEmployee=function (record,id,callback) {
 
             var data = {
                 profileName: memberDetails.Name,
-                password: password
+                //password: password
+                link: config.get('pbsMemberPortal.resetUrl')+ResetKey
             };
 
             var htmlString = swig.renderFile('./templates/member-registered.html', data);
@@ -402,7 +437,7 @@ exports.updateEmployee = function (record,callback) {
 
             if(record._type=='maintenancecentre-employee')
             {
-                MaintenanceEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                MaintenanceEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -413,7 +448,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='registration-employee') {
-                RegEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                RegEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -424,7 +459,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='redistribution-employee') {
-                RedistributionEmployee.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                RedistributionEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -435,7 +470,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Operator') {
-                Operator.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                Operator.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -446,7 +481,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Monitor-group') {
-                Monitorgrp.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                Monitorgrp.update({_id:record._id}, record, {new: true}).lean().exec( function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -457,7 +492,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Accounts-admin') {
-                AccountStaff.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                AccountStaff.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -468,7 +503,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Holdingarea-employee') {
-                HoldingareaStaff.findByIdAndUpdate(record._id, record, {new: true}, function (err, result) {
+                HoldingareaStaff.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -567,7 +602,40 @@ exports.addCard = function (memberId, cardNumber, callback) {
             // Step 3: Method to update member card details
             function (callback) {
 
-                User.findByIdAndUpdate(memberId, {
+                User.findOne({'_id':memberId},function (err,result) {
+                    if(err)
+                    {
+                        return console.error('Error : '+err);
+                    }
+
+
+                DockingStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
+                    if(err)
+                    {
+                        return console.error('Error : '+err);
+                    }
+                    result.unsuccessIp=[];
+                    for(var i=0;i<ds.length;i++)
+                    {
+                        result.unsuccessIp.push(ds[i].ipAddress);
+                    }
+                    //result.unsuccessIp = ds;
+                    result.successIp=[];
+                    result.updateCount=0;
+                    result.cardNum=cardObject.cardNumber;
+                    result.smartCardId = cardObject._id;
+                    result.smartCardNumber = cardObject.cardRFID;
+                    User.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                        if (err)
+                        {
+                            return console.error('Error : '+err);
+                        }
+                        memberObject = result;
+                        return callback(null, result);
+                    });
+                });
+
+/*                User.findByIdAndUpdate(memberId, {
                     $set: {
                         'cardNum':cardObject.cardNumber,
                         'smartCardId': cardObject._id,
@@ -581,8 +649,8 @@ exports.addCard = function (memberId, cardNumber, callback) {
 
                     memberObject = result;
                     return callback(null, result);
+                });*/
                 });
-
             }
 
         ],
@@ -597,5 +665,84 @@ exports.addCard = function (memberId, cardNumber, callback) {
 
         }
     );
+
+};
+
+exports.addLeaveDetails = function (record,callback) {
+
+    var leave;
+    async.series([
+        function (callback) {
+            LeaveTrack.create(record,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                leave=result;
+                    return callback(null,result);
+            });
+        },
+        function (callback) {
+            User.findOne({'_id':record.empid},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                var l = {
+                    leavetrackId:leave._id
+                };
+                result.leavetrackIds.push(l);
+                    User.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });
+
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,leave);
+    })
+};
+
+exports.getOneEmployeeLeaveInfo = function (id,callback) {
+
+    var leave;
+    var allleaves;
+    async.series([
+        function (callback) {
+            LeaveTrack.findOne({'_id':id},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                leave = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            LeaveTrack.find({'empid':leave.empid}).deepPopulate('empid createdBy').sort('-createdDate').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                allleaves = result;
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allleaves);
+    });
+
 
 };

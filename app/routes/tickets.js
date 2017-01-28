@@ -71,11 +71,29 @@ router
 
     })
 
+    .post('/:id/addreply', function (req, res, next) {
+
+        TicketService.addReply(req.params.id,req.body,function (err,result){
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
     .put('/:id', function (req, res, next) {
 
         var existingRecord = req.body;
 
-        Ticket.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+        TicketService.ticketUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
 
             if (err) {
 

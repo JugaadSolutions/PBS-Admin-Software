@@ -2,6 +2,19 @@
  * Created by root on 4/10/16.
  */
 
+exports.TicketChannel = {
+    WEBSITE:1,
+    MOBILEAPP:2,
+    HELPDESK:3,
+    REGISTRATIONCENTRE:4
+};
+
+exports.TicketStatus = {
+    OPEN:'Open',
+    CLOSED:'Close',
+    HOLD:'Hold'
+};
+
 exports.EmployeeStatus={
     ACTIVE:1,
     INACTIVE:0,
@@ -15,7 +28,8 @@ exports.StationType={
 
 exports.EmployeeShift={
     MORNING:1,
-    AFTERNOON:2
+    AFTERNOON:2,
+    REGULAR:3
 };
 
 exports.PayDescription={
@@ -47,7 +61,7 @@ exports.PayMode={
 };
 
 exports.Loc={
-    REG_CENTRE:"Registration Centre",
+    REG_CENTRE:"Other Location",
     ONLINE:"Online"
 };
 

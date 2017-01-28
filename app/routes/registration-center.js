@@ -28,6 +28,19 @@ router
 
     })
 
+    .get('/:id',function (req,res,next) {
+        RegistrationCenter.find({_id:req.params.id,'stationType':'registration-center'}).deepPopulate('assignedTo').lean().exec(function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+        });
+
+    })
+
     .post('/', function (req, res, next) {
 
         RegistrationCenterService.createRC(req.body, function (err, result) {

@@ -31,7 +31,11 @@ var schema = {
 
     farePlan: {type: Schema.ObjectId, required: true, ref: "FarePlan"},
 
-    status: {type: MembershipStatus, required: true, default: MembershipStatus.ACTIVE}
+    status: {type: MembershipStatus, required: true, default: MembershipStatus.ACTIVE},
+    lastSyncedAt:{type:Date,required:false,default:Date.now},
+    updateCount:{type: Number, required: false,default:0},
+    unsuccessIp:{type:[String],required:false,default:[]},
+    successIp:{type:[String],required:false,default:[]}
 };
 
 var model = new Schema(schema);

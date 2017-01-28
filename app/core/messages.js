@@ -41,6 +41,8 @@ module.exports={
     NO_PORT_FOUND: "No docking port found!",
     NO_CARD_FOUND:"No card found for this ID",
     NO_USER_EXISTS_WITH_THIS_INFO:"No user exists with this information",
+
+    PASSWORD_RESET_REQUEST:"Your password reset request",
     PASSWORD_CANNOT_BE_EMPTY:"Password Cannot be empty",
     PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD: "Please enter the correct current password",
 
@@ -63,5 +65,5 @@ module.exports={
     VEHICLE_CHECKIN_NOT_CREATED:"Vehicle checkin not done, it is with the port",
 
     YOUR_PAYMENT_HAS_BEEN_SUCCESSFULLY_PROCESSED: "Your payment has been successfully processed",
-    YOUR_PASSWORD_HAS_BEEN_RESET_SUCCESSFULLY:"Your Password has been reset successfully, Please check your mail"
+    YOUR_PASSWORD_HAS_BEEN_RESET_SUCCESSFULLY:"Your Password has been reset successfully"
 };

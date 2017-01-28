@@ -28,7 +28,7 @@ exports.checkoutApp=function (record,callback) {
 
     async.series([
         function (callback) {
-            User.findOne({'cardNum':record.cardId},function (err,result) {
+            User.findOne({$or: [{'cardNum':record.cardId}, {'smartCardNumber': record.cardId}]},function (err,result) {
                 if(err)
                 {
                     errorstatus=1;
@@ -50,7 +50,8 @@ exports.checkoutApp=function (record,callback) {
         }
         ,
         function (callback) {
-            vehicle.findOne({'vehicleNumber':record.vehicleId},function (err,result) {
+            //console.log('Vehicle nums : '+record.vehicleId);
+            vehicle.findOne({$or: [{'vehicleNumber':record.vehicleId}, {'vehicleRFID': record.vehicleId}]},function (err,result) {
                 if(err)
                 {
                     errorstatus=1;

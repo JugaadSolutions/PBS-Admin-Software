@@ -7,8 +7,11 @@ require('./port');
 var mongoose = require('mongoose');
 //bcrypt = require('bcryptjs');
 //var extend = require('mongoose-schema-extend');
+
 var Schema = mongoose.Schema;
 var abstract = require('./abstract'),
+    uuid = require('node-uuid'),
+    DockStation = require('../models/dock-station'),
  autoIncrement = require('mongoose-auto-increment'),
     Constants = require('../core/constants');
 
@@ -34,7 +37,13 @@ var VehicleSchema = mongoose.Schema({
     vehicleStatus:{type:status,required:true,default:status.OPERATIONAL},
     vehicleCurrentStatus:{type:currentStatus,required:true,default:currentStatus.WITH_PORT},
     /*currentAssociationId:{type:[AssociationIds], required:false,default:[]}*/
-    currentAssociationId:{type:Schema.ObjectId, required:false}
+    currentAssociationId:{type:Schema.ObjectId, required:false},
+    updateCount:{type: Number, required: false,default:0},
+    unsyncedIp:{type:[String],required:false,default:[]},
+    syncedIp:{type:[String],required:false,default:[]},
+    lastModifieddate:{type:Date,required:true,default:Date.now},
+    lastSyncedAt:{type:Date,required:false,default:Date.now},
+    createdAt:{type:Date,required:true,default:Date.now}
 
 }, { collection : 'vehicles'});
 
@@ -44,6 +53,41 @@ var Vehicle = mongoose.model('vehicle', VehicleSchema);
 VehicleSchema.plugin(abstract);
 
 VehicleSchema.plugin(autoIncrement.plugin,{model:Vehicle,field:'vehicleUid',startAt: 1, incrementBy: 1});
+
+Vehicle.schema.pre('update',function (next) {
+    var Vehicle = this;
+    var IPs=[];
+    /*    Syncronizer.updatesync(User,function (err,result) {
+     if(err)
+     {
+     next();
+     }
+     console.log('User synced');
+     next();
+     });*/
+
+    DockStation.find({'stationType':'dock-station'},function (err,result) {
+        if(err)
+        {
+            console.error(err);
+            next(err);
+        }
+        for(var i=0;i<result.length;i++)
+        {
+            IPs.push(result[i].ipAddress);
+        }
+        console.log(IPs.toString());
+        /*        User.unsuccessIp=IPs;
+         User.updateCount=0;
+         User.successIp=[];*/
+        var lastModifieddate = new Date();
+        Vehicle.findOneAndUpdate({}, { $set: { unsyncedIp: IPs ,updateCount:0,syncedIp:[],lastModifiedAt:lastModifieddate} });
+        next();
+    });
+    console.log('Update Vehicle ');
+    //this.Name = 'TEST1234';
+    next();
+});
 
 module.exports = Vehicle;
 

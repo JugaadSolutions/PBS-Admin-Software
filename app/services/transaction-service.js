@@ -12,6 +12,7 @@ var async = require('async'),
     Member = require('../models/member'),
     kpiservice = require('../services/kpi-dockstation-service'),
     DockPort=require('../models/dock-port'),
+    DockStation = require('../models/dock-station'),
     Port = require('../models/port'),
 MemberTransaction = require('../models/transaction');
  var fleet = require('../models/fleet');
@@ -633,11 +634,26 @@ exports.timelyCheckout = function (callback) {
                                 vehicleUid: vehiclesDetails.vehicleUid
                             };
                             result.vehicleId.push(vehicleDetails);
-                            User.findByIdAndUpdate(result._id,result,function (err,result) {
-                                if (err)
+                            result.lastModifiedAt=new Date();
+                            DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
+                                if(err)
                                 {
                                     return console.error('Error : '+err);
                                 }
+                                result.unsuccessIp=[];
+                                for(var i=0;i<ds.length;i++)
+                                {
+                                    result.unsuccessIp.push(ds[i].ipAddress);
+                                }
+                                //result.unsuccessIp = ds;
+                                result.successIp=[];
+                                result.updateCount=0;
+                                User.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                                    if (err)
+                                    {
+                                        return console.error('Error : '+err);
+                                    }
+                                });
                             });
                         }
                     });
@@ -948,10 +964,26 @@ exports.timelyCheckin = function (callback) {
                                             }
 
                                         }
-                                        User.findByIdAndUpdate(result._id, result, function (err, result) {
-                                            if (err) {
-                                                return console.error('Error : ' + err);
+                                        DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
+                                            if(err)
+                                            {
+                                                return console.error('Error : '+err);
                                             }
+                                            result.lastModifiedAt=new Date();
+                                            result.unsuccessIp=[];
+                                            for(var i=0;i<ds.length;i++)
+                                            {
+                                                result.unsuccessIp.push(ds[i].ipAddress);
+                                            }
+                                            //result.unsuccessIp = ds;
+                                            result.successIp=[];
+                                            result.updateCount=0;
+                                            User.update({_id:result._id},result,{new:true}).lean().exec(function (err,result) {
+                                                if (err)
+                                                {
+                                                    return console.error('Error : '+err);
+                                                }
+                                            });
                                         });
                                     }
                                 });

@@ -4,7 +4,7 @@ var express = require('express');
 // Application Level Dependencies
 var FarePlan = require('../models/fare-plan'),
 
-    //FarePlanService = require('../services/fare-plan-service'),
+    FarePlanService = require('../services/fare-plan-service'),
 
     RequestDataHandler = require('../handlers/request-data-handler'),
     Messages = require('../core/messages');
@@ -54,7 +54,7 @@ router
 
     .post('/', function (req, res, next) {
 
-       FarePlan.create(req.body,function(err,result){
+        FarePlanService.createFareplan(req.body,function(err,result){
 
             if (err) {
 
@@ -75,7 +75,7 @@ router
 
         var existingRecord = req.body;
 
-        FarePlan.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+        FarePlanService.updateFareplan(req.params.id, existingRecord, function (err, result) {
 
             if (err) {
 

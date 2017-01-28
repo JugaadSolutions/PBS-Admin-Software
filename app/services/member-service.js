@@ -5,6 +5,8 @@ var Member = require('../models/member'),
     random = require("node-random"),
     swig = require('swig'),
     async=require('async'),
+    config = require('config'),
+    moment = require('moment'),
     MembershipService=require('../services/membership-service'),
     PaymentTransaction=require('../services/payment-transaction'),
     CardService = require('../services/card-service'),
@@ -16,6 +18,7 @@ var Member = require('../models/member'),
     Payments = require('../models/payment-transactions'),
     RegCenter = require('../models/registration-center'),
     Card = require('../models/card'),
+    Station = require('../models/station'),
     //CardService = require('../services/card-service'),
     User=require('../models/user');
 
@@ -34,8 +37,10 @@ exports.createMember=function (record,callback) {
     var filesArray = [];
     var filesArrayToWrite = [];
     var password;
+    var ResetKey;
+    var passwordFlag = 0;
  async.series([
-     function (callback) {
+/*     function (callback) {
 
          if (record.password) {
              password = record.password;
@@ -52,7 +57,28 @@ exports.createMember=function (record,callback) {
              });
          }
 
-     },
+     }*/
+     function (callback) {
+
+         if (record.password) {
+             password = record.password;
+             record.emailVerified=true;
+             passwordFlag = 1;
+             return callback(null, null);
+         } else {
+             random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
+
+                 if (err) {
+                     return callback(err, null);
+                 }
+                 password=data.split('').reverse().join('');
+                 ResetKey = data;
+                 return callback(null, data);
+             });
+         }
+
+     }
+    ,
      function (callback) {
          documents = record.documents;
          record.documents = [];
@@ -170,9 +196,11 @@ exports.createMember=function (record,callback) {
                  result.picture = record.profilePic;
              }
              result.documents = docArray;
+             result.resetPasswordKey = ResetKey;
+             result.resetPasswordKeyValidity = moment().add(2,'hours');
 
-             Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
-
+             //Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+             Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                  if (err) {
                      return callback(err, null);
                  }
@@ -185,24 +213,80 @@ exports.createMember=function (record,callback) {
      },
      function (callback) {
 
-         var data = {
-             profileName: memberDetails.Name,
-             password: password
-         };
+         if(memberDetails.email!=null && memberDetails.email!='' && memberDetails.email!='undefined')
+         {
+             if(passwordFlag==1)
+             {
+                 var data = {
+                     profileName: memberDetails.Name,
+                     //password: password,
+                     link: config.get('pbsMemberPortal.url')
+                 };
 
-         var htmlString = swig.renderFile('./templates/member-registered.html', data);
+                 var htmlString = swig.renderFile('./templates/member-registered-with-password.html', data);
 
-         var emailMessage = {
-             "subject": Messages.SIGN_UP_SUCCESSFUL,
-             "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
-             "html": htmlString,
-             "to": [memberDetails.email]
-         };
+                 var emailMessage = {
+                     "subject": Messages.SIGN_UP_SUCCESSFUL,
+                     "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+                     "html": htmlString,
+                     "to": [memberDetails.email]
+                 };
 
-         EmailNotificationHandler.sendMail(emailMessage);
+                 EmailNotificationHandler.sendMail(emailMessage);
+             }
+             else
+             {
+                 var data = {
+                     profileName: memberDetails.Name,
+                     //password: password,
+                     link: config.get('pbsMemberPortal.resetUrl')+ResetKey
+                 };
 
-         return callback(null, null);
-     }
+                 var htmlString = swig.renderFile('./templates/member-registered.html', data);
+
+                 var emailMessage = {
+                     "subject": Messages.SIGN_UP_SUCCESSFUL,
+                     "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+                     "html": htmlString,
+                     "to": [memberDetails.email]
+                 };
+
+                 EmailNotificationHandler.sendMail(emailMessage);
+             }
+
+             return callback(null, null);
+         }
+         else
+         {
+             return callback(null,null);
+         }
+
+     }/*,
+     function (callback) {
+         Station.find({stationType:'dock-station'},function (err,result) {
+             if(err)
+             {
+                 console.log('Error fetching station');
+             }
+             if(result.length>0)
+             {
+                 for(var i=0;i<result.length;i++)
+                 {
+                    memberDetails.unsuccessIp.push(result[i].ipAddress);
+                 }
+                 Member.findByIdAndUpdate(memberDetails._id, memberDetails, {new: true}, function (err, result) {
+                 //Member.update({_id:memberDetails._id}, memberDetails, {new: true}).lean().exec(function (err, result) {
+                     if (err) {
+                         return callback(err, null);
+                     }
+
+                     memberDetails = result;
+                     return callback(null, result);
+                 });
+             }
+         });
+
+     }*/
 
 
  ],function (err,result) {
@@ -328,7 +412,7 @@ exports.updateMember = function (record,callback) {
                 }
                 //result.documents = docArray;
 
-                Member.findByIdAndUpdate(record._id, record, {new: true}).lean().exec(function (err, result) {
+                Member.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -453,7 +537,7 @@ exports.assignMembership=function (memberId, membershipId,callback) {
 
 };
 
-exports.addCard = function (memberId, cardNumber, membershipId, callback) {
+exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callback) {
 
     var cardObject;
     var memberObject;
@@ -515,6 +599,8 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
                     result.assignedTo = memberId;
                     result.assignedToName = memberName;
                     result.balance= (balance>0)?balance:0;
+                    result.issuedBy=createdBy;
+                    result.issuedDate = new Date();
 
                     Card.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
 
@@ -543,22 +629,32 @@ exports.addCard = function (memberId, cardNumber, membershipId, callback) {
             ,
             // Step 3: Method to update member card details
             function (callback) {
-
-                Member.findByIdAndUpdate(memberId, {
-                    $set: {
-                        'validity': validity,
-                        'cardNum':cardObject.cardNumber,
-                        'smartCardId': cardObject._id,
-                        'smartCardNumber': cardObject.cardRFID
+                Member.findOne({'_id':memberId},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
                     }
-                }, {new: true}, function (err, result) {
+                    result.validity=validity;
+                    result.cardNum = cardObject.cardNumber;
+                    result.smartCardId=cardObject._id;
+                    result.smartCardNumber=cardObject.cardRFID;
+                    Member.update({_id:result._id}, result/*{
+                                            $set: {
+                         'validity': validity,
+                         'cardNum':cardObject.cardNumber,
+                         'smartCardId': cardObject._id,
+                         'smartCardNumber': cardObject.cardRFID
+                         }
+                    }*/, {new: true}).lean().exec(function (err, result) {
 
-                    if (err) {
-                        return callback(err, null);
-                    }
+                        if (err) {
+                            return callback(err, null);
+                        }
 
-                    memberObject = result;
-                    return callback(null, result);
+                        memberObject = result;
+                        return callback(null, result);
+                    });
+
                 });
 
             }
@@ -768,12 +864,11 @@ exports.debitMember = function (id, record, callback) {
                     result.creditBalance=Number(result.creditBalance- record.debit);
                     result.comments = record.comments;
 
-                    Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
-
+                   // Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                    Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                         if (err) {
                             return callback(err, null);
                         }
-
                         memberObject = result;
                         return callback(null, result);
                     })
@@ -921,7 +1016,7 @@ exports.cancelMembership = function (memberId,record,callback) {
     var smartCardId;
     async.series([
         function (callback) {
-          User.findOne({'_id':memberId},function (err,result) {
+          Member.findOne({'_id':memberId},function (err,result) {
               if(err)
               {
                   return callback(err,null);
@@ -1102,14 +1197,20 @@ exports.cancelMembership = function (memberId,record,callback) {
                     if (err) {
                         return callback(err, null);
                     }
-                    memberObject = result;
+
                     var len = finalTransaction.length-1;
-                    Member.findByIdAndUpdate(memberId,{$set:{'status':Constants.MemberStatus.CANCELLED,'creditBalance':finalTransaction[len].balance,'securityDeposit':memberObject.securityDeposit,'processingFeesDeducted':false}},{new:true},function (err,result) {
+                    // Member.findByIdAndUpdate(memberId,{$set:{'status':Constants.MemberStatus.CANCELLED,'creditBalance':finalTransaction[len].balance,'securityDeposit':memberObject.securityDeposit,'processingFeesDeducted':false}},{new:true},function (err,result) {
+                    result.status=Constants.MemberStatus.CANCELLED;
+                    result.creditBalance = finalTransaction[len].balance;
+                    result.securityDeposit = memberObject.securityDeposit;
+                    result.processingFeesDeducted=false;
+                    memberObject = result;
+                        Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                         if(err)
                         {
                             return callback(err, null);
                         }
-                        memberObject = result;
+                       // memberObject = result;
                         return callback(null, result);
                     });
 
@@ -1181,19 +1282,54 @@ exports.cancelMembership = function (memberId,record,callback) {
 
 exports.suspendMembership = function (memberId,record,callback) {
 
-    Member.findByIdAndUpdate(memberId, {
-        $set: {
-            //'validity': validity,
-            'comments': record.comments,
-            'status':Constants.MemberStatus.SUSPENDED
+    Member.findOne({_id:memberId},function (err,memObj) {
+        if(err)
+        {
+            return callback(err,null);
         }
-    },{new:true}, function (err, result) {
+        memObj.comments = record.comments;
+        memObj.status = Constants.MemberStatus.SUSPENDED;
 
-        if (err) {
-            return callback(err, null);
-        }
-        return callback(null, result);
+/*        Member.findByIdAndUpdate(memberId, {
+            $set: {
+                //'validity': validity,
+                'comments': record.comments,
+                'status':Constants.MemberStatus.SUSPENDED
+            }
+        },{new:true}, function (err, result) {*/
+        Member.update({_id:memObj._id}, memObj, {new: true}).lean().exec(function (err, result) {
+            if (err) {
+                return callback(err, null);
+            }
+            return callback(null, memObj);
 
+        });
     });
+
+};
+
+exports.searchMember = function (record,callback) {
+    var findMem = record.name;
+    if(findMem)
+    {
+        if(findMem!='')
+        {
+            Member.find({$or: [{Name: new RegExp(findMem, 'i')}, {email: new RegExp(findMem, 'i')},{address:new RegExp(findMem, 'i')}],_type:'member'},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+        else
+        {
+            return callback(new Error('No text found to search'),null);
+        }
+    }
+    else
+    {
+        return callback(new Error('No text found to search'),null);
+    }
 
 };

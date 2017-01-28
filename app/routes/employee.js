@@ -3,6 +3,7 @@ var express = require('express'),
     RequestDataHandler = require('../handlers/request-data-handler'),
     EmployeeService = require('../services/employee-service'),
     User = require('../models/user'),
+    LeaveTrack = require('../models/leave-tracker'),
     Messages = require('../core/messages');
 var router = express.Router();
 
@@ -93,6 +94,81 @@ router
 
          Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
         User.find({'_type':'maintenancecentre-employee'}).lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+    .get('/rvstaff/emp', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_type':'redistribution-employee'}).lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+
+    .get('/leave/emp', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        LeaveTrack.find({}).deepPopulate('empid createdBy').lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .get('/:id/leave', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        EmployeeService.getOneEmployeeLeaveInfo(req.params.id,function (err, result) {
             if (err) {
 
                 next(err, req, res, next);
@@ -210,6 +286,24 @@ router
     .post('/:id/assigncard', function (req, res, next) {
 
         EmployeeService.addCard(req.params.id, req.body.cardNumber, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .post('/leave', function (req, res, next) {
+
+        EmployeeService.addLeaveDetails(req.body, function (err, result) {
 
             if (err) {
 

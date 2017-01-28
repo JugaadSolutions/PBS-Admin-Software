@@ -20,5 +20,4 @@ var MemberSchema = require('mongoose').model('user').schema.extend({
 
 var Member = mongoose.model('member', MemberSchema);
 
-
 module.exports=Member;

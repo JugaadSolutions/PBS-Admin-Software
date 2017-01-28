@@ -101,6 +101,20 @@ router
         });
     })
 
+    .post('/search', function (req, res, next) {
+        MemberService.searchMember(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
+
     .post('/:id/assignmembership', function (req, res, next) {
 
         MemberService.assignMembership(req.params.id, req.body.membershipId, function (err, result) {
@@ -126,7 +140,7 @@ router
 
     .post('/:id/assigncard', function (req, res, next) {
 
-        MemberService.addCard(req.params.id, req.body.cardNumber, req.body.membershipId, function (err, result) {
+        MemberService.addCard(req.params.id, req.body.cardNumber, req.body.membershipId,req.body.createdBy,function (err, result) {
 
             if (err) {
 

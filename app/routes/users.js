@@ -72,6 +72,29 @@ router
 
     })
 
+    .put('/resetpassword', function (req, res, next) {
+
+        UserService.resetPassword(req.body, function (err) {
+
+            if (err) {
+
+                next(err);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.YOUR_PASSWORD_HAS_BEEN_RESET_SUCCESSFULLY,
+                    description: null,
+                    data: true
+                });
+
+            }
+
+        });
+
+    })
+
 
 ;
 

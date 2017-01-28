@@ -6,6 +6,7 @@ var async = require('async'),
     User = require('../models/user'),
     Member = require('../models/member'),
     DockPort=require('../models/dock-port'),
+    DockStation = require('../models/dock-station'),
     Messages = require('../core/messages'),
     Port = require('../models/port');
     Membership = require('../models/membership');
@@ -374,7 +375,14 @@ var checkinDetails;
                                             userdetails.securityDeposit=userdetails.securityDeposit+balance;
                                             balance = 0;
                                         }*/
-                                        Member.findByIdAndUpdate(result.user,{$set: {'creditBalance': balance/*,'securityDeposit':userdetails.securityDeposit,'comments':userdetails.comments*/}}, {new: true},function (err, updatedUser) {
+                                        Member.findOne({'_id':result.user},function (err,memDetails) {
+                                            if(err)
+                                            {
+                                                return console.log('Error finding member '+err);
+                                            }
+                                            memDetails.creditBalance = balance;
+                                            memDetails.vehicleId = [];
+                                        Member.update({_id:memDetails._id},memDetails, {new: true}).lean().exec(function (err, updatedUser) {
                                             if (err) {
                                                 return console.error('Error '+err);
                                             }
@@ -416,10 +424,72 @@ var checkinDetails;
                                             });
 
                                         });
+                                        });
                                         //creditUsed = result;
                                         //return callback(null, result);
                                     });
                                     });
+                                }
+                                else
+                                {
+                                    if (userdetails.vehicleId.length > 0) {
+                                        for (var i = 0; i < result.vehicleId.length; i++) {
+                                            if (userdetails.vehicleId[i].vehicleid.equals(checkinDetail.vehicleId)) {
+                                                userdetails.vehicleId.splice(i, 1);
+                                                User.findByIdAndUpdate(userdetails._id,userdetails,function (err,result) {
+                                                    if(err)
+                                                    {
+                                                        return console.error('Error '+err);
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    }
+
+                                    var checkInTime = moment(checkinDetail.checkInTime);
+                                    var checkOutTime = moment(result.checkOutTime);
+
+                                    var durationMin = moment.duration(checkInTime.diff(checkOutTime));
+                                    var duration = durationMin.asMinutes();
+
+                                    /*User.*/
+                                    var transactionAssoc = {
+                                        checkInEntry: checkinDetail._id,
+                                        checkOutEntry: result._id
+                                    };
+                                    TransactionAssociation.create(transactionAssoc, function (err, transAssociation) {
+                                        if (err) {
+                                            return console.error('Error '+err);
+                                        }
+                                        CheckIn.findByIdAndUpdate(checkinDetail._id, {$set: {'status': 'Close'}}, {new: true}, function (err, cin) {
+                                            if (err) {
+                                                return console.error('Error '+err);
+                                            }
+                                        });
+                                        CheckOut.findByIdAndUpdate(result._id, {$set: {'status': 'Close'}}, {new: true}, function (err, cout) {
+                                            if (err) {
+                                                return console.error('Error '+err);
+                                            }
+                                        });
+                                        var transaction = {
+                                            user: result.user,
+                                            vehicle: result.vehicleId,
+                                            fromPort: result.fromPort,
+                                            toPort: checkinDetail.toPort,
+                                            checkOutTime: result.checkOutTime,
+                                            checkInTime: checkinDetail.checkInTime,
+                                            duration: duration,
+                                            creditsUsed: 0,
+                                            creditBalance: 0,
+                                            status: 'Close'
+                                        };
+                                        Transaction.create(transaction, function (err, trans) {
+                                            if (err) {
+                                                return console.error('Error '+err);
+                                            }
+                                        });
+                                    });
+
                                 }
                             });
                         }

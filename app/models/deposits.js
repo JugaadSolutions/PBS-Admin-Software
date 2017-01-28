@@ -9,19 +9,21 @@ var abstract = require('./abstract'),
     autoIncrement = require('mongoose-auto-increment'),
     Constants = require('../core/constants');
 
+const Loc=Constants.Loc;
 
 var DepositSchema = mongoose.Schema({
     depositUid: Number,
-    cashCollectionDate:{type:Date,required:false},
-    regCentreName:{type:String,required:false},
-    depositDate:{type:Date,required:false},
+    cashCollectionDate:{type:Date,required:true,default:Date.now()},
+    location:{type:Loc,required:true,default:Loc.REG_CENTRE},
+    //regCentreName:{type:String,required:false},
+    depositDate:{type:Date,required:true, default:Date.now()},
     amount:{type:Number,required:true},
-    bankName:{type:String,required:false},
-    branch:{type:String,required:false},
+    bankName:{type:String,required:true},
+    branch:{type:String,required:true},
     transactionId:{type:String,required:false},
     remarks:{type:String,required:false},
-    depositedBy:{type:String,required:false},
-    createdBy:{type:String,required:false}
+    depositedBy:{type:String,required:true},
+    createdBy:{type:Schema.ObjectId,required:true}
 }, { collection : 'deposits'});
 
 

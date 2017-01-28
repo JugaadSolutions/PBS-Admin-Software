@@ -54,7 +54,7 @@ router
 
     })
 
-    .get('/cleanstation',function (req,res,next) {
+    .get('/cleanstation/info',function (req,res,next) {
         DockingStationService.getCleanedstatrec(function (err,result) {
             if(err)
             {
@@ -101,6 +101,7 @@ router
 
         });
     })
+
 
     .put('/:id', function (req, res, next) {
 

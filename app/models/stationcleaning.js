@@ -14,6 +14,7 @@ var StationCleanSchema = mongoose.Schema({
     totime:{type:Date,required:true},
     empId:{type:Schema.ObjectId,required:true,ref:'user'},
     description:{type:String,required:false},
+    cleanCount:{type:Number,required:false,default:1},
     createdBy:{type:Schema.ObjectId,required:false,ref:'user'}
 }, { collection : 'stationsclean'});
 

@@ -4,7 +4,7 @@ var express = require('express');
 // Application Level Dependencies
 var Membership = require('../models/membership'),
 
-    //MembershipService = require('../services/membership-service'),
+    MembershipService = require('../services/membership-service'),
 
     RequestDataHandler = require('../handlers/request-data-handler'),
     Messages = require('../core/messages');
@@ -54,7 +54,7 @@ router
 
     .post('/', function (req, res, next) {
 
-    Membership.create(req.body,function (err,result){
+        MembershipService.createMembership(req.body,function (err,result){
 
             if (err) {
 
@@ -74,7 +74,7 @@ router
 
         var existingRecord = req.body;
 
-        Membership.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+        MembershipService.updateMembership(req.params.id, existingRecord, function (err, result) {
 
             if (err) {
 

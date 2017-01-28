@@ -4,6 +4,9 @@
 
 var checkinAndCheckout = require('../app/services/transaction-service');
 var TransactionReconciliation = require('../app/services/transaction-reconciliation');
+var HourlyReport = require('../app/services/kpi-hourlyreport');
+var VehicleReport = require('../app/services/kpi-vehicle-service');
+var moment = require('moment');
 /*
 setInterval(function () {
     console.log('Timeout');
@@ -57,3 +60,59 @@ setInterval(function () {
         TransactionReconciliation.ReconcileTransaction();
     });
 },3000);
+
+setInterval(function () {
+//setTimeout(function () {
+    //console.log('Timeout');
+    HourlyReport.createReport(function (err,result) {
+        if(err)
+        {
+            console.log('Error');
+            return;
+        }
+        //console.log('checkin');
+        /*if(result) {
+         console.log(result);
+         }*/
+    });
+//},5000);
+},3600000);
+
+
+
+var endDate = new Date();
+endDate.setHours(6);
+endDate.setMinutes(0);
+endDate.setSeconds(0);
+endDate.setMilliseconds(0);
+
+var sDate = moment();
+var eDate = moment(endDate).add(1,'days');
+var t = moment.duration(eDate.diff(sDate));
+var dur = t.asMilliseconds();
+//setInterval(function () {
+setTimeout(function () {
+/*    VehicleReport.createVehicleReport(function (err,result) {
+        if(err)
+        {
+            console.log('Error');
+            return;
+        }
+    });*/
+    intervalSetter();
+},dur);
+//},86400000);
+function intervalSetter() {
+    setInterval(function () {
+    //setTimeout(function () {
+            VehicleReport.createVehicleReport(function (err,result) {
+         if(err)
+         {
+         console.log('Error');
+         //return;
+         }
+         });
+  //  },dur);
+},86400000);
+
+}

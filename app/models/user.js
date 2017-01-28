@@ -1,11 +1,19 @@
 require('./index');
+
 var mongoose = require('mongoose'),
+     crypto = require('crypto'),
     bcrypt = require('bcryptjs');
-//var extend = require('mongoose-schema-extend');
+var extend = require('mongoose-schema-extend');
 var Schema = mongoose.Schema;
+var Stations = require('./station');
+var DockingStation = require('./dock-station');
 var abstract = require('./abstract'),
     Constants = require('../core/constants'),
     //Messages = require('../core/messages'),
+    stat =
+
+   DockStation = require('../models/dock-station'),
+    Syncronizer = require('../services/updatesync'),
     ValidationHandler = require('../handlers/validation-handler');
 var autoIncrement = require('mongoose-auto-increment');
 
@@ -14,6 +22,10 @@ const ProofType = Constants.ProofType;
 
 const Track = {
     trackId:{type:Schema.ObjectId,required:false}
+};
+
+const leaveTrack={
+    leavetrackId:{type:Schema.ObjectId,required:false,ref:'leavetracker'}
 };
 
 const shift=Constants.EmployeeShift;
@@ -43,7 +55,7 @@ var UserSchema = mongoose.Schema({
     lastName: {type: String, required: false},
     fatherName: {type: String, required: false},
     email: {type: String, required: false, validate: [ValidationHandler.validateEmail, 'Invalid email']},
-    emailVerified: {type: Boolean, required: false, default: true},
+    emailVerified: {type: Boolean, required: false, default: false},
     password: {type: String, required: false},
     phoneNumber: {type: String, required: false},
     age: {type: Number, required: false, min: 5, max: 100},
@@ -67,7 +79,15 @@ var UserSchema = mongoose.Schema({
     documents: {type: [Document], required: false},
     comments:{type: String, required: false},
     trackIds:{type:[Track],required:false},
-    shifts:{type:shift,requires:false}
+    leavetrackIds:{type:[leaveTrack],required:false},
+    shifts:{type:shift,requires:false,default:shift.REGULAR},
+    updateCount:{type: Number, required: false,default:0},
+    unsuccessIp:{type:[String],required:false,default:[]},
+    successIp:{type:[String],required:false,default:[]},
+    resetPasswordKey:{type:String,required:false},
+    resetPasswordKeyValidity:{type:Date,required:false},
+    createdBy:{type:Schema.ObjectId,required:false,ref:'user'},
+    lastSyncedAt:{type:Date,required:false,default:Date.now}
 
 }, { collection : 'users', discriminatorKey : '_type' });
 
@@ -78,20 +98,20 @@ UserSchema.plugin(abstract);
 
 UserSchema.plugin(autoIncrement.plugin,{model:User,field:'UserID',startAt: 1, incrementBy: 1});
 
+/*
 User.schema.pre('save', function (next) {
 
     var user = this;
 
-    if (this.isModified('password') || this.isNew) {
+    if (this.isNew) {
 
-        bcrypt.genSalt(10, function (err, salt) {
+/!*        bcrypt.genSalt(10, function (err, salt) {
 
             if (err) {
 
                 return next(err);
 
             }
-
             bcrypt.hash(user.password, salt, function (err, hash) {
 
                 if (err) {
@@ -105,20 +125,30 @@ User.schema.pre('save', function (next) {
 
             });
 
-        });
+        });*!/
+        var hash = crypto.createHash('md5').update(user.password).digest('hex');
+        user.password = hash;
+        next();
 
-    } else {
+    }
+/!*    else if(this.isModified('password'))
+    {
+        user.password = hash;
+        next();
+    }*!/
+    else {
 
         return next();
 
     }
 
 });
+*/
 
 // Model Methods
 User.schema.methods.comparePassword = function (passw, cb) {
 
-    bcrypt.compare(passw, this.password, function (err, isMatch) {
+/*    bcrypt.compare(passw, this.password, function (err, isMatch) {
 
         if (err) {
 
@@ -126,8 +156,54 @@ User.schema.methods.comparePassword = function (passw, cb) {
 
         }
         cb(null, isMatch);
-    });
+    });*/
+    var hash = crypto.createHash('md5').update(passw).digest('hex');
+    if(hash==this.password)
+    {
+        cb(null,true);
+    }
+    else
+    {
+        return cb(new Error("Password didn't match"));
+    }
+
 };
+
+
+User.schema.pre('update',function (next) {
+    var User = this;
+    var IPs=[];
+/*    Syncronizer.updatesync(User,function (err,result) {
+        if(err)
+        {
+            next();
+        }
+        console.log('User synced');
+        next();
+    });*/
+
+    DockingStation.find({'stationType':'dock-station'},function (err,result) {
+        if(err)
+        {
+            console.error(err);
+            next(err);
+        }
+        for(var i=0;i<result.length;i++)
+        {
+            IPs.push(result[i].ipAddress);
+        }
+        console.log(IPs.toString());
+/*        User.unsuccessIp=IPs;
+        User.updateCount=0;
+        User.successIp=[];*/
+        var lastModifieddate = new Date();
+        User.findOneAndUpdate({}, { $set: { unsuccessIp: IPs ,updateCount:0,successIp:[],lastModifiedAt:lastModifieddate} });
+        next();
+    });
+    console.log('Update User ');
+    //this.Name = 'TEST1234';
+    next();
+});
 
 
 module.exports = User;

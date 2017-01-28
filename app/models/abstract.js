@@ -15,21 +15,30 @@ module.exports = exports = function auditPlugin(schema, options) {
     schema.add({createdAt: Date});
     schema.add({description: String});
 
-    schema.plugin(uniqueValidator, {message: 'SOme string'});
+    schema.plugin(uniqueValidator, {message: 'Duplicate Entry'});
     schema.plugin(paginate);
     schema.plugin(deepPopulate);
 
     schema.pre('save', function (next) {
 
         if (this.isNew) {
-            this.createdAt = new Date;
+            this.createdAt = new Date();
         }
-        this.lastModifiedAt = new Date;
+        this.lastModifiedAt = new Date();
 
         next();
 
     });
+/*    schema.pre('update', function (next) {
 
+      /!*  if (this.isNew) {
+            this.createdAt = new Date();
+        }*!/
+        this.lastModifiedAt = new Date;
+        this.findOneAndUpdate({}, { $set: { unsuccessIp: IPs ,updateCount:0,successIp:[]} });
+        next();
+
+    });*/
     schema.set('toJSON', {
 
         transform: function (doc, ret, options) {

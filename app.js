@@ -1,6 +1,7 @@
 var express = require('express');
 var path = require('path');
 var favicon = require('serve-favicon');
+var helmet = require('helmet');
 var cors = require('cors');
 var compression = require('compression');
 //var logger = require('morgan');
@@ -17,7 +18,22 @@ var app = express();
 
 app.use(compression({}));
 app.use(cors());
-
+app.use(helmet());
+app.use(helmet.noCache());
+app.use(helmet.contentSecurityPolicy({
+    directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'"],
+        imgSrc: ["'self'"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"]
+    }
+}));
+app.disable('x-powered-by');
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -26,7 +42,7 @@ app.set('view engine', 'ejs');
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 //app.use(logger('dev'));
 app.use(bodyParser.json({limit: '50mb'}));
-app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 //app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', function (req, res, next) {

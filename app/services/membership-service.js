@@ -3,7 +3,7 @@ var async = require("async");
 // Application Level Dependencies
 var Membership = require('../models/membership'),
     Member = require('../models/member'),
-
+    Station = require('../models/station'),
     Messages = require('../core/messages');
 
 exports.calculateValidity = function (membershipId, memberId, callback) {
@@ -111,4 +111,106 @@ exports.calculateValidity = function (membershipId, memberId, callback) {
         }
     );
 
+};
+
+exports.createMembership = function (record,callback) {
+    var membershipDetails;
+   async.series([
+       function (callback) {
+           Membership.create(record,function (err,result) {
+               if(err)
+               {
+                   return callback(err,null);
+               }
+               membershipDetails=result;
+               return callback(null,result);
+           });
+       },
+       function (callback) {
+           Station.find({stationType:'dock-station'},function (err,result) {
+               if(err)
+               {
+                   console.log('Error fetching station');
+               }
+               if(result.length>0)
+               {
+                   for(var i=0;i<result.length;i++)
+                   {
+                       membershipDetails.unsuccessIp.push(result[i].ipAddress);
+                   }
+                   Membership.findByIdAndUpdate(membershipDetails._id, membershipDetails, {new: true}, function (err, result) {
+
+                       if (err) {
+                           return callback(err, null);
+                       }
+
+                       membershipDetails = result;
+                       return callback(null, result);
+                   });
+               }
+           });
+       }
+   ],function (err,result) {
+       if(err)
+       {
+           return callback(err,null);
+       }
+       return callback(null,membershipDetails);
+   });
+};
+
+exports.updateMembership = function (id,record,callback) {
+/*    var updatedMembership;
+    async.series([
+        function (callback) {
+            Membership.findOne({_id:id},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                updatedMembership=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {*/
+            Station.find({stationType:'dock-station'},function (err,result) {
+                if(err)
+                {
+                    console.log('Error fetching station');
+                }
+                if(result.length>0)
+                {
+                    record.unsuccessIp=[];
+                    record.updateCount=0;
+                    record.successIp=[];
+                    record.lastModifiedAt = new Date();
+                    for(var i=0;i<result.length;i++)
+                    {
+                        record.unsuccessIp.push(result[i].ipAddress);
+                    }
+                    Membership.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        //membershipDetails = result;
+                        return callback(null, result);
+                    });
+                }
+                else {
+                    return callback(null,null);
+                }
+
+            });
+       /* }
+
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });*/
+    
 };

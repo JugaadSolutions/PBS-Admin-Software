@@ -27,7 +27,8 @@
     "enabled": true
   },
   "pbsMemberPortal": {
-    "url": "https://www.mytrintrin.com/portal/",
+    "url": "http://www.mytrintrin.com/portal/",
+    "resetUrl":"http://www.mytrintrin.com/portal/reset.php?key=",
     "emailVerifySuccessful": "public/email-verification-success",
     "emailVerificationFailed": "public/email-verification-failed",
     "paymentSuccessful": "payment-successful",
