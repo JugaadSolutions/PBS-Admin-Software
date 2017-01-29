@@ -152,13 +152,20 @@ exports.getAllTransactions = function (callback) {
 };
 
 exports.getFewRecordsWRTMember = function (id, callback) {
-    MemberTransaction.find({'user': id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
-
-        if (err) {
-            return callback(err, null);
+/*    User.findOne({UserID:id},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
         }
-        var result = [];
-        res.forEach(function(r){
+        if(result)
+        {
+            MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
+
+                if (err) {
+                    return callback(err, null);
+                }
+                var result = [];
+                res.forEach(function(r){
 
                     result.push({
                         'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
@@ -170,10 +177,98 @@ exports.getFewRecordsWRTMember = function (id, callback) {
                         'duration': (r.duration == null) ? '-' : (r.duration)
                     });
 
+                });
+                return callback(null, result);
             });
-        return callback(null, result);
-        });
+        }
+        else
+        {
+            User.findOne({_id:id},function (err,result) {
+                if (err) {
+                    return callback(err, null);
+                }
+                MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
 
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    var result = [];
+                    res.forEach(function(r){
+
+                        result.push({
+                            'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                            'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
+                            'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
+                            'checkInTime':  moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                            'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
+                            'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
+                            'duration': (r.duration == null) ? '-' : (r.duration)
+                        });
+
+                    });
+                    return callback(null, result);
+                });
+            });
+
+        }
+
+    });*/
+
+
+//    if (typeof id !== "number") {
+    if (isNaN(id)) {
+        MemberTransaction.find({'user': id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
+
+            if (err) {
+                return callback(err, null);
+            }
+            var result = [];
+            res.forEach(function(r){
+
+                result.push({
+                    'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                    'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
+                    'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
+                    'checkInTime':  moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                    'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
+                    'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
+                    'duration': (r.duration == null) ? '-' : (r.duration)
+                });
+
+            });
+            return callback(null, result);
+        });
+        }
+    else
+    {
+        User.findOne({UserID:id},function (err,result) {
+            if (err) {
+                return callback(err, null);
+            }
+                MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    var result = [];
+                    res.forEach(function (r) {
+
+                        result.push({
+                            'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                            'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
+                            'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
+                            'checkInTime': moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                            'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
+                            'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
+                            'duration': (r.duration == null) ? '-' : (r.duration)
+                        });
+
+                    });
+                    return callback(null, result);
+                });
+
+        });
+    }
     };
 
 exports.checkout=function (record,callback) {

@@ -36,7 +36,7 @@ exports.loginUser = function (loginData, callback) {
     {
         username = Number(username);
     }*/
-    User.findOne({$or: [{phoneNumber: username}, {email: username}, {smartCardNumber: username}/*,{cardNum:username}*/]}, function (err, record) {
+    User.findOne({$or: [{email: username}, {phoneNumber: username}, {smartCardNumber: username}/*,{cardNum:username}*/]}, function (err, record) {
 
 
         if (err) {
@@ -54,6 +54,7 @@ exports.loginUser = function (loginData, callback) {
         }
 
         var Id = record._id;
+        var Uid = record.UserID;
         var Role = record._type;
         record.comparePassword(password, function (err, isMatch) {
 
@@ -78,6 +79,7 @@ exports.loginUser = function (loginData, callback) {
                 token: token,
                 expiresIn: TOKEN_EXPIRATION_TIME,
                 id:Id,
+                uid:Uid,
                 role:Role
             };
 
@@ -99,43 +101,86 @@ exports.changePassword = function (userId, updatedData, callback) {
         return callback(emptyPasswordError, null);
     }
 
-    User.findOne({'_id':userId}, function (err, record) {
-
-        if (err) {
-            return callback(err, null);
-        }
-
-        if (!record) {
-            var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
-            return callback(recordNotFoundError, null);
-        }
-
-        record.comparePassword(currentPassword, function (err, isMatch) {
+    if(isNaN(userId))
+    {
+        User.findOne({'_id':userId}, function (err, record) {
 
             if (err) {
                 return callback(err, null);
             }
 
-            if (!isMatch) {
-                var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
-                return callback(passwordsNoMatchError, null);
+            if (!record) {
+                var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
+                return callback(recordNotFoundError, null);
             }
 
-            record.password = newPassword;
-
-            record.save(function (err) {
+            record.comparePassword(currentPassword, function (err, isMatch) {
 
                 if (err) {
                     return callback(err, null);
                 }
 
-                return callback(null, true);
+                if (!isMatch) {
+                    var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
+                    return callback(passwordsNoMatchError, null);
+                }
+
+                record.password = newPassword;
+
+                record.save(function (err) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    return callback(null, true);
+
+                });
 
             });
 
         });
+    }
+    else
+    {
+        User.findOne({UserID:userId}, function (err, record) {
 
-    });
+            if (err) {
+                return callback(err, null);
+            }
+
+            if (!record) {
+                var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
+                return callback(recordNotFoundError, null);
+            }
+
+            record.comparePassword(currentPassword, function (err, isMatch) {
+
+                if (err) {
+                    return callback(err, null);
+                }
+
+                if (!isMatch) {
+                    var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
+                    return callback(passwordsNoMatchError, null);
+                }
+
+                record.password = newPassword;
+
+                record.save(function (err) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    return callback(null, true);
+
+                });
+
+            });
+
+        });
+    }
 
 };
 

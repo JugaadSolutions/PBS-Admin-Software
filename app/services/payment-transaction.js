@@ -2,6 +2,7 @@ var async = require('async'),
     moment = require('moment'),
     MembershipService=require('../services/membership-service'),
     Membership  = require('../models/membership'),
+    User = require('../models/user'),
     Stations = require('../models/station'),
     RegCenter = require('../models/registration-center'),
     Member = require('../models/member'),
@@ -1052,4 +1053,35 @@ exports.getAllDeposits = function (callback) {
         }
         return callback(null,result);
     });
+};
+
+exports.getMembertrans = function (id,callback) {
+    //async.series([],)
+    if(isNaN(id))
+    {
+        Payments.find({'memberId':id,paymentDescription:{$in:['Registration','Credit note']}}).lean().exec(function (err, result) {
+
+            if (err) {
+
+                return callback(err,null)
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        User.findOne({UserID:id},function (err,result) {
+            if (err) {
+                return callback(err, null);
+            }
+            Payments.find({'memberId':result._id,paymentDescription:{$in:['Registration','Credit note']}}).lean().exec(function (err, result) {
+
+                if (err) {
+
+                    return callback(err,null)
+                }
+                return callback(null,result);
+            });
+        });
+    }
 };

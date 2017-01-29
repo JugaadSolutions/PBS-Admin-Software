@@ -688,23 +688,46 @@ exports.creditMember=function (id,record,callback) {
 
         function (callback) {
 
-            Member.findById(id, function (err, result) {
+            if(isNaN(id))
+            {
+                Member.findById(id, function (err, result) {
 
-                if (err) {
-                    return callback(err, null);
-                }
+                    if (err) {
+                        return callback(err, null);
+                    }
 
-                if (!result) {
-                    return callback(new Error(Messages.NO_MEMBER_FOUND), null);
-                }
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
 
-                if (result.processingFeesDeducted) {
-                    isProcessingFeeDeducted = true;
-                }
+                    if (result.processingFeesDeducted) {
+                        isProcessingFeeDeducted = true;
+                    }
 
-                memberObject = result;
-                return callback(null, result);
-            })
+                    memberObject = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                Member.findOne({UserID:id}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    if (result.processingFeesDeducted) {
+                        isProcessingFeeDeducted = true;
+                    }
+
+                    memberObject = result;
+                    return callback(null, result);
+                });
+            }
 
         },
             function (callback) {

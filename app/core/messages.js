@@ -14,6 +14,14 @@ module.exports={
 
     COULD_NOT_SANITIZE_THE_USER_COLLECTION: "Could not sanitize the user collection!",
     COULD_NOT_INITIALIZE_THE_USER_COLLECTION: "Could not initialize the user collection!",
+    COULD_NOT_SANITIZE_THE_FLEET_COLLECTION: "Could not sanitize the fleet collection!",
+    COULD_NOT_INITIALIZE_THE_FLEET_COLLECTION: "Could not initialize the fleet collection!",
+    COULD_NOT_SANITIZE_THE_HOLDING_AREA_COLLECTION: "Could not sanitize the holding area collection!",
+    COULD_NOT_INITIALIZE_THE_HOLDING_AREA_COLLECTION: "Could not initialize the holding area collection!",
+    COULD_NOT_SANITIZE_THE_MAINTENANCE_CENTER_COLLECTION: "Could not sanitize the maintenance center collection!",
+    COULD_NOT_INITIALIZE_THE_MAINTENANCE_CENTER_COLLECTION: "Could not initialize the maintenance center collection!",
+    COULD_NOT_SANITIZE_THE_REDISTRIBUTION_AREA_COLLECTION: "Could not sanitize the redistribution area collection!",
+    COULD_NOT_INITIALIZE_THE_REDISTRIBUTION_AREA_COLLECTION: "Could not initialize the redistribution area collection!",
 
     DELETING_RECORD_SUCCESSFUL:"Deleting record successful",
     DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE:"Debit amount cannot be greater than member credit balance",

@@ -91,7 +91,10 @@ router
 
         // var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
-        PaymentTransaction.find({'memberId':req.params.id,'paymentDescription':'Credit note'}).lean().exec(function (err, result) {
+   //     PaymentTransaction.find({'memberId':req.params.id,'paymentDescription':'Credit note'}).lean().exec(function (err, result) {
+
+        PaymentTransactionService.getMembertrans(req.params.id,function (err,result) {
+
 
             if (err) {
 

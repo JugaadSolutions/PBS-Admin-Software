@@ -41,7 +41,7 @@ router
 
         var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
-        Member.findById(req.params.id).populate(appliedFilter.options.populate).exec(function (err, result) {
+        Member.findOne({$or:[{UserID:req.params.id},{_id:req.params.id}]}).populate(appliedFilter.options.populate).exec(function (err, result) {
 
             if (err) {
 
