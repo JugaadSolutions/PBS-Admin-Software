@@ -1,6 +1,3 @@
-/**
- * Created by kiranniranjan on 6/13/16.
- */
 
 var config = require('config');
 

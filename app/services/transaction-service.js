@@ -245,27 +245,33 @@ exports.getFewRecordsWRTMember = function (id, callback) {
             if (err) {
                 return callback(err, null);
             }
-                MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
+            if (result) {
+            MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
 
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    var result = [];
-                    res.forEach(function (r) {
+                if (err) {
+                    return callback(err, null);
+                }
+                var result = [];
+                res.forEach(function (r) {
 
-                        result.push({
-                            'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
-                            'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
-                            'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
-                            'checkInTime': moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
-                            'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
-                            'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
-                            'duration': (r.duration == null) ? '-' : (r.duration)
-                        });
-
+                    result.push({
+                        'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                        'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
+                        'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
+                        'checkInTime': moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                        'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
+                        'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
+                        'duration': (r.duration == null) ? '-' : (r.duration)
                     });
-                    return callback(null, result);
+
                 });
+                return callback(null, result);
+            });
+            }
+            else
+            {
+                return callback(null,null);
+            }
 
         });
     }

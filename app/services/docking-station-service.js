@@ -358,10 +358,20 @@ exports.createCleanedEntry = function (record,callback) {
     //record.cleaneddate = moment(record.cleaneddate);
     //record.fromtime=moment(record.fromtime);
     //record.totime=moment(record.totime);
-    record.stationId = record.stationIdnew;
+   // record.stationId = record.stationIdnew;
     var cleanedStation;
     async.series([
 
+        function (callback) {
+            DockStation.findOne({StationID:record.stationIdnew},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                record.stationId = result._id;
+                return callback(null,result);
+            });
+        },
         function (callback) {
             var fdate = moment(record.cleaneddate);
             fdate=fdate.format('YYYY-MM-DD');

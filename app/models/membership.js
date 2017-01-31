@@ -1,6 +1,3 @@
-/**
- * Created by kiranniranjan on 5/11/16.
- */
 
 // Third Party Dependencies
 var mongoose = require('mongoose'),

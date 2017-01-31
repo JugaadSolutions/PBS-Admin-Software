@@ -1,5 +1,6 @@
 require('./user');
 var mongoose = require('mongoose'),
+    crypto = require('crypto'),
     extend = require('mongoose-schema-extend'),
 
     Messages = require('../core/messages');
@@ -19,12 +20,13 @@ Admin.count({email: "admin@mytrintrin.com"}, function (err, count) {
     }
 
     if (count < 1) {
-
+        var passw = "MttAdmin@123";
+        var hash = crypto.createHash('md5').update(passw).digest('hex');
         var defaults = {
             // profileName: "My Trin Trin Admin",
             //username: "admin@mytrintrin.com",
             email: "admin@mytrintrin.com",
-            password: "MttAdmin@123",
+            password: hash,
             Name:"Mahesha",
             lastName:"siddegowda",
             //smartCardNumber:"2DR35A6B00000000",

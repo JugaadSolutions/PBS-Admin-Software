@@ -1,6 +1,4 @@
-/**
- * Created by kiranniranjan on 5/16/16.
- */
+
 var
     fs = require('fs'),
 

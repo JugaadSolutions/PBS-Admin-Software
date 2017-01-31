@@ -8,6 +8,7 @@ var async = require('async'),
     Member = require('../models/member'),
     Deposits = require('../models/deposits'),
     Payments = require('../models/payment-transactions'),
+    Cashclosure = require('../models/cash-closure'),
     Constants=require('../core/constants');
 
 exports.signedUp = function (record,memberObject,callback) {
@@ -941,7 +942,9 @@ exports.depositInfo = function (record,callback) {
     }
 };
 
-exports.totalCollection = function (record,callback) {
+exports.totalCollection = totalcash;
+
+function totalcash (record,callback) {
 
     var dates;
 
@@ -1043,7 +1046,7 @@ exports.totalCollection = function (record,callback) {
         return callback(null,trans);
     });
 
-};
+}
 
 exports.getAllDeposits = function (callback) {
     Deposits.find({}).sort('-depositDate').exec(function (err,result) {
@@ -1059,7 +1062,7 @@ exports.getMembertrans = function (id,callback) {
     //async.series([],)
     if(isNaN(id))
     {
-        Payments.find({'memberId':id,paymentDescription:{$in:['Registration','Credit note']}}).lean().exec(function (err, result) {
+        Payments.find({'memberId':id,paymentDescription:{$in:['Registration','Credit note']}}).sort('-createdAt').lean().exec(function (err, result) {
 
             if (err) {
 
@@ -1074,7 +1077,7 @@ exports.getMembertrans = function (id,callback) {
             if (err) {
                 return callback(err, null);
             }
-            Payments.find({'memberId':result._id,paymentDescription:{$in:['Registration','Credit note']}}).lean().exec(function (err, result) {
+            Payments.find({'memberId':result._id,paymentDescription:{$in:['Registration','Credit note']}}).sort('-createdAt').lean().exec(function (err, result) {
 
                 if (err) {
 
@@ -1084,4 +1087,87 @@ exports.getMembertrans = function (id,callback) {
             });
         });
     }
+};
+
+exports.createcashClosure = function (record,callback) {
+    Cashclosure.create(record,function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
+
+exports.dayClosure = function (record,callback) {
+    var exitCode = 0;
+    var cashDetails={
+        openingBalance:0,
+        cashcollected:0,
+        bankdeposit:0,
+        refunds:0,
+        closingBalance:0
+    };
+    async.series([
+        function (callback) {
+            Cashclosure.find({dateTime:{$gte:moment(record.duration)}},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result.length>0)
+                {
+                    exitCode=1;
+                    return callback(new Error("Records already exists. Don't need to create new one"),null);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(exitCode==0)
+            {
+                Cashclosure.findOne({}).sort('-dateTime').exec(function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    var t = moment(record.duration).diff(moment(result.dateTime));
+                    var dur = t.asDays();
+                    if(dur>1)
+                    {
+                        exitCode=1;
+                        var d = moment(result.dateTime).add(1,'days');
+                        var f = moment(d).format('YYYY-MM-DD');
+                        return callback(new Error("You need to close the record from "+f+". Please complete all previous closures"),null);
+                    }else
+                    {
+                        cashDetails.openingBalance = result.closingBalance;
+                        var data={
+                            fromdate:record.duration,
+                            todate:record.duration,
+                            location:'All'
+                        };
+                        totalcash(data,function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null)
+                            }
+                                cashDetails.cashcollected=result.cash;
+                            return callback(null,result);
+                        });
+                    }
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    })
 };

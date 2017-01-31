@@ -241,25 +241,32 @@ exports.forgotPassword = function (email, callback) {
 
             // Step 3: Method to email user their new password
             function (callback) {
+                if(userObject)
+                {
+                    var data = {
+                        profileName: userObject.Name,
+                        // ResetKey: ResetKey,
+                        link: config.get('pbsMemberPortal.resetUrl')+ResetKey
+                    };
 
-                var data = {
-                    profileName: userObject.Name,
-                   // ResetKey: ResetKey,
-                    link: config.get('pbsMemberPortal.resetUrl')+ResetKey
-                };
+                    var htmlString = swig.renderFile('./templates/forgot-password.html', data);
 
-                var htmlString = swig.renderFile('./templates/forgot-password.html', data);
+                    var emailMessage = {
+                        "subject": Messages.PASSWORD_RESET_REQUEST,
+                        "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.forgotPassword, data),
+                        "html": htmlString,
+                        "to": [userObject.email]
+                    };
 
-                var emailMessage = {
-                    "subject": Messages.PASSWORD_RESET_REQUEST,
-                    "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.forgotPassword, data),
-                    "html": htmlString,
-                    "to": [userObject.email]
-                };
+                    EmailNotificationHandler.sendMail(emailMessage);
 
-                EmailNotificationHandler.sendMail(emailMessage);
+                    return callback(null, null);
+                }
+                else
+                {
+                    return callback(null,null);
+                }
 
-                return callback(null, null);
             }
 
         ],

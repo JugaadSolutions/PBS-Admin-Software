@@ -1,6 +1,3 @@
-/**
- * Created by kiranniranjan on 6/13/16.
- */
 
 // Third party dependencies
 var config = require('config'),

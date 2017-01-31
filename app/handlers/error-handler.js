@@ -1,7 +1,5 @@
 /**
  * pbs-admin-core
- *
- * Created by vishwas on 08/May/2016 at 18:15
  */
 var Messages = require('../core/messages');
 
@@ -116,7 +114,7 @@ const checkValidationErrors = function (err) {
         var errors = err['errors'];
         var messages = [];
 
-        for (key in errors) {
+        for (var key in errors) {
 
             var message = errors[key]['message'];
             var path = message.replace("Path ", "");

@@ -51,7 +51,7 @@ var vehicleIds={
 
 var UserSchema = mongoose.Schema({
     UserID : Number,
-    Name: {type: String, required: false},
+    Name: {type: String, required: true},
     lastName: {type: String, required: false},
     fatherName: {type: String, required: false},
     email: {type: String, required: false, validate: [ValidationHandler.validateEmail, 'Invalid email']},
@@ -157,8 +157,8 @@ User.schema.methods.comparePassword = function (passw, cb) {
         }
         cb(null, isMatch);
     });*/
-    var hash = crypto.createHash('md5').update(passw).digest('hex');
-    if(hash==this.password)
+    //var hash = crypto.createHash('md5').update(passw).digest('hex');
+    if(passw==this.password)
     {
         cb(null,true);
     }

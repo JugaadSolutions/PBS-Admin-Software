@@ -40,28 +40,50 @@ router
     .get('/:id', function (req, res, next) {
 
         var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+        if(isNaN(req.params.id))
+        {
+            Member.findById(req.params.id).populate(appliedFilter.options.populate).exec(function (err, result) {
+                if (err) {
 
-        Member.findOne({$or:[{UserID:req.params.id},{_id:req.params.id}]}).populate(appliedFilter.options.populate).exec(function (err, result) {
+                    next(err, req, res, next);
 
-            if (err) {
+                } else {
 
-                next(err, req, res, next);
+                    var response = result != null ? {
+                        error: false,
+                        message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                        description: '',
+                        data: result
+                    } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
 
-            } else {
+                    res.json(response);
 
-                var response = result != null ? {
-                    error: false,
-                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
-                    description: '',
-                    data: result
-                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+                }
 
-                res.json(response);
+            });
+        }
+        else
+        {
+            Member.findOne({UserID:req.params.id}).populate(appliedFilter.options.populate).exec(function (err, result) {
+                if (err) {
 
-            }
+                    next(err, req, res, next);
 
-        });
+                } else {
 
+                    var response = result != null ? {
+                        error: false,
+                        message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                        description: '',
+                        data: result
+                    } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                    res.json(response);
+
+                }
+
+            });
+        }
     })
 
     .get('/:id/cancelmemberrequest', function (req, res, next) {

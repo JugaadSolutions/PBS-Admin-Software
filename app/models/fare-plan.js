@@ -1,7 +1,3 @@
-/**
- * Created by kiranniranjan on 5/25/16.
- */
-
 // Third Party Dependencies
 var mongoose = require('mongoose'),
     uuid = require('node-uuid'),
