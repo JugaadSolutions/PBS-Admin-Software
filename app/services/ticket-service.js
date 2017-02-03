@@ -4,18 +4,41 @@
 var Constants = require('../core/constants'),
     moment = require('moment'),
     async = require('async'),
+    User = require('../models/user'),
     Ticket = require('../models/tickets');
 
 
 exports.createTicket = function (record,callback) {
+    var ticketInfo;
+async.series([
+    function (callback) {
+        User.findOne({UserID:record.createdBy},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            record.createdBy = result._id;
+            return callback(null,result);
+        });
+    },
+    function (callback) {
+        Ticket.create(record,function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            ticketInfo = result;
+            return callback(null,result);
+        });
+    }
+],function (err,result) {
+    if(err)
+    {
+        return callback(err,null);
+    }
+    return callback(null,ticketInfo);
+});
 
-    Ticket.create(record,function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
 };
 
 exports.ticketUpdate=function (id,record,callback) {

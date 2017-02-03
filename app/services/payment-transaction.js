@@ -7,8 +7,10 @@ var async = require('async'),
     RegCenter = require('../models/registration-center'),
     Member = require('../models/member'),
     Deposits = require('../models/deposits'),
+    GlobalSettings = require('../models/global-settings'),
     Payments = require('../models/payment-transactions'),
     Cashclosure = require('../models/cash-closure'),
+    RequestHandler = require('../handlers/ccavRequestHandler'),
     Constants=require('../core/constants');
 
 exports.signedUp = function (record,memberObject,callback) {
@@ -1099,6 +1101,19 @@ exports.createcashClosure = function (record,callback) {
     });
 };
 
+exports.getCashclosures = function (record,callback) {
+    var ldate = moment(record.todate).add(1, 'days');
+    ldate=ldate.format('YYYY-MM-DD');
+    Cashclosure.find({dateTime:{$gte:moment(record.fromdate),$lte:moment(ldate)}},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};
+
+/*
 exports.dayClosure = function (record,callback) {
     var exitCode = 0;
     var cashDetails={
@@ -1170,4 +1185,258 @@ exports.dayClosure = function (record,callback) {
         }
         return callback(null,result);
     })
+};*/
+
+exports.dayClosure = function (callback) {
+
+    var exitState = 0;
+    var cashDetails={
+        dateinfo:'',
+        openingBalance:0,
+        cashcollected:0,
+        bankdeposit:0,
+        refunds:0,
+        closingBalance:0
+    };
+    async.series([
+        function (callback) {
+            GlobalSettings.findOne({name:'Commissioned-Date'},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result)
+                {
+                    var dur = moment(result.value[0]).subtract(1,'days');
+                    Cashclosure.count().exec(function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(result>0)
+                        {
+                            return callback(null,result);
+                        }
+                        else
+                        {
+                            var data = {dateTime:moment(dur)};
+                            Cashclosure.create(data,function (err) {
+                                if (err) {
+                                    return callback(err,null);
+                                }
+                                return callback(null,result);
+                            });
+                        }
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
+            });
+        },
+        function (callback) {
+            Cashclosure.findOne().sort('-dateTime').exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+
+                //console.log(moment().diff(moment(result.dateTime),'days'));
+                if(moment().diff(moment(result.dateTime))==0)
+                {
+                    exitState =1;
+                    return callback(new Error("Today's day closure is completed, Please try tomorrow" ),null);
+                }
+                else
+                {
+
+                    var dt =moment(result.dateTime).add(1,'days');
+
+
+                    var newDt = dt.format('YYYY-MM-DD');
+                    var dur = moment().diff(moment(newDt),'days');
+
+                    console.log(dur);
+                    if(dur<=0)
+                    {
+                        exitState =1;
+                        return callback(new Error("All cash closures are cleared" ),null);
+                    }
+                    /*var today = moment().format('YYYY-MM-DD');
+                    var dur =   moment(today).diff(moment(newDt));
+                    var d = moment.duration(dur).asDays();*/
+                    cashDetails.dateinfo=newDt;
+                    cashDetails.openingBalance=result.closingBalance;
+
+                    return callback(null,result);
+                }
+
+            });
+        },
+        function (callback) {
+            if(exitState==0)
+            {
+                depositInfo(cashDetails.dateinfo,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    cashDetails.bankdeposit = result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function (callback) {
+            if(exitState==0)
+            {
+                refundInfo(cashDetails.dateinfo,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    cashDetails.refunds = result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        },
+        function (callback) {
+            if(exitState==0)
+            {
+                var data= {
+                    fromdate:cashDetails.dateinfo,
+                    todate:cashDetails.dateinfo,
+                    location:'All'
+                };
+                totalcash(data,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    cashDetails.cashcollected = result[0].cash;
+                    cashDetails.closingBalance = (cashDetails.openingBalance+cashDetails.cashcollected)-(cashDetails.bankdeposit+cashDetails.refunds);
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,cashDetails);
+    });
+};
+
+exports.getDepositsInfo = depositInfo;
+function depositInfo(record,callback) {
+    var amount=0;
+    var ldate = moment(record.dateInfo).add(1, 'days');
+    ldate=ldate.format('YYYY-MM-DD');
+  async.series([
+      function (callback) {
+          Deposits.find({depositDate:{$gte:moment(record.dateInfo),$lt:moment(ldate)}},function (err,result) {
+              if(err)
+              {
+                  return callback(err,null);
+              }
+              if(result)
+              {
+                  if(result.length>0)
+                  {
+                    for(var i=0;i<result.length;i++)
+                    {
+                        amount = amount+ result[i].amount;
+                        if(i==result.length-1)
+                        {
+                            return callback(null,result);
+                        }
+                    }
+                  }
+                  else
+                  {
+                      return callback(null,result);
+                  }
+              }
+              else
+              {
+                  return callback(null,result);
+              }
+          });
+      }
+  ],function (err,result) {
+      if(err)
+      {
+          return callback(err,null);
+      }
+      return callback(null,amount);
+  });
+}
+
+exports.getRefundInfo = refundInfo;
+function refundInfo(record,callback) {
+    var amount = 0;
+    var ldate = moment(record.dateInfo).add(1, 'days');
+    ldate=ldate.format('YYYY-MM-DD');
+    async.series([
+        function (callback) {
+            Payments.find({createdAt:{$gte:moment(record.dateInfo),$lt:moment(ldate)},paymentDescription:'Refund'},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result)
+                {
+                    if(result.length>0)
+                    {
+                        for(var i=0;i<result.length;i++)
+                        {
+                            amount = amount+result[i].debit;
+                            if(i==result.length-1)
+                            {
+                                return callback(null,amount);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return callback(null,amount);
+                    }
+                }
+                else
+                {
+                    return callback(null,0);
+                }
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,amount);
+
+    });
+
+}
+
+exports.ccavanueRequest = function (record,callback) {
+    RequestHandler.postReq(record,function (res) {
+        return callback(null,res);
+    });
 };

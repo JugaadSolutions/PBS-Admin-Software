@@ -6,7 +6,8 @@ exports.TicketChannel = {
     WEBSITE:1,
     MOBILEAPP:2,
     HELPDESK:3,
-    REGISTRATIONCENTRE:4
+    REGISTRATIONCENTRE:4,
+    USERPORTAL:5
 };
 
 exports.TicketStatus = {

@@ -6,6 +6,7 @@ var express = require('express'),
     Deposits = require('../models/deposits'),
     RequestDataHandler = require('../handlers/request-data-handler'),
     PaymentTransaction = require('../models/payment-transactions'),
+    ccAvenueHandler = require('../handlers/ccavenue-handler'),
     PaymentTransactionService = require('../services/payment-transaction');
 
 var router = express.Router();
@@ -22,6 +23,8 @@ router
                 next(err, req, res, next);
 
             } else {
+
+                //res.postReq();
 
                 res.json({
                     error: false,
@@ -167,6 +170,31 @@ router
     })
 */
 
+    .get('/dayclosure/info', function (req, res, next) {
+
+        //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+        //PaymentTransaction.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
+        PaymentTransactionService.dayClosure(function (err,result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
 
     .post('/daywisecollection',function (req,res,next) {
         PaymentTransactionService.daywiseCollection(req.body,function (err,result) {
@@ -186,8 +214,9 @@ router
         });
     })
 
+
     .post('/cashcollection',function (req,res,next) {
-        PaymentTransactionService.cashCollection(req.body,function (err,result) {
+        PaymentTransactionService.getCashclosures(req.body,function (err,result) {
             if (err) {
 
                 next(err, req, res, next);
@@ -204,8 +233,56 @@ router
         });
     })
 
+    .post('/ccavRequestHandler',function (req,res,next) {
+/*        PaymentTransactionService.ccavanueRequest(req.body,function (err,result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+            }
+        });*/
+        ccAvenueHandler.encrypt(req.body, function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+                res.makePayment();
+               /* ccavenue.makePayment(res);
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });*/
+            }
+        });
+    })
+
     .post('/deposit', function (req, res, next) {
         PaymentTransactionService.depositCash(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/cashclosure', function (req, res, next) {
+        PaymentTransactionService.createcashClosure(req.body,function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

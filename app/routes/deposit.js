@@ -28,6 +28,23 @@ router
         });
 
     })
+    .post('/', function (req, res, next) {
+
+        PaymentTransactionService.getDepositsInfo(req.body,function (err,result){
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
 
 ;
 

@@ -35,6 +35,12 @@
     "paymentSuccessful": "payment-successful",
     "paymentFailed": "payment-failed"
   },
+  "ccAvenue": {
+    "merchantId": "96478",
+    "accessCode": "AVUM66DI93AY80MUYA",
+    "workingKey": "5F8405032B54AF1400A79BB0B92D2ECC",
+    "currency": "INR"
+  },
   "mandrill": {
     "apiKey": "RTD5yV_ntMX5sJzDRWduCw"
   },

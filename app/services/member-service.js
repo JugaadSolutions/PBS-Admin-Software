@@ -808,8 +808,8 @@ exports.creditMember=function (id,record,callback) {
 
         },
             function (callback) {
-                if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
-                {
+                /*if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
+                {*/
                     Payments.findOne({'gatewayTransactionId':record.transactionNumber},function (err,result) {
                         if(err)
                         {
@@ -819,94 +819,94 @@ exports.creditMember=function (id,record,callback) {
                             transactionDetails = result;
                         return callback(null,result);
                     });
-                }
+        /*        }
                 else
                 {
                     return callback(null,null);
-                }
+                }*/
             }
         ,
         function (callback) {
            /* var orderId = 'PBS'+ new Date().getTime();*/
-           if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
-           {
-               if(transactionDetails)
-               {
-                   return callback(null,null);
-               }
-               else {
-                   var userfeeDeposit;
-                   var uf = 'PBS' + new Date().getTime();
-                   userfeeDeposit = {
-                       memberId: memberObject._id,
-                       invoiceNo: uf,
-                       paymentDescription: Constants.PayDescription.REGISTRATION,
-                       paymentMode: record.creditMode,
-                       paymentThrough: Constants.PayThrough.PAYMENT_GATEWAY,
-                       gatewayTransactionId: record.transactionNumber,
-                       comments: record.comments,
-                       credit: record.credit,
-                       balance: record.credit
-                   };
+            if(transactionDetails)
+            {
+                return callback(new Error('This payment has already been completed'),null);
+            }
+            else {
+                if (memberObject.status == Constants.MemberStatus.PROSPECTIVE) {
 
-                   Payments.create(userfeeDeposit, function (err, result) {
-                       if (err) {
-                           return callback(err, null);
-                       }
-                       memberObject.creditBalance = record.credit;
-                       Member.findByIdAndUpdate(memberObject._id, memberObject, {new: true}, function (err, result) {
-                           if (err) {
-                               return callback(err, null);
-                           }
-                           memberObject = result;
-                       });
 
-                       return callback(null, result);
-                   });
-               }
-           }
-           else {
-               if (isProcessingFeeDeducted) {
-                   PaymentTransaction.existingMember(memberObject, record, function (err, result) {
-                       if (err) {
-                           return callback(err, null);
-                       }
-                       updatedMemberObject = result;
-                       return callback(null, result);
-                   });
-                   /*
-                    transObject={
-                    memberId:memberObject._id,
-                    invoiceNo: orderId,
-                    paymentDescription:Constants.PayDescription.CREDIT_NOTE,
-                    paymentMode:record.creditMode,
-                    paymentThrough:Constants.PayThrough.POS,
-                    gatewayTransactionId:record.transactionNumber,
-                    comments:record.comments,
-                    credit:record.credit,
-                    balance:record.credit
+                    var userfeeDeposit;
+                    var uf = 'PBS' + new Date().getTime();
+                    userfeeDeposit = {
+                        memberId: memberObject._id,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.REGISTRATION,
+                        paymentMode: record.creditMode,
+                        paymentThrough: Constants.PayThrough.PAYMENT_GATEWAY,
+                        gatewayTransactionId: record.transactionNumber,
+                        comments: record.comments,
+                        credit: record.credit,
+                        balance: record.credit
                     };
-                    Transaction.create(transObject,function (err,result) {
-                    if(err)
-                    {
-                    return callback(err,null);
+
+                    Payments.create(userfeeDeposit, function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        memberObject.creditBalance = record.credit;
+                        Member.findByIdAndUpdate(memberObject._id, memberObject, {new: true}, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            memberObject = result;
+                        });
+
+                        return callback(null, result);
+                    });
+                }
+                else {
+                    if (isProcessingFeeDeducted) {
+                        PaymentTransaction.existingMember(memberObject, record, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            updatedMemberObject = result;
+                            return callback(null, result);
+                        });
+                        /*
+                         transObject={
+                         memberId:memberObject._id,
+                         invoiceNo: orderId,
+                         paymentDescription:Constants.PayDescription.CREDIT_NOTE,
+                         paymentMode:record.creditMode,
+                         paymentThrough:Constants.PayThrough.POS,
+                         gatewayTransactionId:record.transactionNumber,
+                         comments:record.comments,
+                         credit:record.credit,
+                         balance:record.credit
+                         };
+                         Transaction.create(transObject,function (err,result) {
+                         if(err)
+                         {
+                         return callback(err,null);
+                         }
+                         transactionDetails=result;
+                         return callback(null,result);
+                         });*/
                     }
-                    transactionDetails=result;
-                    return callback(null,result);
-                    });*/
-               }
-               else {
-                   PaymentTransaction.newMember(memberObject, record, function (err, result) {
-                       if (err) {
-                           return callback(err, null);
-                       }
-                       updatedMemberObject = result;
-                       return callback(null, result);
-                   });
+                    else {
+                        PaymentTransaction.newMember(memberObject, record, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            updatedMemberObject = result;
+                            return callback(null, result);
+                        });
 
-               }
-           }
-
+                    }
+                }
+            }
         }/*,
         function (callback) {
             if(transactionDetails!=0)

@@ -3,7 +3,7 @@
 var mongoose = require('mongoose'),
     uuid = require('node-uuid'),
     _ = require('underscore');
-
+var autoIncrement = require('mongoose-auto-increment');
 // Application Level Dependencies
 var abstract = require('./abstract'),
     Constants = require('../core/constants');
@@ -17,7 +17,7 @@ const MembershipStatus = Constants.MembershipStatus;
 var schema = {
 
     //membershipId: {type: String, required: false, unique: true, default: uuid.v4()},
-
+    membershipId: {type: Number, required: false},
     subscriptionType: {type: String, required: true},
     validity: {type: Number, required: true},
 
@@ -57,5 +57,7 @@ model.plugin(abstract);
 
 // Mongoose Model
 var Membership = mongoose.model('Membership', model, 'membership');
+
+model.plugin(autoIncrement.plugin,{model:Membership,field:'membershipId',startAt: 1, incrementBy: 1});
 
 module.exports = Membership;

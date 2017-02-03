@@ -26,7 +26,7 @@ CashClosureSchema.plugin(abstract);
 
 CashClosureSchema.plugin(autoIncrement.plugin,{model:Cash,field:'ccId',startAt: 1, incrementBy: 1});
 
-Cash.count({},function (err,count) {
+/*Cash.count({},function (err,count) {
     if(err)
     {
         throw new Error('Cannot able to count cash closure' + err);
@@ -40,6 +40,6 @@ Cash.count({},function (err,count) {
             }
         });
     }
-});
+});*/
 
 module.exports = Cash;

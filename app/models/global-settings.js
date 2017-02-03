@@ -7,6 +7,8 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var abstract = require('./abstract'),
     autoIncrement = require('mongoose-auto-increment'),
+    Messages = require('../core/messages'),
+    moment = require('moment'),
     Constants = require('../core/constants');
 
 var GlobalSettingSchema = mongoose.Schema({
@@ -23,5 +25,24 @@ GlobalSettingSchema.plugin(abstract);
 
 GlobalSettingSchema.plugin(autoIncrement.plugin,{model:Gs,field:'globalId',startAt: 1, incrementBy: 1});
 
+Gs.count({name:'Commissioned-Date'},function (err,count) {
+    if(err)
+    {
+        throw new Error(Messages.COULD_NOT_SANITIZE_THE_USER_COLLECTION + err);
+    }
+    if(count<1)
+    {
+        var d = moment().format('YYYY-MM-DD');
+        var data = {
+            name:'Commissioned-Date',
+            value:[d]
+        };
+        Gs.create(data,function (err) {
+            if (err) {
+                throw new Error('Global setting initialization error ' + err);
+            }
+        });
+    }
+});
 
 module.exports = Gs;

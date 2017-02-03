@@ -6,6 +6,7 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var abstract = require('./abstract');
 var random = require("node-random");
+var autoIncrement = require('mongoose-auto-increment');
 var Constants = require('../core/constants');
 
 const comType = Constants.ComplaintValidation;
@@ -25,8 +26,8 @@ const channel = Constants.TicketChannel;
 var TicketsSchema = mongoose.Schema({
     user:{type:Schema.ObjectId,required:false,ref:'user'},
     name:{type:String,required:false},
-    uuid:{type:String,required:true,unique:true},
-    channels:{type:channel,required:false},
+    uuId:{type:Number,required:false},
+    channel:{type:channel,required:false},
     tickettype:{type:String,required:false},
     department:{type:String,required:false},
     subject:{type:String,required:false},
@@ -47,26 +48,6 @@ var Tickets = mongoose.model('tickets', TicketsSchema);
 
 TicketsSchema.plugin(abstract);
 
-Tickets.schema.pre('save', function (next) {
-
-    var ticket = this;
-
-    if (this.isNew) {
-        random.strings({"length": 8, "number": 1, "upper": true, "digits": true}, function (err, data) {
-
-            if (err) {
-                return next(err);
-            }
-
-            ticket.uuid = data;
-            next();
-        });
-    } else {
-
-        return next();
-
-    }
-
-});
+TicketsSchema.plugin(autoIncrement.plugin,{model:Tickets,field:'uuId',startAt: 1, incrementBy: 1});
 
 module.exports = Tickets;

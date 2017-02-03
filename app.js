@@ -8,7 +8,12 @@ var compression = require('compression');
 //var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('config');
-
+var http = require('http'),
+    fs = require('fs'),
+    ccav = require('./app/handlers/ccavutil.js'),
+    qs = require('querystring'),
+    ccavReqHandler = require('./app/handlers/ccavRequestHandler.js'),
+    ccavResHandler = require('./app/handlers/ccavResponseHandler.js');
 /*var routes = require('./routes/index');
 var users = require('./routes/users');*/
 

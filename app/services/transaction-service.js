@@ -246,7 +246,7 @@ exports.getFewRecordsWRTMember = function (id, callback) {
                 return callback(err, null);
             }
             if (result) {
-            MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
+            MemberTransaction.find({'user': result._id}).sort({'createdAt': -1}).deepPopulate('fromPort fromPort.StationId toPort  toPort.StationId').lean().exec(function (err, res) {
 
                 if (err) {
                     return callback(err, null);
