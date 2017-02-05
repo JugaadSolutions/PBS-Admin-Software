@@ -211,6 +211,9 @@ exports.existingMember = function (memberObject,record,callback) {
     var validity;
     var transObject;
     var transactionDetails;
+    var memberDetails;
+    var membershipDetails;
+    var membershipType;
     var location;
     var orderId = 'PBS'+ new Date().getTime();
    async.series([
@@ -272,24 +275,155 @@ exports.existingMember = function (memberObject,record,callback) {
                {
                    return callback(err,null);
                }
+
                result.creditBalance = Number(result.creditBalance+transactionDetails.balance);
+               memberDetails  = result;
                Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
-                   if(err)
-                   {
-                       return callback(err,null);
+                   if (err) {
+                       return callback(err, null);
                    }
-                   return callback(null,result);
+                    return callback(null,result);
                });
            });
 
-       }
+       },
+       function (callback) {
 
+
+           Membership.find({},function (err,result) {
+               if(err)
+               {
+                   return callback(err,null);
+               }
+
+               if(result.length>0)
+               {
+                   membershipDetails = result;
+                   for(var i=0;i<result.length;i++)
+                   {
+                       var mShip = result[i];
+                       if(mShip._id==memberDetails.membershipId)
+                       {
+                           if(mShip.processingFees>0)
+                           {
+                               membershipType = 'Causal user';
+                               break;
+                           }
+                       }
+
+                   }
+                   return callback(null,null);
+               }
+               else
+               {
+                   return callback(null,result);
+               }
+           });
+       }
+       ,
+       function (callback) {
+           if(membershipType =='Causal user')
+           {
+               return callback(null,null);
+           }
+           else
+           {
+               if(transactionDetails.balance>=200 && transactionDetails.balance<400)
+               {
+                   for(var i=0;i<membershipDetails.length;i++)
+                   {
+                       var memShip = membershipDetails[i];
+                       if(memShip.userFees==200)
+                       {
+                            memberDetails.membershipId = memShip._id;
+                            var dur = moment(memberDetails.validity).diff(moment(),'days');
+                           if(dur>=0)
+                           {
+                               memberDetails.validity = moment(memberDetails.validity).add(memShip.validity,'days');
+                               break;
+                           }
+                           else
+                           {
+                               memberDetails.validity = moment().add(memShip.validity,'days');
+                               break;
+                           }
+                       }
+                   }
+                   Member.update({_id:memberDetails._id}, memberDetails, {new: true}).lean().exec(function (err, result) {
+                       if (err) {
+                           return callback(err, null);
+                       }
+                       return callback(null,result);
+                   });
+               }
+               else if(transactionDetails.balance>=400 && transactionDetails.balance<1000)
+               {
+                   for(var i=0;i<membershipDetails.length;i++)
+                   {
+                       var memShip = membershipDetails[i];
+                       if(memShip.userFees==400)
+                       {
+                           memberDetails.membershipId = memShip._id;
+                           var dur = moment(memberDetails.validity).diff(moment(),'days');
+                           if(dur>=0)
+                           {
+                               memberDetails.validity = moment(memberDetails.validity).add(memShip.validity,'days');
+                               break;
+                           }
+                           else
+                           {
+                               memberDetails.validity = moment().add(memShip.validity,'days');
+                               break;
+                           }
+                       }
+                   }
+                   Member.update({_id:memberDetails._id}, memberDetails, {new: true}).lean().exec(function (err, result) {
+                       if (err) {
+                           return callback(err, null);
+                       }
+                       return callback(null,result);
+                   });
+               }
+               else if(transactionDetails.balance>=1000)
+               {
+                   for(var i=0;i<membershipDetails.length;i++)
+                   {
+                       var memShip = membershipDetails[i];
+                       if(memShip.userFees==1000)
+                       {
+                           memberDetails.membershipId = memShip._id;
+                           var dur = moment(memberDetails.validity).diff(moment(),'days');
+                           if(dur>=0)
+                           {
+                               memberDetails.validity = moment(memberDetails.validity).add(memShip.validity,'days');
+                               break;
+                           }
+                           else
+                           {
+                               memberDetails.validity = moment().add(memShip.validity,'days');
+                               break;
+                           }
+                       }
+                   }
+                   Member.update({_id:memberDetails._id}, memberDetails, {new: true}).lean().exec(function (err, result) {
+                       if (err) {
+                           return callback(err, null);
+                       }
+                       return callback(null,result);
+                   });
+               }
+               else
+               {
+                   return callback(null,null);
+               }
+           }
+       }
    ],function(err,result){
        if(err)
        {
            return callback(err,null);
        }
-       return callback(null,result);
+       return callback(null,memberDetails);
    });
 
 };

@@ -52,7 +52,7 @@ exports.createFareplan = function (record,callback) {
                 {
                     for(var i=0;i<result.length;i++)
                     {
-                        fareplanDetails.unsuccessIp.push(result[i].ipAddress);
+                        fareplanDetails.unsuccessIp.push(result[i].StationID);
                     }
                     FarePlan.findByIdAndUpdate(fareplanDetails._id, fareplanDetails, {new: true}, function (err, result) {
 
@@ -92,7 +92,7 @@ exports.updateFareplan = function (id,record,callback) {
             record.lastModifiedAt = new Date();
             for(var i=0;i<result.length;i++)
             {
-                record.unsuccessIp.push(result[i].ipAddress);
+                record.unsuccessIp.push(result[i].StationID);
             }
             FarePlan.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
 

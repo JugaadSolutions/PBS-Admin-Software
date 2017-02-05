@@ -85,7 +85,7 @@ exports.addBicycle=function (record, callback) {
                 {
                     for(var i=0;i<result.length;i++)
                     {
-                        vehicleRecord.unsyncedIp.push(result[i].ipAddress);
+                        vehicleRecord.unsyncedIp.push(result[i].StationID);
                     }
                     Vehicle.findByIdAndUpdate(vehicleRecord._id, vehicleRecord, {new: true}, function (err, result) {
 

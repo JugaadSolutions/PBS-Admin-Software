@@ -736,7 +736,7 @@ exports.timelyCheckout = function (callback) {
                             };
                             result.vehicleId.push(vehicleDetails);
                             result.lastModifiedAt=new Date();
-                            DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
+                            DockStation.find({'stationType':'dock-station'},'StationID',function (err,ds) {
                                 if(err)
                                 {
                                     return console.error('Error : '+err);
@@ -744,7 +744,7 @@ exports.timelyCheckout = function (callback) {
                                 result.unsuccessIp=[];
                                 for(var i=0;i<ds.length;i++)
                                 {
-                                    result.unsuccessIp.push(ds[i].ipAddress);
+                                    result.unsuccessIp.push(ds[i].StationID);
                                 }
                                 //result.unsuccessIp = ds;
                                 result.successIp=[];
@@ -1065,7 +1065,7 @@ exports.timelyCheckin = function (callback) {
                                             }
 
                                         }
-                                        DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
+                                        DockStation.find({'stationType':'dock-station'},'StationID',function (err,ds) {
                                             if(err)
                                             {
                                                 return console.error('Error : '+err);
@@ -1074,7 +1074,7 @@ exports.timelyCheckin = function (callback) {
                                             result.unsuccessIp=[];
                                             for(var i=0;i<ds.length;i++)
                                             {
-                                                result.unsuccessIp.push(ds[i].ipAddress);
+                                                result.unsuccessIp.push(ds[i].StationID);
                                             }
                                             //result.unsuccessIp = ds;
                                             result.successIp=[];

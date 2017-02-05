@@ -4,6 +4,8 @@ var favicon = require('serve-favicon');
 var helmet = require('helmet');
 var cors = require('cors');
 var compression = require('compression');
+var winston = require('winston');
+var expressWinston = require('express-winston');
 //var logger = require('morgan');
 //var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
@@ -22,7 +24,12 @@ var ErrorHandler = require('./app/handlers/error-handler');
 var app = express();
 
 app.use(compression({}));
-app.use(cors());
+
+var corsOptions = {
+    origin: 'http://www.mytrintrin.com',
+    optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+};
+app.use(cors(corsOptions));
 app.use(helmet());
 app.use(helmet.noCache());
 app.use(helmet.contentSecurityPolicy({
@@ -61,11 +68,13 @@ require('./app/routes')(app);
 
 
 // catch 404 and forward to error handler
+/*
 app.use(function(req, res, next) {
   var err = new Error('Not Found');
   err.status = 404;
   next(err);
 });
+*/
 
 // error handlers
 
@@ -92,6 +101,26 @@ app.use(function(err, req, res, next) {
   });
 });
 */
+// Middleware to log application level errors
+app.use(expressWinston.errorLogger({
+    transports: [
+        new winston.transports.File({
+            level: config.get('logging.general.level'),
+            filename: config.get('logging.general.file'),
+            handleExceptions: true,
+            json: true,
+            maxsize: 20971520, //5MB
+            maxFiles: 10,
+            colorize: true
+        }),
+        new winston.transports.Console({
+            json: true,
+            colorize: true
+        })
+    ],
+    exitOnError: true
+}));
+
 app.use(function (err, req, res, next) {
   ErrorHandler.processError(err, function (status, response) {
     res.status(status).json(response);

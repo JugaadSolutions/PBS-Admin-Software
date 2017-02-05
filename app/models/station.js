@@ -19,8 +19,8 @@ const GPS = {
 var StationSchema = mongoose.Schema({
     StationID : Number,
     operationStatus:{type:status,required:false,default:status.OPERATIONAL},
-    gpsCoordinates: {type: GPS, required: false}
-
+    gpsCoordinates: {type: GPS, required: false},
+    lastSyncedAt:{type:Date,required:false,default:Date.now}
 }, { collection : 'stations', discriminatorKey : 'stationType' });
 
 

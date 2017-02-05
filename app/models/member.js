@@ -14,7 +14,8 @@ var MemberSchema = require('mongoose').model('user').schema.extend({
     creditBalance: {type: Number, required: false, default:0},
     securityDeposit:{type:Number,required:false,default:0},
     smartCardFees:{type:Number,required:false,default:0},
-    processingFees:{type:Number,required:false,default:0}
+    processingFees:{type:Number,required:false,default:0},
+    memberprofilePic: {type: String, required: false, default: ''}
 
 });
 

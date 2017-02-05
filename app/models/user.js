@@ -190,7 +190,7 @@ User.schema.pre('update',function (next) {
         }
         for(var i=0;i<result.length;i++)
         {
-            IPs.push(result[i].ipAddress);
+            IPs.push(result[i].StationID);
         }
         console.log(IPs.toString());
 /*        User.unsuccessIp=IPs;

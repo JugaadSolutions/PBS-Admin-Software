@@ -136,7 +136,7 @@ exports.createMembership = function (record,callback) {
                {
                    for(var i=0;i<result.length;i++)
                    {
-                       membershipDetails.unsuccessIp.push(result[i].ipAddress);
+                       membershipDetails.unsuccessIp.push(result[i].StationID);
                    }
                    Membership.findByIdAndUpdate(membershipDetails._id, membershipDetails, {new: true}, function (err, result) {
 
@@ -186,7 +186,7 @@ exports.updateMembership = function (id,record,callback) {
                     record.lastModifiedAt = new Date();
                     for(var i=0;i<result.length;i++)
                     {
-                        record.unsuccessIp.push(result[i].ipAddress);
+                        record.unsuccessIp.push(result[i].StationID);
                     }
                     Membership.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
 

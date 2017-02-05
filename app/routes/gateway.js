@@ -6,6 +6,7 @@ var express = require('express');
 
 // Application Level Dependencies
 var gateway = require('../models/gateway-response'),
+    moment = require('moment'),
     Messages = require('../core/messages');
 
 var router = express.Router();
@@ -41,8 +42,9 @@ router
 
     .post('/', function (req, res, next) {
 
-
-        gateway.create(req.body,function (err,result){
+    var data = req.body;
+        data.paymentdate = moment(data.paymentdate);
+        gateway.create(data,function (err,result){
 
             if (err) {
 

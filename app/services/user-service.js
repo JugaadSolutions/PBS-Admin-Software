@@ -65,7 +65,7 @@ exports.loginUser = function (loginData, callback) {
             }
 
             record.userId = record._id;
-            record = _.pick(record, 'email', '_type', 'phoneNumber', 'userID', 'createdAt');
+            record = _.pick(record, 'email', '_type', 'phoneNumber', 'UserID', 'createdAt','status');
 
 
 

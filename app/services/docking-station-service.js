@@ -199,7 +199,7 @@ exports.createDS = function (record,callback) {
 
 
         function (callback) {
-            Membership.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+            Membership.update({},{$push:{unsuccessIp:stationDetailsUpdated.StationID}},{ multi: true },function (err,result) {
                 if(err)
                 {
                     //return console.error('Unable to push data to users while creating dock-station');
@@ -209,7 +209,7 @@ exports.createDS = function (record,callback) {
             });
         },
         function (callback) {
-            Fareplan.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+            Fareplan.update({},{$push:{unsuccessIp:stationDetailsUpdated.StationID}},{ multi: true },function (err,result) {
                 if(err)
                 {
                     //return console.error('Unable to push data to users while creating dock-station');
@@ -219,7 +219,7 @@ exports.createDS = function (record,callback) {
             });
         },
         function (callback) {
-            Users.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+            Users.update({},{$push:{unsuccessIp:stationDetailsUpdated.StationID}},{ multi: true },function (err,result) {
                 if(err)
                 {
                     //return console.error('Unable to push data to users while creating dock-station');
@@ -229,7 +229,7 @@ exports.createDS = function (record,callback) {
             });
         },
         function (callback) {
-            Vehicle.update({},{$push:{unsyncedIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+            Vehicle.update({},{$push:{unsyncedIp:stationDetailsUpdated.StationID}},{ multi: true },function (err,result) {
                 if(err)
                 {
                     //return console.error('Unable to push data to users while creating dock-station');

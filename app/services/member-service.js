@@ -129,6 +129,44 @@ exports.createMember=function (record,callback) {
              return callback(null, null);
          }
 
+     },
+     function (callback) {
+
+         if (record.memberprofilePic) {
+
+             var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails._id+"/";
+
+             if (!fs.existsSync(dir)){
+                 fs.mkdirSync(dir);
+             }
+             //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+             var docNumber =memberDetails.UserID+ uuid.v4();
+             var docFilePath = dir+ docNumber+".png";
+
+             var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+             var fileDetails = {
+                 key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails._id + '/ ' + docNumber + '.png',
+                 filePath: docFilePath
+             };
+
+             // Method to write Multiple files
+             var writeFiles = {
+                 filePath: docFilePath,
+                 file: decodedDoc,
+                 fileName: docNumber
+             };
+
+             filesArrayToWrite.push(writeFiles);
+             filesArray.push(fileDetails);
+
+             record.memberprofilePic = docNumber;
+             return callback(null, null);
+
+         } else {
+             return callback(null, null);
+         }
+
      }
      ,
      function (callback) {
@@ -377,6 +415,44 @@ exports.updateMember = function (record,callback) {
                 filesArray.push(fileDetails);
 
                 record.profilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+
+        },
+        function (callback) {
+
+            if (record.memberprofilePic) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record._id+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber = record.UserID + uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record._id + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.memberprofilePic = docNumber;
                 return callback(null, null);
 
             } else {
