@@ -41,6 +41,7 @@ exports.createEmployee=function (record,id,callback) {
      */
     var documents = [];
     var memberDetails;
+    var profilePic = {};
     var filesArray = [];
     var filesArrayToWrite = [];
     var password;
@@ -69,6 +70,8 @@ exports.createEmployee=function (record,id,callback) {
             documents = record.documents;
             record.documents = [];
             record.password=password;
+            record.profilePic = '';
+            profilePic = record.profilePic;
             if(id==1)
             {
                 RegEmployee.create(record,function (err,result) {
@@ -147,6 +150,44 @@ exports.createEmployee=function (record,id,callback) {
                 });
             }
         },
+        function (callback) {
+            if (profilePic) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+memberDetails._id+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber =memberDetails.UserID+ uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails._id + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.profilePic = docNumber;
+                memberDetails.profilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+        }
+        ,
         function (callback) {
             if (documents) {
 
@@ -271,13 +312,14 @@ exports.createEmployee=function (record,id,callback) {
                     }
                 }
 
-                if (record.profilePic) {
+/*                if (record.profilePic) {
                     result.picture = record.profilePic;
-                }
+                }*/
                 result.documents = docArray;
                 result.unsuccessIp=IPs;
                 result.resetPasswordKey = ResetKey;
                 result.resetPasswordKeyValidity = moment().add(2,'hours');
+                result.profilePic = record.profilePic;
                 User.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
 
                     if (err) {
@@ -330,6 +372,44 @@ exports.updateEmployee = function (record,callback) {
     var filesArray = [];
     var filesArrayToWrite = [];
     async.series([
+        function (callback) {
+
+            if (record.profilePic.result) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+record._id+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber = record.UserID + uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + record._id + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.profilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+
+        },
         function (callback) {
             if (record.documents) {
 
@@ -407,13 +487,11 @@ exports.updateEmployee = function (record,callback) {
         function (callback) {
 
             var docArray = [];
-
             /*Member.findById(memberDetails._id, function (err, result) {
 
              if (err) {
              return callback(err, null);
              }*/
-
             if (record.documents) {
 
                 for (var i = 0; i < record.documents.length; i++) {
@@ -430,11 +508,11 @@ exports.updateEmployee = function (record,callback) {
                 }
             }
 
-            if (record.profilePic) {
+ /*           if (record.profilePic) {
                 record.picture = record.profilePic;
-            }
-            //result.documents = docArray;
-
+            }*/
+            record.documents = docArray;
+            memberDetails=record;
             if(record._type=='maintenancecentre-employee')
             {
                 MaintenanceEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
@@ -443,7 +521,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }
@@ -454,7 +532,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }
@@ -465,7 +543,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }
@@ -476,7 +554,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }
@@ -487,7 +565,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }
@@ -498,7 +576,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }
@@ -509,7 +587,7 @@ exports.updateEmployee = function (record,callback) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
             }

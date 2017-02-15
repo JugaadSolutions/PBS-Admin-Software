@@ -47,6 +47,15 @@ exports.processError = function (err, callback) {
                 data: []
             };
             break;
+        case "UniqueFieldError":
+            status = 400;
+            response = {
+                error: true,
+                message: "We could not process your request due to validation issues.",
+                description: err.message,
+                data: []
+            };
+            break;
 
         case "UserError":
             status = 400;

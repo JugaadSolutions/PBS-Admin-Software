@@ -18,6 +18,7 @@ var Member = require('../models/member'),
     Payments = require('../models/payment-transactions'),
     RegCenter = require('../models/registration-center'),
     Card = require('../models/card'),
+    CardTrack = require('../models/card-track'),
     Station = require('../models/station'),
     //CardService = require('../services/card-service'),
     User=require('../models/user');
@@ -33,6 +34,7 @@ exports.createMember=function (record,callback) {
     };
     */
     var documents = [];
+    var profilePic = {};
     var memberDetails;
     var filesArray = [];
     var filesArrayToWrite = [];
@@ -81,7 +83,9 @@ exports.createMember=function (record,callback) {
     ,
      function (callback) {
          documents = record.documents;
+         profilePic = record.profilePic;
          record.documents = [];
+         record.profilePic = '';
          record.password=password;
          Member.create(record,function (err,result) {
              if(err)
@@ -94,7 +98,7 @@ exports.createMember=function (record,callback) {
      },
      function (callback) {
 
-         if (record.profilePic) {
+         if (profilePic) {
 
              var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails._id+"/";
 
@@ -105,7 +109,7 @@ exports.createMember=function (record,callback) {
              var docNumber =memberDetails.UserID+ uuid.v4();
              var docFilePath = dir+ docNumber+".png";
 
-             var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+             var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
              var fileDetails = {
                  key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails._id + '/ ' + docNumber + '.png',
@@ -123,6 +127,7 @@ exports.createMember=function (record,callback) {
              filesArray.push(fileDetails);
 
              record.profilePic = docNumber;
+             memberDetails.profilePic = docNumber;
              return callback(null, null);
 
          } else {
@@ -161,6 +166,7 @@ exports.createMember=function (record,callback) {
              filesArray.push(fileDetails);
 
              record.memberprofilePic = docNumber;
+             //memberDetails.memberprofilePic = docNumber;
              return callback(null, null);
 
          } else {
@@ -269,20 +275,18 @@ exports.createMember=function (record,callback) {
                  }
              }
 
-             if (record.profilePic) {
+/*             if (record.profilePic) {
                  result.picture = record.profilePic;
-             }
+             }*/
              result.documents = docArray;
              result.resetPasswordKey = ResetKey;
              result.resetPasswordKeyValidity = moment().add(2,'hours');
-
+                result.profilePic = record.profilePic;
              //Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
              Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                  if (err) {
                      return callback(err, null);
                  }
-
-                 memberDetails = result;
                  return callback(null, result);
              });
 
@@ -386,7 +390,7 @@ exports.updateMember = function (record,callback) {
     async.series([
         function (callback) {
 
-            if (record.profilePic) {
+            if (record.profilePic.result) {
 
                 var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record._id+"/";
 
@@ -560,18 +564,18 @@ exports.updateMember = function (record,callback) {
                     }
                 }
 
-                if (record.profilePic) {
+/*                if (record.profilePic) {
                     record.picture = record.profilePic;
-                }
-                //result.documents = docArray;
-
+                }*/
+                record.documents = docArray;
+            memberDetails=record;
                 Member.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
+                    //memberDetails = result;
                     return callback(null, result);
                 });
 
@@ -611,8 +615,23 @@ exports.assignMembership=function (memberId, membershipId,callback) {
                 });
             },*/
 
-
-
+            function (callback) {
+                if(isNaN(memberId))
+                {
+                    return callback(null,null);
+                }
+                else
+                {
+                    User.findOne({UserID:memberId},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        memberId = result._id;
+                        return callback(null,result);
+                    });
+                }
+            },
             // Step 2: Method to update Member validity
             function (callback) {
 
@@ -634,7 +653,7 @@ exports.assignMembership=function (memberId, membershipId,callback) {
             },
             function (callback) {
                 if(Number(memberObject.creditBalance)>0 && memberObject.processingFeesDeducted==false) {
-                    Payments.findOne({'memberId':memberObject._id,'paymentDescription':'Credit note'},function (err,result) {
+                    Payments.findOne({'memberId':memberObject._id,'paymentDescription':'Registration'},function (err,result) {
                         if(err)
                         {
                             return callback(err,null);
@@ -642,7 +661,6 @@ exports.assignMembership=function (memberId, membershipId,callback) {
                         paymentObject=result;
                         return callback(null,result);
                     });
-
                 }
                 else
                 {
@@ -654,20 +672,28 @@ exports.assignMembership=function (memberId, membershipId,callback) {
         function (callback) {
             if(Number(memberObject.creditBalance)>0 && memberObject.processingFeesDeducted==false)
             {
-                var rec = {
-                    transactionNumber:paymentObject.gatewayTransactionId,
-                    comments:paymentObject.comments,
-                    credit:paymentObject.credit,
-                    creditMode:paymentObject.paymentMode
-                };
-                PaymentTransaction.signedUp(rec,memberObject,function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
+                if(paymentObject)
+                {
+                    var rec = {
+                        transactionNumber:paymentObject.gatewayTransactionId,
+                        comments:paymentObject.comments,
+                        credit:paymentObject.credit,
+                        creditMode:paymentObject.paymentMode
+                    };
+                    PaymentTransaction.signedUp(rec,memberObject,function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
 
-                    return callback(null,result);
-                });
+                        return callback(null,result);
+                    });
+                }
+                else
+                {
+                    return callback(new Error('Could not able to find your transaction details '),null);
+                }
+
             }
             else
             {
@@ -699,10 +725,6 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
     var validity;
 
     async.series([
-        /*function (callback) {
-
-        },*/
-
             // Step 1: Method to check for any assigned cards
             function (callback) {
 
@@ -720,7 +742,7 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
                         balance = result.creditBalance;
                     }
                     memberName = result.Name;
-                    if (result.cardNum) {
+/*                    if (result.cardNum) {
 
                         CardService.deactivateCard(result.cardNum, function (err, result) {
 
@@ -731,9 +753,9 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
                             return callback(null, result);
                         });
 
-                    } else {
+                    } else {*/
                         return callback(null, null);
-                    }
+                   // }
                 });
 
             },
@@ -746,8 +768,8 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
                     if (err) {
                         return callback(err, null);
                     }
-
-                    result.status = Constants.CardStatus.ACTIVE;
+                    var before = result;
+                    result.status = Constants.CardStatus.ASSIGNED;
                     result.membershipId = membershipId;
                     result.assignedTo = memberId;
                     result.assignedToName = memberName;
@@ -760,9 +782,21 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
                         if (err) {
                             return callback(err, null);
                         }
-
                         cardObject = result;
-                        return callback(null, result);
+                            var data = {
+                                assignerUserId:result.assignedTo,
+                                preStatus:before.status,
+                                postStatus:result.status,
+                                cardId:result._id,
+                                changerId:createdBy
+                            };
+                            CardTrack.create(data,function (err,result) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                return callback(null,result);
+                            });
                     });
 
                 });
@@ -791,6 +825,7 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
                     result.cardNum = cardObject.cardNumber;
                     result.smartCardId=cardObject._id;
                     result.smartCardNumber=cardObject.cardRFID;
+                    memberObject = result;
                     Member.update({_id:result._id}, result/*{
                                             $set: {
                          'validity': validity,
@@ -804,7 +839,7 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
                             return callback(err, null);
                         }
 
-                        memberObject = result;
+                       // memberObject = result;
                         return callback(null, result);
                     });
 
@@ -1036,54 +1071,92 @@ exports.debitMember = function (id, record, callback) {
                     if (result.creditBalance < record.debit) {
                         return callback(new Error(Messages.DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE), null);
                     }
-
                     result.creditBalance=Number(result.creditBalance- record.debit);
                     result.comments = record.comments;
-
+                    memberObject = result;
                    // Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
                     Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                         if (err) {
                             return callback(err, null);
                         }
-                        memberObject = result;
+                        //memberObject = result;
                         return callback(null, result);
                     })
                 });
 
             },
             function (callback) {
-                User.findOne({'_id':record.createdBy}).lean().exec(function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    if(!result)
-                    {
-                        location = 'Other Location';
-                        return callback(null,result);
-                    }
-                    if(result._type=='registration-employee')
-                    {
-                        RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
-                            if(err)
-                            {
-                                return callback(err,null);
-                            }
-                            if(!result)
-                            {
-                                location = 'Other Location';
-                                return callback(null,result);
-                            }
-                            location=reg.location;
-                            return callback(null,result);
-                        });
-                    }
-                    else {
+                if(isNaN(record.createdBy))
+                {
+                    User.findOne({'_id':record.createdBy}).lean().exec(function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
                             location = 'Other Location';
                             return callback(null,result);
-                    }
+                        }
+                        if(result._type=='registration-employee')
+                        {
+                            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                if(!result)
+                                {
+                                    location = 'Other Location';
+                                    return callback(null,result);
+                                }
+                                location=reg.location;
+                                return callback(null,result);
+                            });
+                        }
+                        else {
+                            location = 'Other Location';
+                            return callback(null,result);
+                        }
 
-                });
+                    });
+                }
+                else
+                {
+                    User.findOne({UserID:record.createdBy}).lean().exec(function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
+                            location = 'Other Location';
+                            return callback(null,result);
+                        }
+                        record.createdBy = result._id;
+                        if(result._type=='registration-employee')
+                        {
+                            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                if(!result)
+                                {
+                                    location = 'Other Location';
+                                    return callback(null,result);
+                                }
+                                location=reg.location;
+                                return callback(null,result);
+                            });
+                        }
+                        else {
+                            location = 'Other Location';
+                            return callback(null,result);
+                        }
+
+                    });
+                }
             }
             ,
 
@@ -1490,7 +1563,7 @@ exports.searchMember = function (record,callback) {
     {
         if(findMem!='')
         {
-            Member.find({$or: [{Name: new RegExp(findMem, 'i')}, {email: new RegExp(findMem, 'i')},{address:new RegExp(findMem, 'i')}],_type:'member'},function (err,result) {
+            Member.find({$or: [{Name: new RegExp(findMem, 'i')}, {email: new RegExp(findMem, 'i')},{address:new RegExp(findMem, 'i')},{phoneNumber:new RegExp(findMem, 'i')}],_type:'member'},function (err,result) {
                 if(err)
                 {
                     return callback(err,null);

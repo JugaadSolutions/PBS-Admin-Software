@@ -1136,17 +1136,21 @@ exports.timelyCheckin = function (callback) {
                                     {
                                         if(!result[i]._id.equals(portUpdated._id))
                                         {
-                                            if(checkinDetail.vehicleId.equals(result[i].vehicleId[0].vehicleid))
+                                            if(result[i].vehicleId[0].vehicleid)
                                             {
-                                                /*result[i].vehicleId=[];
-                                                result[i].portStatus=Constants.AvailabilityStatus.EMPTY;*/
-                                                DockPort.findByIdAndUpdate(result[i]._id,{$set:{'vehicleId':[],'portStatus':Constants.AvailabilityStatus.EMPTY}},{new:true},function (err,result) {
-                                                    if(err)
-                                                    {
-                                                        return console.error('Error : '+err);
-                                                    }
-                                                });
+                                                if(checkinDetail.vehicleId.equals(result[i].vehicleId[0].vehicleid))
+                                                {
+                                                    /*result[i].vehicleId=[];
+                                                     result[i].portStatus=Constants.AvailabilityStatus.EMPTY;*/
+                                                    DockPort.findByIdAndUpdate(result[i]._id,{$set:{'vehicleId':[],'portStatus':Constants.AvailabilityStatus.EMPTY}},{new:true},function (err,result) {
+                                                        if(err)
+                                                        {
+                                                            return console.error('Error : '+err);
+                                                        }
+                                                    });
+                                                }
                                             }
+
                                         }
                                     }
                                 });

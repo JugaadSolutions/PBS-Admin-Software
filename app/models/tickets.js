@@ -18,7 +18,8 @@ const trans = {
     replierId:{type:Schema.ObjectId,required:false,ref:'user'},
     description:{type:String,required:false},
     status:{type:stats,required:true,default:stats.OPEN},
-    replydate:{type:Date,required:true,default:Date.now}
+    replydate:{type:Date,required:true,default:Date.now},
+    internal:{type:Number,required:false,default:1}
 };
 
 const channel = Constants.TicketChannel;

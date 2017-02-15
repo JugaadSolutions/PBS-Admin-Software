@@ -38,11 +38,12 @@ router
     })
 
     .get('/:id', function (req, res, next) {
-
+        //string
         var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
         if(isNaN(req.params.id))
         {
-            Member.findById(req.params.id).populate(appliedFilter.options.populate).exec(function (err, result) {
+
+            Member.findOne({$or:[{_id:req.params.id},{phoneNumber:req.params.id}]}).populate(appliedFilter.options.populate).exec(function (err, result) {
                 if (err) {
 
                     next(err, req, res, next);
@@ -64,7 +65,7 @@ router
         }
         else
         {
-            Member.findOne({UserID:req.params.id}).populate(appliedFilter.options.populate).exec(function (err, result) {
+            Member.findOne({$or:[{UserID:req.params.id},{phoneNumber:req.params.id}]}).populate(appliedFilter.options.populate).exec(function (err, result) {
                 if (err) {
 
                     next(err, req, res, next);

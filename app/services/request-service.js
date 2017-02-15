@@ -10,8 +10,8 @@ exports.requestHandler = function (httpMethod, uri, ip, requestBody,callback) {
 
     //requestBody = EncryptionService.encrypt(requestBody);
     //var req = requestBody;
-    var burl = 'http://'+ip+':13070/api/';
-//    console.log(burl);
+    var burl = 'http://'+ip+':13075/api/';
+    //console.log(burl);
     req(
         {
             method: httpMethod,

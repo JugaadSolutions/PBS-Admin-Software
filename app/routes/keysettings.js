@@ -41,7 +41,7 @@ router
     })
 
     .get('/:id',function (req,res,next) {
-        Settings.findOne({'_id':req.params.id,'visibility':1},function (err,result) {
+        Settings.findOne({name:req.params.id,'visibility':1},function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

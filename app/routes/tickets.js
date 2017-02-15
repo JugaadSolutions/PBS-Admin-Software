@@ -70,7 +70,23 @@ router
         });
 
     })
+    .post('/ticketinfo', function (req, res, next) {
 
+        TicketService.getTicketinfo(req.body,function (err,result){
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
     .post('/:id/addreply', function (req, res, next) {
 
         TicketService.addReply(req.params.id,req.body,function (err,result){
@@ -93,7 +109,7 @@ router
 
         var existingRecord = req.body;
 
-        TicketService.ticketUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+        TicketService.ticketUpdate(req.params.id, existingRecord, function (err, result) {
 
             if (err) {
 

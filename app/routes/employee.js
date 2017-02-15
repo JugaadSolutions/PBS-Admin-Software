@@ -3,6 +3,7 @@ var express = require('express'),
     RequestDataHandler = require('../handlers/request-data-handler'),
     EmployeeService = require('../services/employee-service'),
     User = require('../models/user'),
+    GolbalStats = require('../models/global-settings'),
     LeaveTrack = require('../models/leave-tracker'),
     Messages = require('../core/messages');
 var router = express.Router();
@@ -38,7 +39,30 @@ router
         });
 
     })
+    .get('/departments', function (req, res, next) {
 
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        GolbalStats.findOne({name:'Employee'}   ,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
     .get('/:id', function (req, res, next) {
 
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);

@@ -6,27 +6,25 @@ var syncService=require('../app/services/sync-service');
 
 var flag = 1;
 var lastSyncedTime;
-/*setTimeout(function () {
+setTimeout(function () {
     usersync();
-},0);*/
+},10);
 
-/*
 setTimeout(function () {
     vehiclesync();
-},1);
-*/
+},15);
 
 function usersync() {
     setTimeout(function () {
         //console.log('Timeout');
-        if(flag==1)
+/*        if(flag==1)
         {
-            lastSyncedTime = null;
-            flag = 0;
-            syncService.startUserSync(lastSyncedTime,function (err,result) {
+            flag = 0;*/
+            syncService.startUserSync(function (err,result) {
                 if(err)
                 {
                     console.log('Error');
+                    usersync();
                     return;
                 }
                 if(result)
@@ -36,8 +34,8 @@ function usersync() {
                 }
 
             });
-        }
-        else
+  //      }
+/*        else
         {
             //lastSyncedTime = new Date();
             syncService.startUserSync(lastSyncedTime,function (err,time,result) {
@@ -54,9 +52,9 @@ function usersync() {
                 }
 
             });
-        }
+        }*/
 
-    },40000);
+    },30000);
 }
 
 function vehiclesync() {
@@ -66,6 +64,7 @@ function vehiclesync() {
             if(err)
             {
                 console.log('Error');
+                vehiclesync();
                 return;
             }
             if(result)
@@ -75,6 +74,6 @@ function vehiclesync() {
             }
 
         });
-    },50000);
+    },51313);
 }
 //setInterval(function () {

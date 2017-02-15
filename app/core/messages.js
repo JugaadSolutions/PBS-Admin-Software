@@ -61,6 +61,8 @@ module.exports={
     SIGN_UP_SUCCESSFUL:"Sign Up Successful",
 
     THIS_CARD_HAS_ALREADY_BEEN_ASSIGNED_TO_A_USER:"This card has already been assigned to a user",
+    THIS_CARD_HAS_BEEN_BLOCKED:"This card has been blocked, Please try some other cards",
+    THIS_CARD_HAS_BEEN_SET_AS_DAMAGED:"This card is Damaged",
 
     UPDATING_RECORD_SUCCESSFUL:"Updating record successful ",
 

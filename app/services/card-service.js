@@ -4,7 +4,9 @@ var Card = require('../models/card'),
     /*Member = require('../models/member'),
     Employee = require('../models/employee'),*/
     Constants = require('../core/constants'),
+    Station = require('../models/station'),
     User = require('../models/user'),
+    CardTrack = require('../models/card-track'),
     Messages = require('../core/messages');
 
 exports.deactivateCard = function (id, callback) {
@@ -12,7 +14,12 @@ exports.deactivateCard = function (id, callback) {
     var memberObject;
     var assignedToId;
     var cardObject;
-
+    var IPs = [];
+    var trackdata = {
+        preStatus:0,
+        postStatus:0,
+        cardId:''
+    };
     async.series([
 
             // Step 1: Method to validate card
@@ -30,6 +37,30 @@ exports.deactivateCard = function (id, callback) {
                     cardObject=result;
                     return callback(null, result);
 
+                });
+
+            },
+            function (callback) {
+                Station.find({stationType:'dock-station'},function (err,result) {
+                    if(err)
+                    {
+                        console.log('Error fetching station');
+                    }
+                    if(result.length>0)
+                    {
+                        for(var i=0;i<result.length;i++)
+                        {
+                            IPs.push(result[i].StationID);
+                            if(i==result.length-1)
+                            {
+                                return callback(null,result);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
                 });
 
             },
@@ -53,7 +84,7 @@ exports.deactivateCard = function (id, callback) {
                             smartCardId: result.smartCardId,
                             smartCardNumber: result.smartCardNumber
                         }
-                    }, {new: true}, function (err, result) {
+                    }, {new: true}).lean().exec(function (err, result) {
 
                         if (err) {
                             return callback(err, null);
@@ -66,6 +97,22 @@ exports.deactivateCard = function (id, callback) {
                 });
 
             },
+        function (callback) {
+                memberObject.lastModifiedAt = new Date();
+            memberObject.unsuccessIp=IPs;
+            memberObject.updateCount=0;
+            memberObject.successIp=[];
+            User.findByIdAndUpdate(memberObject._id, memberObject, {new: true}).lean().exec(function (err, result) {
+
+                if (err) {
+                    return callback(err, null);
+                }
+
+                memberObject = result;
+                return callback(null, result);
+            });
+
+        },
 
             // Step 3: Method to change card status to inactive
             function (callback) {
@@ -73,16 +120,35 @@ exports.deactivateCard = function (id, callback) {
                 Card.findByIdAndUpdate(cardObject._id, {
                     $unset: {assignedTo: assignedToId,
                         membershipId:memberObject.membershipId,
-                        status: Constants.CardStatus.INACTIVE,
-                        balance:0}
+                         issuedDate: ""}
                 }, {new: true}, function (err, result) {
 
                     if (err) {
                         return callback(err, null);
                     }
+                    var before = result;
+                    result.status = Constants.CardStatus.AVAILABLE;
+                    result.balance = 0;
+                    Card.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        cardObject = result;
+                                trackdata.assignerUserId=memberObject._id;
+                                trackdata.preStatus=before.status;
+                                trackdata.postStatus=result.status;
+                                trackdata.cardId=result._id;
 
-                    cardObject = result;
-                    return callback(null, result);
+
+                        CardTrack.create(trackdata,function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            return callback(null,result);
+                        });
+                    });
                 });
 
             }
@@ -124,8 +190,16 @@ exports.cardAvailableForMember = function (cardNumber, callback) {
                         return callback(new Error(Messages.INVALID_CARD_NUMBER_PLEASE_TRY_AGAIN));
                     }
 
-                    if (result.status == Constants.CardStatus.ACTIVE) {
+                    if (result.status == Constants.CardStatus.ASSIGNED) {
                         return callback(new Error(Messages.THIS_CARD_HAS_ALREADY_BEEN_ASSIGNED_TO_A_USER));
+                    }
+
+                    if (result.status == Constants.CardStatus.DAMAGED) {
+                        return callback(new Error(Messages.THIS_CARD_HAS_BEEN_SET_AS_DAMAGED));
+                    }
+
+                    if (result.status == Constants.CardStatus.BLOCKED) {
+                        return callback(new Error(Messages.THIS_CARD_HAS_BEEN_BLOCKED));
                     }
 
                     /*if (result.cardLevel != Card.CardLevel.CHECK_OUT_CARD) {

@@ -130,7 +130,9 @@ exports.MembershipStatus = {
 };
 
 exports.VehicleType={
-  BICYCLE:0
+    BICYCLE:1,
+    GEARED_BICYCLE:2,
+    PEDAL_ASSIST:3
 };
 
 exports.VehicleLocationStatus={
@@ -162,8 +164,9 @@ exports.ComplaintValidation={
 /** Card **/
 
 exports.CardType = {
-    REGISTERED_MEMBER: 0,
-    EMPLOYEE: 1
+    REGISTERED_MEMBER: 1,
+    EMPLOYEE: 2,
+    CASUAL_MEMBER:3
 };
 
 exports.CardLevel = {
@@ -175,8 +178,10 @@ exports.CardLevel = {
 };
 
 exports.CardStatus = {
-    ACTIVE: 0,
-    INACTIVE: -1
+    AVAILABLE: 1,
+    ASSIGNED: 2,
+    DAMAGED:3,
+    BLOCKED:4
 };
 /** Fare Plan Status **/
 

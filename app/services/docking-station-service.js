@@ -119,7 +119,15 @@ exports.createDS = function (record,callback) {
             DockStation.create(record,function (err,result) {
                 if(err)
                 {
-                    return callback(err,null);
+                    if (err.name === 'MongoError' && err.code === 11000) {
+                        // Duplicate username
+                        err.name = 'UniqueFieldError';
+                        err.message = 'Station name, Ipaddress and subnet fields must be unique, please check your inputs';
+                        err.statusCode=400;
+                        return callback(err,null);
+                    }else {
+                        return callback(err, null);
+                    }
                 }
                 stationDetails=result;
                 return callback(null,result);
@@ -138,7 +146,7 @@ exports.createDS = function (record,callback) {
                         StationId: stationDetails._id,
                         FPGA: i,
                         ePortNumber: port,
-                        Name: stationDetails.name +"Unit-"+i+" PORT -" + port
+                        Name: stationDetails.name +"-Unit-"+i+" PORT-" + port
                     };
 
                     DockService.createPort(portsDetails, function (err, result) {

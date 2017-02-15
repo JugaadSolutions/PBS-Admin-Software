@@ -54,7 +54,7 @@ var UserSchema = mongoose.Schema({
     Name: {type: String, required: true},
     lastName: {type: String, required: false},
     fatherName: {type: String, required: false},
-    email: {type: String, required: false, validate: [ValidationHandler.validateEmail, 'Invalid email']},
+    email: {type: String, required: false/*, validate: [ValidationHandler.validateEmail, 'Invalid email']*/},
     emailVerified: {type: Boolean, required: false, default: false},
     password: {type: String, required: false},
     phoneNumber: {type: String, required: false},
@@ -87,7 +87,7 @@ var UserSchema = mongoose.Schema({
     resetPasswordKey:{type:String,required:false},
     resetPasswordKeyValidity:{type:Date,required:false},
     createdBy:{type:Schema.ObjectId,required:false,ref:'user'},
-    lastSyncedAt:{type:Date,required:false,default:Date.now}
+    lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'}
 
 }, { collection : 'users', discriminatorKey : '_type' });
 

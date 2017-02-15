@@ -24,7 +24,6 @@ router
                 res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
             }
         });
-
     })
 
     .get('/:id',function (req,res,next) {
@@ -37,12 +36,35 @@ router
                 res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
             }
         });
-
     })
-
     .post('/', function (req, res, next) {
-
         MaintenanceCenterService.createDS(req.body, function (err, result) {
+            if (err) {
+                next(err, req, res, next);
+            } else {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+        });
+    })
+    .post('/maintained', function (req, res, next) {
+
+        MaintenanceCenterService.createMaintenance(req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+    })
+    .post('/repaired', function (req, res, next) {
+
+        MaintenanceCenterService.createRepair(req.body, function (err, result) {
 
             if (err) {
 

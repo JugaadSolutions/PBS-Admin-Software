@@ -10,12 +10,12 @@ var expressWinston = require('express-winston');
 //var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var config = require('config');
-var http = require('http'),
+/*var http = require('http'),
     fs = require('fs'),
     ccav = require('./app/handlers/ccavutil.js'),
     qs = require('querystring'),
     ccavReqHandler = require('./app/handlers/ccavRequestHandler.js'),
-    ccavResHandler = require('./app/handlers/ccavResponseHandler.js');
+    ccavResHandler = require('./app/handlers/ccavResponseHandler.js');*/
 /*var routes = require('./routes/index');
 var users = require('./routes/users');*/
 
@@ -25,11 +25,11 @@ var app = express();
 
 app.use(compression({}));
 
-var corsOptions = {
+/*var corsOptions = {
     origin: 'http://www.mytrintrin.com',
     optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
-};
-app.use(cors(corsOptions));
+};*/
+app.use(cors(/*corsOptions*/));
 app.use(helmet());
 app.use(helmet.noCache());
 app.use(helmet.contentSecurityPolicy({
