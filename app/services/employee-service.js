@@ -271,7 +271,7 @@ exports.createEmployee=function (record,id,callback) {
                 {
                     for(var i=0;i<result.length;i++)
                     {
-                        IPs.push(result[i].StationID);
+                        IPs.push(result[i].ipAddress);
                         if(i==result.length-1)
                         {
                             return callback(null,result);
@@ -687,7 +687,7 @@ exports.addCard = function (memberId, cardNumber, callback) {
                     }
 
 
-                DockingStation.find({'stationType':'dock-station'},'StationID',function (err,ds) {
+                DockingStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
                     if(err)
                     {
                         return console.error('Error : '+err);
@@ -695,7 +695,7 @@ exports.addCard = function (memberId, cardNumber, callback) {
                     result.unsuccessIp=[];
                     for(var i=0;i<ds.length;i++)
                     {
-                        result.unsuccessIp.push(ds[i].StationID);
+                        result.unsuccessIp.push(ds[i].ipAddress);
                     }
                     //result.unsuccessIp = ds;
                     result.successIp=[];

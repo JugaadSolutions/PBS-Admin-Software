@@ -6,13 +6,15 @@ var syncService=require('../app/services/sync-service');
 
 var flag = 1;
 var lastSyncedTime;
+/*
 setTimeout(function () {
     usersync();
 },10);
+*/
 
-setTimeout(function () {
+/*setTimeout(function () {
     vehiclesync();
-},15);
+},15);*/
 
 function usersync() {
     setTimeout(function () {

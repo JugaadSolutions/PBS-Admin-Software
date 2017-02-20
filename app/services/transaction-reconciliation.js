@@ -510,10 +510,10 @@ var checkinDetails;
         {
             return console.log(err);
         }
-        if(result[0].length>0)
+/*        if(result[0].length>0)
         {
             return console.log(result);
-        }
+        }*/
 
     });
 };

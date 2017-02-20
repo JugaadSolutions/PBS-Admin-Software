@@ -744,7 +744,7 @@ exports.timelyCheckout = function (callback) {
                                 result.unsuccessIp=[];
                                 for(var i=0;i<ds.length;i++)
                                 {
-                                    result.unsuccessIp.push(ds[i].StationID);
+                                    result.unsuccessIp.push(ds[i].ipAddress);
                                 }
                                 //result.unsuccessIp = ds;
                                 result.successIp=[];
@@ -1074,7 +1074,7 @@ exports.timelyCheckin = function (callback) {
                                             result.unsuccessIp=[];
                                             for(var i=0;i<ds.length;i++)
                                             {
-                                                result.unsuccessIp.push(ds[i].StationID);
+                                                result.unsuccessIp.push(ds[i].ipAddress);
                                             }
                                             //result.unsuccessIp = ds;
                                             result.successIp=[];

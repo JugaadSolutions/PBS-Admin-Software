@@ -12,6 +12,7 @@ var Member = require('../models/member'),
     CardService = require('../services/card-service'),
     Messages = require('../core/messages'),
     Constants =require('../core/constants'),
+    Membership = require('../models/membership'),
     PoolAccount = require('../models/poolingaccount'),
     TemplatesMessage = require('../../templates/text-messages'),
     EmailNotificationHandler = require('../handlers/email-notification-handler'),
@@ -594,7 +595,8 @@ exports.updateMember = function (record,callback) {
 
 };
 
-exports.assignMembership=function (memberId, membershipId,callback) {
+exports.assignMembership=assignMemberShip;
+    function assignMemberShip (memberId, membershipId,callback) {
 
    // var validity;
     var memberObject;
@@ -632,7 +634,7 @@ exports.assignMembership=function (memberId, membershipId,callback) {
                     });
                 }
             },
-            // Step 2: Method to update Member validity
+
             function (callback) {
 
                 Member.findByIdAndUpdate(memberId, {
@@ -716,7 +718,8 @@ exports.assignMembership=function (memberId, membershipId,callback) {
 
 };
 
-exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callback) {
+exports.addCard = assignCard;
+function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
 
     var cardObject;
     var memberObject;
@@ -862,7 +865,8 @@ exports.addCard = function (memberId, cardNumber, membershipId,createdBy, callba
 
 };
 
-exports.creditMember=function (id,record,callback) {
+exports.creditMember=addCreditToMember;
+function addCreditToMember(id,record,callback) {
 
     var memberObject;
     var updatedMemberObject;
@@ -1581,4 +1585,745 @@ exports.searchMember = function (record,callback) {
         return callback(new Error('No text found to search'),null);
     }
 
+};
+
+exports.addMember=function (record,callback) {
+
+    /*   var memberData={
+     name:record.Name,
+     phoneNumber
+     address
+     city
+     country
+     };
+     */
+    var documents = [];
+    var profilePic = {};
+    var memberDetails;
+    var filesArray = [];
+    var filesArrayToWrite = [];
+    var password;
+    var ResetKey;
+    var passwordFlag = 0;
+    var location;
+
+    async.series([
+        /*     function (callback) {
+
+         if (record.password) {
+         password = record.password;
+         return callback(null, null);
+         } else {
+         random.strings({"length": 6, "number": 1, "upper": true, "digits": true}, function (err, data) {
+
+         if (err) {
+         return callback(err, null);
+         }
+
+         password = data;
+         return callback(null, data);
+         });
+         }
+
+         }*/
+        function (callback) {
+
+            if (record.password) {
+                password = record.password;
+                record.emailVerified=true;
+                passwordFlag = 1;
+                return callback(null, null);
+            } else {
+                random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    password=data.split('').reverse().join('');
+                    ResetKey = data;
+                    return callback(null, data);
+                });
+            }
+
+        },
+        function (callback) {
+            User.findOne({UserID:record.createdBy},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    location = 'Other Location';
+                    return callback(null,result);
+                }
+                record.createdBy = result._id;
+                if(result._type=='registration-employee')
+                {
+                    RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
+                            location = 'Other Location';
+                            return callback(null,result);
+                        }
+                        location=reg.location;
+                        return callback(null,result);
+                    });
+                }
+                else {
+                    location = 'Other Location';
+                    return callback(null,result);
+                }
+
+            });
+        }
+        ,
+        function (callback) {
+            documents = record.documents;
+            profilePic = record.profilePic;
+            record.documents = [];
+            record.profilePic = '';
+            record.password=password;
+
+            if(record.UserID==0)
+            {
+                var memData = {
+                    Name:record.Name,
+                    lastName:record.lastName,
+                    email:record.email,
+                    password: record.password,
+                    phoneNumber:record.phoneNumber,
+                    sex:record.sex,
+                    city:record.city,
+                    state:record.state,
+                    country:record.country,
+                    createdBy:record.createdBy,
+                    registeredLocation:location,
+                    resetPasswordKey:ResetKey,
+                    resetPasswordKeyValidity:moment().add(2,'hours')
+                };
+                Member.create(memData,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }else
+            {
+                var memData = {
+                    Name:record.Name,
+                    lastName:record.lastName,
+                    email:record.email,
+                    password: record.password,
+                    phoneNumber:record.phoneNumber,
+                    sex:record.sex,
+                    city:record.city,
+                    state:record.state,
+                    country:record.country,
+                    createdBy:record.createdBy,
+                    registeredLocation:location
+
+                };
+                Member.findOneAndUpdate({UserID:record.UserID},memData,{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails = result;
+                    return callback(null,result);
+                });
+            }
+
+        },
+        function (callback) {
+
+            if (profilePic) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails.UserID+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber =memberDetails.UserID+ uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.profilePic = docNumber;
+                memberDetails.profilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+
+        },
+        function (callback) {
+
+            if (record.memberprofilePic) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails.UserID+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber =memberDetails.UserID+ uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.memberprofilePic = docNumber;
+                memberDetails.memberprofilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+
+        }
+        ,
+        function (callback) {
+            if (documents) {
+
+                for (var i = 0; i < documents.length; i++) {
+
+                    var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails.UserID+"/";
+
+                    if (!fs.existsSync(dir)){
+                        fs.mkdirSync(dir);
+                    }
+                    //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                    var docNumber = i + uuid.v4();
+                    var docFilePath = dir+ docNumber+".png";
+
+                    // Check if there is a new document available
+                    if (documents[i].documentCopy.result) {
+
+                        var decodedDoc = new Buffer(documents[i].documentCopy.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                        /*var fileDetails = {
+                         key: config.get('aws.bucket') + config.get('awsFolders.member') + memberObject.memberId + '/' + docNumber + '.png',
+                         filePath: docFilePath
+                         };*/
+                        var fileDetails = {
+                            key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                            filePath: docFilePath
+                        };
+
+                        // Method to write Multiple files
+                        var writeFiles = {
+                            filePath: docFilePath,
+                            file: decodedDoc,
+                            fileName: docNumber
+                        };
+
+                        filesArrayToWrite.push(writeFiles);
+                        filesArray.push(fileDetails);
+
+                        documents[i].documentCopy = docNumber;
+
+                    }
+
+                    // removing document name if type not Other
+                    if (documents[i].documentType != "Other") {
+                        documents[i].documentName = "";
+                    }
+
+                    //filesToDelete.push(docFilePath);
+                }
+
+                return callback(null, null);
+            } else {
+                return callback(null, null);
+            }
+        },
+        function (callback) {
+
+            if (filesArrayToWrite.length > 0) {
+
+                UploadHandler.writeFile(filesArrayToWrite, function (err) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    return callback(null, null);
+                });
+
+            } else {
+                return callback(null, null);
+            }
+
+        },
+
+        function (callback) {
+
+            var docArray = [];
+
+                if (documents) {
+
+                    for (var i = 0; i < documents.length; i++) {
+
+                        var docDetails = {
+                            documentType: documents[i].documentType,
+                            documentNumber: documents[i].documentNumber,
+                            documentCopy: documents[i].documentCopy,
+                            documentName: documents[i].documentName,
+                            description: documents[i].description
+                        };
+
+                        docArray.push(docDetails);
+                    }
+                    memberDetails.documents = docArray;
+                    /*memberDetails.resetPasswordKey = ResetKey;
+                    memberDetails.resetPasswordKeyValidity = moment().add(2,'hours');*/
+                    memberDetails.profilePic = record.profilePic;
+
+                    Member.findByIdAndUpdate(memberDetails._id,memberDetails,{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        memberDetails = result;
+                        return callback(null,result);
+                    });
+
+                    //return callback(null, null);
+                }
+                else
+                {
+                    return callback(null, null);
+                }
+
+        },
+        function (callback) {
+           if(record.membershipId)
+           {
+                Membership.findOne({membershipId:record.membershipId},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails.membershipId = result._id;
+                    record.creditBalance = Number(result.userFees+result.securityDeposit+result.smartCardFees+result.processingFees);
+                    assignMemberShip(memberDetails._id,memberDetails.membershipId,function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });
+                });
+           }
+           else
+           {
+               return callback(null,null);
+           }
+        },
+        function (callback) {
+            if(memberDetails.creditBalance>0)
+            {
+                return callback(null,null);
+            }
+            else
+            {
+                var creditData = {
+                    transactionNumber: record.transactionNumber,
+                    credit:record.creditBalance,
+                    commemts:record.comments,
+                    creditMode:record.creditMode
+                };
+                addCreditToMember(memberDetails._id,creditData,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails = result;
+                    return callback(null,result);
+                });
+            }
+        }
+        ,
+        function (callback) {
+            assignCard(memberDetails._id,record.cardNumber,memberDetails.membershipId,memberDetails.createdBy,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                memberDetails=result;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+
+            if(memberDetails.email!=null && memberDetails.email!='' && memberDetails.email!='undefined')
+            {
+                if(passwordFlag==1)
+                {
+                    var data = {
+                        profileName: memberDetails.Name,
+                        //password: password,
+                        link: config.get('pbsMemberPortal.url')
+                    };
+
+                    var htmlString = swig.renderFile('./templates/member-registered-with-password.html', data);
+
+                    var emailMessage = {
+                        "subject": Messages.SIGN_UP_SUCCESSFUL,
+                        "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+                        "html": htmlString,
+                        "to": [memberDetails.email]
+                    };
+
+                    EmailNotificationHandler.sendMail(emailMessage);
+                }
+                else
+                {
+                    var data = {
+                        profileName: memberDetails.Name,
+                        //password: password,
+                        link: config.get('pbsMemberPortal.resetUrl')+ResetKey
+                    };
+
+                    var htmlString = swig.renderFile('./templates/member-registered.html', data);
+
+                    var emailMessage = {
+                        "subject": Messages.SIGN_UP_SUCCESSFUL,
+                        "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+                        "html": htmlString,
+                        "to": [memberDetails.email]
+                    };
+
+                    EmailNotificationHandler.sendMail(emailMessage);
+                }
+
+                return callback(null, null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }/*,
+         function (callback) {
+         Station.find({stationType:'dock-station'},function (err,result) {
+         if(err)
+         {
+         console.log('Error fetching station');
+         }
+         if(result.length>0)
+         {
+         for(var i=0;i<result.length;i++)
+         {
+         memberDetails.unsuccessIp.push(result[i].ipAddress);
+         }
+         Member.findByIdAndUpdate(memberDetails._id, memberDetails, {new: true}, function (err, result) {
+         //Member.update({_id:memberDetails._id}, memberDetails, {new: true}).lean().exec(function (err, result) {
+         if (err) {
+         return callback(err, null);
+         }
+
+         memberDetails = result;
+         return callback(null, result);
+         });
+         }
+         });
+
+         }*/
+
+
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,memberDetails);
+    });
+
+};
+
+exports.addSignedupMember = function (record,callback) {
+
+    var documents = [];
+    var profilePic = {};
+    var filesArray = [];
+    var filesArrayToWrite = [];
+    var location;
+    var memberDetails;
+    async.series([
+        function (callback) {
+            User.findOne({UserID:record.createdBy},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    location = 'Other Location';
+                    return callback(null,result);
+                }
+                record.createdBy = result._id;
+                if(result._type=='registration-employee')
+                {
+                    RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
+                            record.registeredLocation = 'Other Location';
+                            return callback(null,result);
+                        }
+                        record.registeredLocation=reg.location;
+                        return callback(null,result);
+                    });
+                }
+                else {
+                    record.registeredLocation = 'Other Location';
+                    return callback(null,result);
+                }
+
+            });
+        }
+        ,
+        function (callback) {
+
+            if (profilePic) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber =record.UserID+ uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.profilePic = docNumber;
+                memberDetails.profilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+
+        },
+        function (callback) {
+
+            if (record.memberprofilePic) {
+
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
+
+                if (!fs.existsSync(dir)){
+                    fs.mkdirSync(dir);
+                }
+                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                var docNumber =record.UserID+ uuid.v4();
+                var docFilePath = dir+ docNumber+".png";
+
+                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                var fileDetails = {
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
+                    filePath: docFilePath
+                };
+
+                // Method to write Multiple files
+                var writeFiles = {
+                    filePath: docFilePath,
+                    file: decodedDoc,
+                    fileName: docNumber
+                };
+
+                filesArrayToWrite.push(writeFiles);
+                filesArray.push(fileDetails);
+
+                record.memberprofilePic = docNumber;
+                memberDetails.memberprofilePic = docNumber;
+                return callback(null, null);
+
+            } else {
+                return callback(null, null);
+            }
+
+        }
+        ,
+        function (callback) {
+            if (documents) {
+
+                for (var i = 0; i < documents.length; i++) {
+
+                    var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
+
+                    if (!fs.existsSync(dir)){
+                        fs.mkdirSync(dir);
+                    }
+                    //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
+                    var docNumber = i + uuid.v4();
+                    var docFilePath = dir+ docNumber+".png";
+
+                    // Check if there is a new document available
+                    if (documents[i].documentCopy.result) {
+
+                        var decodedDoc = new Buffer(documents[i].documentCopy.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+
+                        /*var fileDetails = {
+                         key: config.get('aws.bucket') + config.get('awsFolders.member') + memberObject.memberId + '/' + docNumber + '.png',
+                         filePath: docFilePath
+                         };*/
+                        var fileDetails = {
+                            key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
+                            filePath: docFilePath
+                        };
+
+                        // Method to write Multiple files
+                        var writeFiles = {
+                            filePath: docFilePath,
+                            file: decodedDoc,
+                            fileName: docNumber
+                        };
+
+                        filesArrayToWrite.push(writeFiles);
+                        filesArray.push(fileDetails);
+
+                        documents[i].documentCopy = docNumber;
+
+                    }
+
+                    // removing document name if type not Other
+                    if (documents[i].documentType != "Other") {
+                        documents[i].documentName = "";
+                    }
+
+                    //filesToDelete.push(docFilePath);
+                }
+
+                return callback(null, null);
+            } else {
+                return callback(null, null);
+            }
+        },
+        function (callback) {
+
+            if (filesArrayToWrite.length > 0) {
+
+                UploadHandler.writeFile(filesArrayToWrite, function (err) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    return callback(null, null);
+                });
+
+            } else {
+                return callback(null, null);
+            }
+
+        },
+
+        function (callback) {
+
+            var docArray = [];
+
+            if (documents) {
+
+                for (var i = 0; i < documents.length; i++) {
+
+                    var docDetails = {
+                        documentType: documents[i].documentType,
+                        documentNumber: documents[i].documentNumber,
+                        documentCopy: documents[i].documentCopy,
+                        documentName: documents[i].documentName,
+                        description: documents[i].description
+                    };
+
+                    docArray.push(docDetails);
+                }
+                record.documents = docArray;
+                /*memberDetails.resetPasswordKey = ResetKey;
+                 memberDetails.resetPasswordKeyValidity = moment().add(2,'hours');*/
+//                memberDetails.profilePic = record.profilePic;
+
+                Member.findOneAndUpdate({UserID:record.UserID},record,{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails = result;
+                    return callback(null,result);
+                });
+
+                //return callback(null, null);
+            }
+            else
+            {
+                return callback(null, null);
+            }
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    })
 };

@@ -83,7 +83,7 @@ Vehicle.schema.pre('update',function (next) {
         }
         for(var i=0;i<result.length;i++)
         {
-            IPs.push(result[i].StationID);
+            IPs.push(result[i].ipAddress);
         }
         console.log(IPs.toString());
         /*        User.unsuccessIp=IPs;

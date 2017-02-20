@@ -14,6 +14,7 @@ exports.deactivateCard = function (id, callback) {
     var memberObject;
     var assignedToId;
     var cardObject;
+    var before;
     var IPs = [];
     var trackdata = {
         preStatus:0,
@@ -34,6 +35,7 @@ exports.deactivateCard = function (id, callback) {
                     if (!result) {
                         return callback(new Error(Messages.NO_CARD_FOUND, null));
                     }
+                    before = result.status;
                     cardObject=result;
                     return callback(null, result);
 
@@ -50,7 +52,7 @@ exports.deactivateCard = function (id, callback) {
                     {
                         for(var i=0;i<result.length;i++)
                         {
-                            IPs.push(result[i].StationID);
+                            IPs.push(result[i].ipAddress);
                             if(i==result.length-1)
                             {
                                 return callback(null,result);
@@ -118,7 +120,8 @@ exports.deactivateCard = function (id, callback) {
             function (callback) {
 
                 Card.findByIdAndUpdate(cardObject._id, {
-                    $unset: {assignedTo: assignedToId,
+                    $unset: {assignedTo: "",
+                        issuedBy:"",
                         membershipId:memberObject.membershipId,
                          issuedDate: ""}
                 }, {new: true}, function (err, result) {
@@ -126,7 +129,7 @@ exports.deactivateCard = function (id, callback) {
                     if (err) {
                         return callback(err, null);
                     }
-                    var before = result;
+
                     result.status = Constants.CardStatus.AVAILABLE;
                     result.balance = 0;
                     Card.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
@@ -136,7 +139,7 @@ exports.deactivateCard = function (id, callback) {
                         }
                         cardObject = result;
                                 trackdata.assignerUserId=memberObject._id;
-                                trackdata.preStatus=before.status;
+                                trackdata.preStatus=before;
                                 trackdata.postStatus=result.status;
                                 trackdata.cardId=result._id;
 

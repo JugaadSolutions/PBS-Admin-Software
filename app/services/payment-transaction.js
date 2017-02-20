@@ -239,7 +239,7 @@ exports.existingMember = function (memberObject,record,callback) {
             invoiceNo: orderId,
             paymentDescription:Constants.PayDescription.CREDIT_NOTE,
             paymentMode:(record.creditMode==null)?Constants.PayMode.NET_BANKING:record.creditMode,
-            paymentThrough:Constants.PayThrough.PAYMENT_GATEWAY,
+            paymentThrough:(record.creditMode==Constants.PayThrough.CASH)?Constants.PayThrough.CASH:Constants.PayThrough.PAYMENT_GATEWAY ,
             gatewayTransactionId:record.transactionNumber,
             comments:record.comments,
             credit:record.credit,

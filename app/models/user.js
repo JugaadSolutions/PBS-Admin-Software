@@ -87,6 +87,7 @@ var UserSchema = mongoose.Schema({
     resetPasswordKey:{type:String,required:false},
     resetPasswordKeyValidity:{type:Date,required:false},
     createdBy:{type:Schema.ObjectId,required:false,ref:'user'},
+    registeredLocation:{type:String,required:false},
     lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'}
 
 }, { collection : 'users', discriminatorKey : '_type' });
@@ -190,7 +191,7 @@ User.schema.pre('update',function (next) {
         }
         for(var i=0;i<result.length;i++)
         {
-            IPs.push(result[i].StationID);
+            IPs.push(result[i].ipAddress);
         }
         console.log(IPs.toString());
 /*        User.unsuccessIp=IPs;
