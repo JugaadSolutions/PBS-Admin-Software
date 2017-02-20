@@ -1971,6 +1971,7 @@ exports.addMember=function (record,callback) {
                     commemts:record.comments,
                     creditMode:record.creditMode
                 };
+
                 addCreditToMember(memberDetails._id,creditData,function (err,result) {
                     if(err)
                     {
