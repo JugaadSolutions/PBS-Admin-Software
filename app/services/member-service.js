@@ -22,6 +22,7 @@ var Member = require('../models/member'),
     CardTrack = require('../models/card-track'),
     Station = require('../models/station'),
     //CardService = require('../services/card-service'),
+    Topup = require('../models/topup-plan'),
     User=require('../models/user');
 
 exports.createMember=function (record,callback) {
@@ -1021,33 +1022,23 @@ function addCreditToMember(id,record,callback) {
                 }
                 else {
                     if (isProcessingFeeDeducted) {
-                        PaymentTransaction.existingMember(memberObject, record, function (err, result) {
-                            if (err) {
-                                return callback(err, null);
+
+                        Topup.findOne({userFees:record.credit},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
                             }
-                            updatedMemberObject = result;
-                            return callback(null, result);
+                            record.credit = result.topupId;
+                            PaymentTransaction.topUp(memberObject, record, function (err, result) {
+                                if (err) {
+                                    return callback(err, null);
+                                }
+                                updatedMemberObject = result;
+                                return callback(null, result);
+                            });
                         });
-                        /*
-                         transObject={
-                         memberId:memberObject._id,
-                         invoiceNo: orderId,
-                         paymentDescription:Constants.PayDescription.CREDIT_NOTE,
-                         paymentMode:record.creditMode,
-                         paymentThrough:Constants.PayThrough.POS,
-                         gatewayTransactionId:record.transactionNumber,
-                         comments:record.comments,
-                         credit:record.credit,
-                         balance:record.credit
-                         };
-                         Transaction.create(transObject,function (err,result) {
-                         if(err)
-                         {
-                         return callback(err,null);
-                         }
-                         transactionDetails=result;
-                         return callback(null,result);
-                         });*/
+
+
                     }
                     else {
                         PaymentTransaction.newMember(memberObject, record, function (err, result) {
@@ -1090,6 +1081,124 @@ function addCreditToMember(id,record,callback) {
         return callback(null,updatedMemberObject);
     });
 
+};
+
+exports.topupMember = function (id,record,callback) {
+    var memberObject;
+    var updatedMemberObject;
+    var isProcessingFeeDeducted = false;
+    var transactionDetails;
+    async.series([
+        function (callback) {
+
+            if(isNaN(id))
+            {
+                Member.findById(id, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    if (result.processingFeesDeducted) {
+                        isProcessingFeeDeducted = true;
+                    }
+
+                    memberObject = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                Member.findOne({UserID:id}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    if (result.processingFeesDeducted) {
+                        isProcessingFeeDeducted = true;
+                    }
+
+                    memberObject = result;
+                    return callback(null, result);
+                });
+            }
+
+        },
+        function (callback) {
+
+            if(isNaN(record.createdBy))
+            {
+                    return callback(null,null);
+            }
+            else
+            {
+                User.findOne({UserID:record.createdBy}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    record.createdBy = result._id;
+                    return callback(null, result);
+                });
+            }
+
+        },
+        function (callback) {
+            if(memberObject.status!==Constants.MemberStatus.PROSPECTIVE)
+            {
+                Payments.findOne({'gatewayTransactionId':record.transactionNumber},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+
+                    transactionDetails = result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function (callback) {
+            if(transactionDetails)
+            {
+                return callback(new Error('This payment has already been completed'),null);
+            }
+            else {
+
+                if (isProcessingFeeDeducted) {
+                    PaymentTransaction.topUp(memberObject, record, function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        updatedMemberObject = result;
+                        return callback(null, result);
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+            }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,updatedMemberObject);
+    })
 };
 
 exports.debitMember = function (id, record, callback) {

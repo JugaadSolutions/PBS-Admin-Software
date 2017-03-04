@@ -5,6 +5,7 @@ var async = require('async'),
     User = require('../models/user'),
     Stations = require('../models/station'),
     RegCenter = require('../models/registration-center'),
+    Topup = require('../models/topup-plan'),
     Member = require('../models/member'),
     Deposits = require('../models/deposits'),
     GlobalSettings = require('../models/global-settings'),
@@ -426,6 +427,95 @@ exports.existingMember = function (memberObject,record,callback) {
        return callback(null,memberDetails);
    });
 
+};
+
+exports.topUp = function (memberObject,record,callback) {
+
+    var transObject;
+    var transactionDetails;
+    var memberDetails;
+    var membershipDetails;
+    var membershipType;
+    var location;
+    var orderId = 'PBS'+ new Date().getTime();
+    var topupDetails;
+
+    async.series([
+        function (callback) {
+            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    location = 'Other Location';
+                    return callback(null,result);
+                }
+                location=result.location;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Topup.findOne({topupId:record.credit},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                topupDetails = result;
+                record.credit = result.userFees;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            transObject={
+                memberId:memberObject._id,
+                invoiceNo: orderId,
+                paymentDescription:Constants.PayDescription.TOPUP,
+                paymentMode:(record.creditMode==null)?Constants.PayMode.NET_BANKING:record.creditMode,
+                paymentThrough:(record.creditMode==Constants.PayThrough.CASH)?Constants.PayThrough.CASH:Constants.PayThrough.PAYMENT_GATEWAY ,
+                gatewayTransactionId:record.transactionNumber,
+                comments:record.comments,
+                credit:record.credit,
+                balance:record.credit,
+                location:(location!=null)?location:'Other Location',
+                createdBy:record.createdBy
+            };
+            Payments.create(transObject,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                transactionDetails=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            memberObject.creditBalance = Number(memberObject.creditBalance+topupDetails.userFees);
+            var dur = moment(memberObject.validity).diff(moment(),'days');
+            if(dur>=0)
+            {
+                memberObject.validity = moment(memberObject.validity).add(topupDetails.validity,'days');
+            }
+            else
+            {
+                memberObject.validity = moment().add(topupDetails.validity,'days');
+            }
+            Member.update({_id:memberObject._id}, memberObject, {new: true}).lean().exec(function (err, result) {
+                if (err) {
+                    return callback(err, null);
+                }
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,memberObject);
+    });
 };
 
 exports.newMember = function (memberObject,record,callback) {

@@ -276,6 +276,29 @@ router
 
     })
 
+    .post('/:id/topup', function (req, res, next) {
+
+        MemberService.topupMember(req.params.id, req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.YOUR_PAYMENT_HAS_BEEN_SUCCESSFULLY_PROCESSED,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
     .post('/:id/debit', function (req, res, next) {
 
         MemberService.debitMember(req.params.id, req.body, function (err, result) {

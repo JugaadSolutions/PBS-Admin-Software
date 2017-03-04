@@ -43,7 +43,8 @@ exports.PayDescription={
     UNUSED_AMOUNT:"Unused Balance",
     //USAGE_FEE:"Usage Fee",
     DEBIT_NOTE:"Debit note",
-    CREDIT_NOTE:"Credit note"
+    CREDIT_NOTE:"Credit note",
+    TOPUP:"Topup"
 };
 
 exports.PayMode={
@@ -128,6 +129,12 @@ exports.MembershipStatus = {
     ACTIVE: 0,
     INACTIVE: -1
 };
+
+exports.TopupPlanStatus = {
+    ACTIVE: 0,
+    INACTIVE: -1
+};
+
 
 exports.VehicleType={
     BICYCLE:1,
