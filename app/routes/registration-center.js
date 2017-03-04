@@ -29,15 +29,30 @@ router
     })
 
     .get('/:id',function (req,res,next) {
-        RegistrationCenter.find({_id:req.params.id,'stationType':'registration-center'}).deepPopulate('assignedTo').lean().exec(function (err,result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else {
-                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
-            }
-        });
+        if(isNaN(req.params.id))
+        {
+            RegistrationCenter.find({_id:req.params.id,'stationType':'registration-center'}).deepPopulate('assignedTo').lean().exec(function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+            });
+        }
+        else
+        {
+            RegistrationCenter.find({StationID:req.params.id,'stationType':'registration-center'}).deepPopulate('assignedTo').lean().exec(function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+            });
+        }
 
     })
 

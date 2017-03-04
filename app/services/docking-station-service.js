@@ -353,13 +353,26 @@ exports.getstationdetail = function (id,callback) {
 };
 
 exports.updateDockstation = function (id,record,callback) {
-    DockStation.findByIdAndUpdate(id,record,{new:true},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        DockStation.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        DockStation.findOneIdAndUpdate({StationID:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
 };
 
 exports.createCleanedEntry = function (record,callback) {

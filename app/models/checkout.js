@@ -22,11 +22,13 @@ var schema = {
     errorStatus:{type: Number, required: false,default:0},
     errorMsg:{type: String, required: false},
     updateStatus:{type: Number, required: false,default:0},
-    duration:{type: Number, required: false,default:0}
+    duration:{type: Number, required: false,default:0},
+    checkOutInitiatedTime: {type: Date, required: false},
+    checkOutCompletionTime: {type: Date, required: false}
 };
 
 var model = new Schema(schema);
-
+model.index({ user: 1, vehicleId: 1, fromPort:1,checkOutTime:1 }, { unique: true });
 // Plugins
 model.plugin(abstract);
 
@@ -45,5 +47,6 @@ check.save(function (error) {
             console.error(error);
           }
 });*/
+
 
 module.exports = CheckOut;

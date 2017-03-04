@@ -17,7 +17,9 @@ var KioskTransactionSchema = mongoose.Schema({
     cardRFID: {type: String, required: true},
     status:{type:Number,required:false,default:0},
     result:{type:String,required:false},
-    duration:{type:Number,required:false,default:0}
+    duration:{type:Number,required:false,default:0},
+    transactionInitiatedTime: {type: Date, required: false},
+    transactionCompletionTime: {type: Date, required: false}
 }, { collection : 'kiosk-transactions' });
 
 

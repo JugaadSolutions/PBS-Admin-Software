@@ -29,6 +29,25 @@ exports.addBicycle=function (record, callback) {
             });
         },
         function (callback) {
+            if(record.createdBy)
+            {
+                User.findOne({UserID:record.createdBy},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    record.createdBy = result._id;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }
+        ,
+        function (callback) {
             var addVehicle={
                 fleetId:fleetRecord._id,
                 vehicleNumber:record.vehicleNumber,
@@ -36,10 +55,16 @@ exports.addBicycle=function (record, callback) {
                 currentAssociationId:fleetRecord._id
 
             };
+            if(record.createdBy)
+            {
+                addVehicle.createdBy = record.createdBy;
+            }
             //record.push(addAssociation);
             Vehicle.create(addVehicle,function (err,result) {
                 if(err)
                 {
+                    err.name = "UniqueFieldError";
+                    err.message = addVehicle.vehicleNumber+':'+addVehicle.vehicleRFID;
                     return callback(err,null);
                 }
                 if(!result)
@@ -337,11 +362,88 @@ exports.checkVehicleAvailability = function (callback) {
 
 exports.updateVehicle = function (id,record,callback) {
 
-    Vehicle.update({_id:id},record,{new:true},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
+    if(isNaN(id))
+    {
+        Vehicle.update({_id:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        Vehicle.update({vehicleUid:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
+};
+
+exports.summery = function (callback) {
+
+    var data = {
+        hubs:0,
+        ha:0,
+        mc:0,
+        rv:0,
+        users:0,
+        fleet:0
+    };
+    async.series([
+        function (callback) {
+            Port.find({portStatus:{$ne:Constants.AvailabilityStatus.EMPTY}},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    var port = result[i];
+                    if(port._type=='Docking-port')
+                    {
+                        data.hubs = data.hubs+1;
+                    }
+                   if(port._type=='Fleet')
+                   {
+                        data.fleet = data.fleet+port.vehicleId.length;
+                   }
+                    if(port._type=='Redistribution-vehicle')
+                    {
+                        data.rv = data.rv+port.vehicleId.length;
+                    }
+                    if(port._type=='Holding-area')
+                    {
+                        data.ha = data.ha+port.vehicleId.length;
+                    }
+                    if(port._type=='Maintenance-area')
+                    {
+                        data.mc = data.mc+port.vehicleId.length;
+                    }
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Vehicle.count({vehicleCurrentStatus:Constants.VehicleLocationStatus.WITH_MEMBER},function (err,count) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                data.users = count;
+                return callback(null,count);
+            });
         }
-        return callback(null,result);
+    ],function (err,result) {
+       if(err)
+       {
+           return callback(err,null);
+       }
+       return callback(null,data);
     });
 };

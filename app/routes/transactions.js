@@ -63,6 +63,21 @@ router
         });
     })
 
+    .post('/completed', function (req, res, next) {
+
+        TransactionService.getAllCompletedTransactions(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message:  Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
+
 /*    .post('/', function (req, res, next) {
         TransactionService.createUser(req.body,function (err,result) {
             if(err)

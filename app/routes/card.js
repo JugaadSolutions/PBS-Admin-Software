@@ -15,16 +15,32 @@ var router = express.Router();
 router
 
     .get('/:id',function (req,res,next) {
-        Card.findOne({'_id':req.params.id},function (err,result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else {
-                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
-            }
+        if(isNaN(req.params.id))
+        {
+            Card.findOne({'_id':req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
 
-        });
+            });
+        }
+        else
+        {
+            Card.findOne({cardUid:req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
+        }
     })
 
     .get('/', function (req, res, next) {
@@ -74,20 +90,38 @@ router
 
         var existingRecord = req.body;
 
-        Card.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+        if(isNaN(req.params.id))
+        {
+            Card.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
 
-            if (err) {
+                if (err) {
 
-                next(err, req, res, next);
+                    next(err, req, res, next);
 
-            } else {
+                } else {
 
-                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+                    res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
 
-            }
+                }
 
-        });
+            });
+        }
+        else
+        {
+            Card.findOneAndUpdate({cardUid:req.params.id}, existingRecord, {new: true}, function (err, result) {
 
+                if (err) {
+
+                    next(err, req, res, next);
+
+                } else {
+
+                    res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+                }
+
+            });
+        }
     })
 
 

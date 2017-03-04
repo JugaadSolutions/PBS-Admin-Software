@@ -3,6 +3,7 @@ var mongoose = require('mongoose'),
     uuid = require('node-uuid'),
     _ = require('underscore');
 
+var autoIncrement = require('mongoose-auto-increment');
 // Application Level Dependencies
 var abstract = require('./abstract'),
     Constants = require('../core/constants');
@@ -23,7 +24,7 @@ var Plans = {
 var schema = {
 
     //farePlanId: {type: String, required: false, unique: true, default: uuid.v4()},
-
+    fareplanUid:Number,
     planName: {type: String, required: true, unique: true},
     plans: {type: [Plans], required: true},
 
@@ -57,5 +58,6 @@ model.plugin(abstract);
 
 // Mongoose Model
 var FarePlan = mongoose.model('FarePlan', model, 'fare-plan');
+model.plugin(autoIncrement.plugin,{model:FarePlan,field:'fareplanUid',startAt: 1, incrementBy: 1});
 
 module.exports = FarePlan;

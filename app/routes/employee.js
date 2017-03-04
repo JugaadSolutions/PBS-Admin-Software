@@ -68,23 +68,46 @@ router
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
 
          Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
-        User.find({'_id':req.params.id},function (err, result) {
-            if (err) {
+        if(isNaN(req.params.id))
+        {
+            User.find({_id:req.params.id},function (err, result) {
+                if (err) {
 
-                next(err, req, res, next);
+                    next(err, req, res, next);
 
-            } else {
+                } else {
 
-                res.json({
-                    error: false,
-                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
-                    description: '',
-                    data: result
-                });
+                    res.json({
+                        error: false,
+                        message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                        description: '',
+                        data: result
+                    });
 
-            }
+                }
 
-        });
+            });
+        }
+        else
+        {
+            User.find({UserID:req.params.id},function (err, result) {
+                if (err) {
+
+                    next(err, req, res, next);
+
+                } else {
+
+                    res.json({
+                        error: false,
+                        message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                        description: '',
+                        data: result
+                    });
+
+                }
+
+            });
+        }
 
     })
 
@@ -193,6 +216,31 @@ router
 
          Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
         EmployeeService.getOneEmployeeLeaveInfo(req.params.id,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .get('/:id/cyclestatus', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        EmployeeService.getCyclesWithEmployee(req.params.id,function (err, result) {
             if (err) {
 
                 next(err, req, res, next);

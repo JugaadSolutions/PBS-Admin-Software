@@ -6,14 +6,16 @@ var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var abstract = require('./abstract'),
     autoIncrement = require('mongoose-auto-increment'),
+    uuid = require('node-uuid'),
     Constants = require('../core/constants');
 
 const CardStatus = Constants.CardStatus;
 
 var CardTrackSchema = mongoose.Schema({
     cardTrackUid:Number,
+    cardUid:{type:String,required:false,default:uuid.v4()},
     dateTime:{type:Date,required:false,default:Date.now},
-    assignerUserId:{type:Schema.ObjectId,required:false},
+    assignedUserId:{type:Schema.ObjectId,required:false},
     preStatus:{type: CardStatus, required: false},
     postStatus:{type: CardStatus, required: false},
     cardId:{type:Schema.ObjectId,required:false},

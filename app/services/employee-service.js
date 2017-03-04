@@ -16,6 +16,7 @@ var async = require('async'),
     LeaveTrack = require('../models/leave-tracker'),
     User = require('../models/user'),
     Card = require('../models/card'),
+    Ports = require('../models/port'),
     CardService = require('../services/card-service'),
     Constants = require('../core/constants'),
     UploadHandler = require('../handlers/upload-handler'),
@@ -153,7 +154,7 @@ exports.createEmployee=function (record,id,callback) {
         function (callback) {
             if (profilePic) {
 
-                var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+memberDetails._id+"/";
+                var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+memberDetails.UserID+"/";
 
                 if (!fs.existsSync(dir)){
                     fs.mkdirSync(dir);
@@ -165,7 +166,7 @@ exports.createEmployee=function (record,id,callback) {
                 var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
                 var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails._id + '/ ' + docNumber + '.png',
+                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails.UserID + '/ ' + docNumber + '.png',
                     filePath: docFilePath
                 };
 
@@ -193,7 +194,7 @@ exports.createEmployee=function (record,id,callback) {
 
                 for (var i = 0; i < documents.length; i++) {
 
-                    var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+memberDetails._id+"/";
+                    var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+memberDetails.UserID+"/";
 
                     if (!fs.existsSync(dir)){
                         fs.mkdirSync(dir);
@@ -212,7 +213,7 @@ exports.createEmployee=function (record,id,callback) {
                          filePath: docFilePath
                          };*/
                         var fileDetails = {
-                            key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails._id + '/ ' + docNumber + '.png',
+                            key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails.UserID + '/ ' + docNumber + '.png',
                             filePath: docFilePath
                         };
 
@@ -376,7 +377,7 @@ exports.updateEmployee = function (record,callback) {
 
             if (record.profilePic.result) {
 
-                var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+record._id+"/";
+                var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+record.UserID+"/";
 
                 if (!fs.existsSync(dir)){
                     fs.mkdirSync(dir);
@@ -388,7 +389,7 @@ exports.updateEmployee = function (record,callback) {
                 var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
                 var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + record._id + '/ ' + docNumber + '.png',
+                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + record.UserID + '/ ' + docNumber + '.png',
                     filePath: docFilePath
                 };
 
@@ -415,7 +416,7 @@ exports.updateEmployee = function (record,callback) {
 
                 for (var i = 0; i < record.documents.length; i++) {
 
-                    var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+record._id+"/";
+                    var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+record.UserID+"/";
 
                     if (!fs.existsSync(dir)){
                         fs.mkdirSync(dir);
@@ -434,7 +435,7 @@ exports.updateEmployee = function (record,callback) {
                          filePath: docFilePath
                          };*/
                         var fileDetails = {
-                            key: '/usr/share/nginx/html/mytrintrin/Employee/' + record._id + '/ ' + docNumber + '.png',
+                            key: '/usr/share/nginx/html/mytrintrin/Employee/' + record.UserID + '/ ' + docNumber + '.png',
                             filePath: docFilePath
                         };
 
@@ -515,7 +516,7 @@ exports.updateEmployee = function (record,callback) {
             memberDetails=record;
             if(record._type=='maintenancecentre-employee')
             {
-                MaintenanceEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                MaintenanceEmployee.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -526,7 +527,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='registration-employee') {
-                RegEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                RegEmployee.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -537,7 +538,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='redistribution-employee') {
-                RedistributionEmployee.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                RedistributionEmployee.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -548,7 +549,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Operator') {
-                Operator.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                Operator.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -559,7 +560,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Monitor-group') {
-                Monitorgrp.update({_id:record._id}, record, {new: true}).lean().exec( function (err, result) {
+                Monitorgrp.update({UserID:record.UserID}, record, {new: true}).lean().exec( function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -570,7 +571,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Accounts-admin') {
-                AccountStaff.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                AccountStaff.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -581,7 +582,7 @@ exports.updateEmployee = function (record,callback) {
                 });
             }
             if(record._type=='Holdingarea-employee') {
-                HoldingareaStaff.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                HoldingareaStaff.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -622,32 +623,67 @@ exports.addCard = function (memberId, cardNumber, callback) {
             // Step 1: Method to check for any assigned cards
             function (callback) {
 
-                User.findById(memberId, function (err, result) {
+               if(isNaN(memberId))
+               {
+                   User.findById(memberId, function (err, result) {
 
-                    if (err) {
-                        return callback(err, null);
-                    }
+                       if (err) {
+                           return callback(err, null);
+                       }
 
-                    if (!result) {
-                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
-                    }
+                       if (!result) {
+                           return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                       }
 
-                    memberName = result.Name;
-                    if (result.cardNum) {
+                       memberName = result.Name;
+                      /* if (result.cardNum) {
 
-                        CardService.deactivateCard(result.cardNum, function (err, result) {
+                           CardService.deactivateCard(result.cardNum, function (err, result) {
 
-                            if (err) {
-                                return callback(null, null);
-                            }
+                               if (err) {
+                                   return callback(null, null);
+                               }
 
-                            return callback(null, result);
-                        });
+                               return callback(null, result);
+                           });
 
-                    } else {
-                        return callback(null, null);
-                    }
-                });
+                       } else {
+                           return callback(null, null);
+                       }*/
+                      return callback(null,result);
+                   });
+               }
+               else
+               {
+                   User.findOne({UserID:memberId}, function (err, result) {
+
+                       if (err) {
+                           return callback(err, null);
+                       }
+
+                       if (!result) {
+                           return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                       }
+                       memberId = result._id;
+                       memberName = result.Name;
+                       /*if (result.cardNum) {
+
+                           CardService.deactivateCard(result.cardNum, function (err, result) {
+
+                               if (err) {
+                                   return callback(null, null);
+                               }
+
+                               return callback(null, result);
+                           });
+
+                       } else {
+                           return callback(null, null);
+                       }*/
+
+                       return callback(null,result);
+                   });
+               }
 
             },
 
@@ -823,4 +859,85 @@ exports.getOneEmployeeLeaveInfo = function (id,callback) {
     });
 
 
+};
+
+exports.getCyclesWithEmployee = function (id,callback) {
+
+    var userDetails;
+    var redistribution = false;
+    var vehicleId={};
+    async.series([
+        function (callback) {
+            User.findOne({UserID:id}).deepPopulate('vehicleId.vehicleid').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result._type=='redistribution-employee')
+                {
+                    redistribution = true;
+                }
+                userDetails = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+             if(userDetails.vehicleId.length>0)
+                {
+                    vehicleId.user = [];
+                    var data = userDetails.vehicleId;
+                    for(var i=0;i<userDetails.vehicleId.length;i++)
+                    {
+                        vehicleId.user.push(data[i].vehicleid.vehicleNumber);
+                        if(i==userDetails.vehicleId.length-1)
+                        {
+                            return callback(null,null);
+                        }
+                    }
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+        },
+        function (callback) {
+            if(redistribution)
+            {
+               Ports.findOne({_type:'Redistribution-vehicle',assignedTo:userDetails._id}).deepPopulate('vehicleId.vehicleid').lean().exec(function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    vehicleId.rv = [];
+                    if(result.vehicleId.length>0)
+                    {
+                        var data = result.vehicleId;
+                        for(var i=0;i<result.vehicleId.length;i++)
+                        {
+                            vehicleId.rv.push(data[i].vehicleid.vehicleNumber);
+                            if(i==result.vehicleId.length-1)
+                            {
+                                return callback(null,null);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
+                });
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,vehicleId);
+    });
 };

@@ -91,7 +91,7 @@ exports.getAllTransactions = function (callback) {
                 {
                     return callback(err,null);
                 }
-                if(result)
+                if(result.length>0)
                 {
                     for(var i=0;i<result.length;i++)
                     {
@@ -121,7 +121,7 @@ exports.getAllTransactions = function (callback) {
                 }
                 return callback(null,result);
             });
-        },
+        }/*,
         function (callback) {
             MemberTransaction.find({}).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
                 if(err)
@@ -140,7 +140,7 @@ exports.getAllTransactions = function (callback) {
                 return callback(null,result);
             });
 
-        }
+        }*/
     ],function (err,result) {
         if(err)
         {
@@ -653,7 +653,7 @@ exports.timelyCheckout = function (callback) {
             function (callback) {
             if(checkoutDetails.length>0)
             {
-                async.forEach(checkoutDetails,function (checkoutDetail) {
+                async.forEachLimit(checkoutDetails,1,function (checkoutDetail) {
 /*                    async.series([
                         function (callback) {
 
@@ -665,7 +665,7 @@ exports.timelyCheckout = function (callback) {
                         }
                         return callback(null,result);
                     });*/
-                    vehicle.findOne(checkoutDetail.vehicleId,function (err,result) {
+                    vehicle.findById(checkoutDetail.vehicleId,function (err,result) {
                         if(err)
                         {
                             return console.error('Error : '+err);
@@ -675,7 +675,7 @@ exports.timelyCheckout = function (callback) {
                             vehiclesDetails = result;
                             result.currentAssociationId = checkoutDetail.user;
                             result.vehicleCurrentStatus = Constants.VehicleLocationStatus.WITH_MEMBER;
-                            vehicle.findByIdAndUpdate(result._id,result,function (err,result) {
+                            vehicle.findByIdAndUpdate(result._id,result,function (err) {
                                 if(err)
                                 {
                                     return console.error('Error : '+err);
@@ -683,7 +683,7 @@ exports.timelyCheckout = function (callback) {
                             });
                         }
                     });
-                    Port.findOne(checkoutDetail.fromPort,function (err,result) {
+                    Port.findById(checkoutDetail.fromPort,function (err,result) {
                         if(err)
                         {
                             return console.error('Error : '+err);
@@ -705,17 +705,22 @@ exports.timelyCheckout = function (callback) {
                             {
                                 if(result.vehicleId.length>0)
                                 {
+                                    result.portStatus = Constants.AvailabilityStatus.NORMAL;
                                     for(var i=0;i<result.vehicleId.length;i++)
                                     {
                                         if(result.vehicleId[i].vehicleid.equals(checkoutDetail.vehicleId))
                                         {
                                             result.vehicleId.splice(i,1);
+                                            if(result.vehicleId.length==0)
+                                            {
+                                                result.portStatus = Constants.AvailabilityStatus.EMPTY;
+                                            }
+                                            break;
                                         }
                                     }
                                 }
-
                             }
-                           Port.findByIdAndUpdate(result._id,result,function (err,result) {
+                           Port.findByIdAndUpdate(result._id,result,function (err) {
                                if(err)
                                {
                                    return console.error('Error : '+err);
@@ -723,7 +728,7 @@ exports.timelyCheckout = function (callback) {
                            });
                         }
                     });
-                    User.findOne(checkoutDetail.user,function (err,result) {
+                    User.findById(checkoutDetail.user,function (err,result) {
                         if(err)
                         {
                             return console.error('Error : '+err);
@@ -731,12 +736,11 @@ exports.timelyCheckout = function (callback) {
                         if(result)
                         {
                             var vehicleDetails = {
-                                vehicleid: checkoutDetail.vehicleId,
-                                vehicleUid: vehiclesDetails.vehicleUid
+                                vehicleid: checkoutDetail.vehicleId
                             };
                             result.vehicleId.push(vehicleDetails);
                             result.lastModifiedAt=new Date();
-                            DockStation.find({'stationType':'dock-station'},'StationID',function (err,ds) {
+                            DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
                                 if(err)
                                 {
                                     return console.error('Error : '+err);
@@ -749,7 +753,7 @@ exports.timelyCheckout = function (callback) {
                                 //result.unsuccessIp = ds;
                                 result.successIp=[];
                                 result.updateCount=0;
-                                User.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                                User.findByIdAndUpdate(result._id,result,function (err) {
                                     if (err)
                                     {
                                         return console.error('Error : '+err);
@@ -1022,7 +1026,7 @@ exports.timelyCheckin = function (callback) {
         function (callback) {
             if(checkinDetails.length>0)
             {
-                async.forEach(checkinDetails,function (checkinDetail) {
+                async.forEachLimit(checkinDetails,1,function (checkinDetail) {
                     /*                    async.series([
                      function (callback) {
 
@@ -1034,7 +1038,7 @@ exports.timelyCheckin = function (callback) {
                      }
                      return callback(null,result);
                      });*/
-                    vehicle.findOne(checkinDetail.vehicleId,function (err,result) {
+                    vehicle.findById(checkinDetail.vehicleId,function (err,result) {
                         if(err)
                         {
                             return console.error('Error : '+err);
@@ -1044,7 +1048,7 @@ exports.timelyCheckin = function (callback) {
                             vehiclesDetails = result;
                             if(result.vehicleCurrentStatus == Constants.VehicleLocationStatus.WITH_MEMBER)
                             {
-                                User.findOne(result.currentAssociationId, function (err, result) {
+                                User.findById(result.currentAssociationId, function (err, result) {
                                     if (err) {
                                         return console.error('Checkin Time User Error : ' + err);
                                     }
@@ -1060,12 +1064,13 @@ exports.timelyCheckin = function (callback) {
                                                 for (var i = 0; i < result.vehicleId.length; i++) {
                                                     if (result.vehicleId[i].vehicleid.equals(checkinDetail.vehicleId)) {
                                                         result.vehicleId.splice(i, 1);
+                                                        break;
                                                     }
                                                 }
                                             }
 
                                         }
-                                        DockStation.find({'stationType':'dock-station'},'StationID',function (err,ds) {
+                                        DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
                                             if(err)
                                             {
                                                 return console.error('Error : '+err);
@@ -1079,7 +1084,7 @@ exports.timelyCheckin = function (callback) {
                                             //result.unsuccessIp = ds;
                                             result.successIp=[];
                                             result.updateCount=0;
-                                            User.update({_id:result._id},result,{new:true}).lean().exec(function (err,result) {
+                                            User.update({_id:result._id},result,{new:true}).lean().exec(function (err) {
                                                 if (err)
                                                 {
                                                     return console.error('Error : '+err);
@@ -1091,7 +1096,7 @@ exports.timelyCheckin = function (callback) {
                             }
                             result.currentAssociationId = checkinDetail.toPort;
                             result.vehicleCurrentStatus = Constants.VehicleLocationStatus.WITH_PORT;
-                            vehicle.findByIdAndUpdate(result._id,result,function (err,result) {
+                            vehicle.findByIdAndUpdate(result._id,result,function (err) {
                                 if(err)
                                 {
                                     return console.error('Error : '+err);
@@ -1099,7 +1104,7 @@ exports.timelyCheckin = function (callback) {
                             });
                         }
                     });
-                    Port.findOne(checkinDetail.toPort,function (err,result) {
+                    Port.findById(checkinDetail.toPort,function (err,result) {
                         if(err)
                         {
                             return console.error('Error : '+err);
@@ -1107,18 +1112,33 @@ exports.timelyCheckin = function (callback) {
                         if(result)
                         {
                             var vehicleDetails = {
-                                vehicleid: checkinDetail.vehicleId,
-                                vehicleUid: vehiclesDetails.vehicleUid
+                                vehicleid: checkinDetail.vehicleId
                             };
+
                             if(result._type=='Docking-port')
                             {
                                 //if(result.vehicleId.length>0) {
                                 result.vehicleId=[];
+                                result.portStatus = Constants.AvailabilityStatus.FULL;
+                                result.vehicleId.push(vehicleDetails);
                                 // }
                             }
-                            result.vehicleId.push(vehicleDetails);
-                            result.portStatus = Constants.AvailabilityStatus.FULL;
-                            Port.findByIdAndUpdate(result._id,result,function (err,portUpdated) {
+                            else
+                            {
+                                result.vehicleId.push(vehicleDetails);
+                                if(result.vehicleId.length>=result.portCapacity)
+                                {
+                                    result.portStatus = Constants.AvailabilityStatus.FULL;
+                                }
+                                else
+                                {
+                                        result.portStatus = Constants.AvailabilityStatus.NORMAL;
+                                }
+                            }
+                            //result.portStatus = Constants.AvailabilityStatus.FULL;
+
+
+                            Port.findByIdAndUpdate(result._id,result,{new:true},function (err,portUpdated) {
                                 if(err)
                                 {
                                     return console.error('Error : '+err);
@@ -1142,7 +1162,7 @@ exports.timelyCheckin = function (callback) {
                                                 {
                                                     /*result[i].vehicleId=[];
                                                      result[i].portStatus=Constants.AvailabilityStatus.EMPTY;*/
-                                                    DockPort.findByIdAndUpdate(result[i]._id,{$set:{'vehicleId':[],'portStatus':Constants.AvailabilityStatus.EMPTY}},{new:true},function (err,result) {
+                                                    DockPort.findByIdAndUpdate(result[i]._id,{$set:{'vehicleId':[],'portStatus':Constants.AvailabilityStatus.EMPTY}},function (err) {
                                                         if(err)
                                                         {
                                                             return console.error('Error : '+err);
@@ -1185,6 +1205,7 @@ exports.timelyCheckin = function (callback) {
 
                 },function (err) {
                     console.error('Error : '+err);
+
                     //callback();
                 });
                 return callback(null,null);
@@ -1340,4 +1361,95 @@ exports.timelyCheckin = function (callback) {
         }
         return callback(null,result);
     })
+};
+
+exports.getAllCompletedTransactions = function (record,callback) {
+    var alltrans = [];
+    var queryObject;
+    var fdate,ldate;
+    async.series([
+        function (callback) {
+            if(record.fromdate && record.todate)
+             {
+                 fdate = moment(record.fromdate);
+                fdate=fdate.format('YYYY-MM-DD');
+                 ldate = moment(record.todate).add(1, 'days');
+                 ldate=ldate.format('YYYY-MM-DD');
+                 queryObject = {
+                     createdAt: {$gte: moment(fdate), $lte: moment(ldate)}
+                 };
+                 return callback(null,null);
+             }
+            else
+            {
+                 fdate = moment().subtract(15,'days');
+                fdate=fdate.format('YYYY-MM-DD');
+                 ldate = moment().add(1, 'days');
+                ldate=ldate.format('YYYY-MM-DD');
+                queryObject = {
+                    createdAt: {$gte: moment(fdate), $lte: moment(ldate)}
+                };
+                return callback(null,null);
+            }
+
+        },
+        function (callback) {
+            if (record.user) {
+                User.findOne({UserID: record.user}, function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    queryObject.user = result._id;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function(callback){
+            if(record.vehicle)
+            {
+                vehicle.findOne({vehicleUid:record.vehicle},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    queryObject.vehicle = result._id;
+                    return callback(null,result);
+                });
+            }
+            else {
+                return callback(null, null);
+            }
+
+        }
+        ,
+        function (callback) {
+            MemberTransaction.find(queryObject).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result)
+                {
+                    for(var i=0;i<result.length;i++)
+                    {
+                        if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area')&& (result[i].toPort._type=='Docking-port' || result[i].toPort._type=='Redistribution-area')) {
+                            alltrans.push(result[i]);
+                        }
+                    }
+                }
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,alltrans);
+    });
+
 };

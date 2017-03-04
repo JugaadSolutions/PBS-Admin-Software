@@ -138,7 +138,7 @@ exports.deactivateCard = function (id, callback) {
                             return callback(err,null);
                         }
                         cardObject = result;
-                                trackdata.assignerUserId=memberObject._id;
+                                trackdata.assignedUserId=memberObject._id;
                                 trackdata.preStatus=before;
                                 trackdata.postStatus=result.status;
                                 trackdata.cardId=result._id;

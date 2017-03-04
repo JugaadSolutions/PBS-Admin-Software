@@ -15,16 +15,33 @@ router
 
 
     .get('/:id',function (req,res,next) {
-        Vehicles.findOne({'_id':req.params.id},function (err,result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else {
-                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
-            }
+        if(isNaN(req.params.id))
+        {
+            Vehicles.findById({_id:req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
 
-        });
+            });
+        }
+        else
+        {
+            Vehicles.findOne({vehicleUid:req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
+        }
+
     })
 
     .get('/',function (req,res,next) {
@@ -50,6 +67,19 @@ router
             {
                 res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
             }
+        });
+    })
+
+    .get('/summery/all',function (req,res,next) {
+        VehicleService.summery(function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+
         });
     })
 

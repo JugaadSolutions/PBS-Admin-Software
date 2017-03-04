@@ -52,6 +52,7 @@ var VehicleSchema = mongoose.Schema({
     lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'},
     maintenance:{type:[maintain],required:false,default:[]},
     repairs:{type:[repair],required:false,default:[]},
+    createdBy:{type:String,required:false},
     createdAt:{type:Date,required:true,default:Date.now}
 
 }, { collection : 'vehicles'});

@@ -16,7 +16,7 @@ router
 
     .get('/',function (req,res,next) {
 
-        HoldingPort.find({'_type':'Holding-area'}).deepPopulate('StationId').lean().exec(function(err,result) {
+        HoldingPort.find({'_type':'Holding-area'}).deepPopulate('StationId vehicleId.vehicleid').lean().exec(function(err,result) {
             if (err) {
                 next(err, req, res, next);
             }

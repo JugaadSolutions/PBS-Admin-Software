@@ -14,11 +14,24 @@ exports.createRC=function (record,callback) {
 };
 
 exports.updateRegistrationcenter = function (id,record,callback) {
-    RegistrationCenter.findByIdAndUpdate(id,record,{new:true},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        RegistrationCenter.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        RegistrationCenter.findOneAndUpdate({StationID:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
 };

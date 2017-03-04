@@ -94,15 +94,30 @@ exports.updateFareplan = function (id,record,callback) {
             {
                 record.unsuccessIp.push(result[i].ipAddress);
             }
-            FarePlan.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
+            if(isNaN(id))
+            {
+                FarePlan.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
 
-                if (err) {
-                    return callback(err, null);
-                }
+                    if (err) {
+                        return callback(err, null);
+                    }
 
-                //membershipDetails = result;
-                return callback(null, result);
-            });
+                    //membershipDetails = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                FarePlan.findOneAndUpdate({fareplanUid:id}, record, {new: true}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    //membershipDetails = result;
+                    return callback(null, result);
+                });
+            }
         }
         else {
             return callback(null,null);

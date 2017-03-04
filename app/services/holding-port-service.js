@@ -72,21 +72,47 @@ exports.getAllRecords=function (record,callback) {
 };
 
 exports.getOneRecord = function (id,callback) {
-    HoldingPort.findOne({'_id':id},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        HoldingPort.findOne({'_id':id},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        HoldingPort.findOne({PortID:id},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
 };
 
 exports.updateHoldingport = function (id,record,callback) {
-    HoldingPort.findByIdAndUpdate(id,record,{new:true},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        HoldingPort.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        HoldingPort.findOneAndUpdate({PortID:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
 };

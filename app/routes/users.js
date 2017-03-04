@@ -1,5 +1,6 @@
 var express = require('express'),
 TransactionService = require('../services/transaction-service'),
+    Users = require('../models/user'),
     UserService = require('../services/user-service'),
 Messages = require('../core/messages');
 var router = express.Router();
@@ -12,19 +13,19 @@ var router = express.Router();
 router
 
 
-/*.post('/', function (req, res, next) {
-  TransactionService.createUser(req.body,function (err,result) {
+.get('/', function (req, res, next) {
+    Users.find({},function (err,result) {
     if(err)
     {
       next(err, req, res, next);
     }
     else
     {
-      res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+      res.json({error: false, message: Messages.FETCH_RECORD_SUCCESSFUL, description: '', data: result});
     }
 
   });
-})*/
+})
 
     .put('/:id/password/change', function (req, res, next) {
 

@@ -15,16 +15,33 @@ var router = express.Router();
 router
 
     .get('/:id',function (req,res,next) {
-    Membership.findOne({'_id':req.params.id}).deepPopulate('farePlan').lean().exec(function (err,result) {
-        if(err)
+        if(isNaN(req.params.id))
         {
-            next(err, req, res, next);
+            Membership.findOne({'_id':req.params.id}).deepPopulate('farePlan').lean().exec(function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
         }
-        else {
-            res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+        else
+        {
+            Membership.findOne({'membershipId':req.params.id}).deepPopulate('farePlan').lean().exec(function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
         }
 
-    });
     })
 
     .get('/', function (req, res, next) {

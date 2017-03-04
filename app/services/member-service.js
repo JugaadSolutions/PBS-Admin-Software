@@ -726,40 +726,79 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
     var balance=0;
     var memberName;
     var validity;
+    var before;
 
     async.series([
             // Step 1: Method to check for any assigned cards
             function (callback) {
 
-                User.findById(memberId, function (err, result) {
+                if(isNaN(memberId))
+                {
+                    User.findById(memberId, function (err, result) {
 
-                    if (err) {
-                        return callback(err, null);
-                    }
+                        if (err) {
+                            return callback(err, null);
+                        }
 
-                    if (!result) {
-                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
-                    }
-                    if(result._type=='member')
-                    {
-                        balance = result.creditBalance;
-                    }
-                    memberName = result.Name;
-/*                    if (result.cardNum) {
+                        if (!result) {
+                            return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                        }
+                        if(result._type=='member')
+                        {
+                            balance = result.creditBalance;
+                        }
+                        memberName = result.Name;
+                        /*                    if (result.cardNum) {
 
-                        CardService.deactivateCard(result.cardNum, function (err, result) {
+                         CardService.deactivateCard(result.cardNum, function (err, result) {
 
-                            if (err) {
-                                return callback(null, null);
-                            }
+                         if (err) {
+                         return callback(null, null);
+                         }
 
-                            return callback(null, result);
-                        });
+                         return callback(null, result);
+                         });
 
-                    } else {*/
+                         } else {*/
                         return callback(null, null);
-                   // }
-                });
+                        // }
+                    });
+
+                }
+                else
+                {
+                    User.findOne({UserID:memberId}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        if (!result) {
+                            return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                        }
+                        if(result._type=='member')
+                        {
+                            balance = result.creditBalance;
+                        }
+                        memberName = result.Name;
+                        memberId = result._id;
+                        /*                    if (result.cardNum) {
+
+                         CardService.deactivateCard(result.cardNum, function (err, result) {
+
+                         if (err) {
+                         return callback(null, null);
+                         }
+
+                         return callback(null, result);
+                         });
+
+                         } else {*/
+                        return callback(null, null);
+                        // }
+                    });
+
+                }
 
             },
 
@@ -771,7 +810,7 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
                     if (err) {
                         return callback(err, null);
                     }
-                    var before = result;
+                    before = result;
                     result.status = Constants.CardStatus.ASSIGNED;
                     result.membershipId = membershipId;
                     result.assignedTo = memberId;
@@ -787,7 +826,7 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
                         }
                         cardObject = result;
                             var data = {
-                                assignerUserId:result.assignedTo,
+                                assignedUserId:result.assignedTo,
                                 preStatus:before.status,
                                 postStatus:result.status,
                                 cardId:result._id,
@@ -923,8 +962,8 @@ function addCreditToMember(id,record,callback) {
 
         },
             function (callback) {
-                /*if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
-                {*/
+                if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
+                {
                     Payments.findOne({'gatewayTransactionId':record.transactionNumber},function (err,result) {
                         if(err)
                         {
@@ -934,11 +973,11 @@ function addCreditToMember(id,record,callback) {
                             transactionDetails = result;
                         return callback(null,result);
                     });
-        /*        }
+                }
                 else
                 {
                     return callback(null,null);
-                }*/
+                }
             }
         ,
         function (callback) {
@@ -1061,32 +1100,87 @@ exports.debitMember = function (id, record, callback) {
 
             // Step 1: Method to check and deduct processing fee
             function (callback) {
+                if(isNaN(id))
+                {
+                    Member.findById(id, function (err, result) {
 
-                Member.findById(id, function (err, result) {
-
-                    if (err) {
-                        return callback(err, null);
-                    }
-
-                    if (!result) {
-                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
-                    }
-
-                    if (result.creditBalance < record.debit) {
-                        return callback(new Error(Messages.DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE), null);
-                    }
-                    result.creditBalance=Number(result.creditBalance- record.debit);
-                    result.comments = record.comments;
-                    memberObject = result;
-                   // Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
-                    Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                         if (err) {
                             return callback(err, null);
                         }
-                        //memberObject = result;
-                        return callback(null, result);
-                    })
-                });
+
+                        if (!result) {
+                            return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                        }
+
+                        if (result.creditBalance < record.debit) {
+                            return callback(new Error(Messages.DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE), null);
+                        }
+                        result.creditBalance=Number(result.creditBalance- record.debit);
+                        result.comments = record.comments;
+                        memberObject = result;
+                        // Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                        Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            //memberObject = result;
+                            return callback(null, result);
+                        })
+                    });
+                }
+                else
+                {
+                    Member.findOne({UserID:id}, function (err, result) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        if (!result) {
+                            return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                        }
+
+                        if (result.creditBalance < record.debit) {
+                            return callback(new Error(Messages.DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE), null);
+                        }
+                        result.creditBalance=Number(result.creditBalance- record.debit);
+                        result.comments = record.comments;
+                        memberObject = result;
+                        // Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                        Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            //memberObject = result;
+                            return callback(null, result);
+                        })
+                    });
+                }
+
+
+            },
+            function (callback) {
+                if(memberObject.cardNum!=0)
+                {
+                    Card.findOne({cardNumber:memberObject.cardNum},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        result.balance = memberObject.creditBalance;
+                        Card.findByIdAndUpdate(result._id,result,function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            return callback(null,result);
+                        });
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
 
             },
             function (callback) {
@@ -1215,6 +1309,9 @@ exports.cancelMembershiprequest = function (id,callback) {
     };
     async.series([
         function (callback) {
+
+        if(isNaN(id))
+        {
             User.findOne({'_id':id},function (err,result) {
                 if(err)
                 {
@@ -1227,6 +1324,23 @@ exports.cancelMembershiprequest = function (id,callback) {
                 userObject=result;
                 return callback(null,result);
             });
+        }
+        else
+        {
+            User.findOne({UserID:id},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error('User with this id does not exist'),null);
+                }
+                userObject=result;
+                return callback(null,result);
+            });
+        }
+
         },
         function (callback) {
             if(userObject)
@@ -1269,15 +1383,32 @@ exports.cancelMembership = function (memberId,record,callback) {
     var smartCardId;
     async.series([
         function (callback) {
-          Member.findOne({'_id':memberId},function (err,result) {
-              if(err)
-              {
-                  return callback(err,null);
-              }
-              memberObject=result;
-              smartCardId=result.smartCardId;
-              return callback(null,result);
-          });
+        if(isNaN(memberId))
+        {
+            Member.findOne({'_id':memberId},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                memberObject=result;
+                smartCardId=result.smartCardId;
+                return callback(null,result);
+            });
+        }
+        else
+        {
+            Member.findOne({UserID:memberId},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                memberId = result._id;
+                memberObject=result;
+                smartCardId=result.smartCardId;
+                return callback(null,result);
+            });
+        }
+
         },
         function (callback) {
             var cancelmembership;
@@ -1479,15 +1610,20 @@ exports.cancelMembership = function (memberId,record,callback) {
 
         },
             function (callback) {
-                if(memberObject)
+                if(memberObject.cardNum)
                 {
-                    CardService.deactivateCard(memberObject.cardNum,function (err,result) {
-                        if(err)
-                        {
-                            return callback(err,null);
-                        }
-                        return callback(null,result);
-                    });
+                    if(memberObject.cardNum!=0) {
+                        CardService.deactivateCard(memberObject.cardNum, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            return callback(null, result);
+                        });
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
                 }
                 else
                 {
@@ -1535,30 +1671,57 @@ exports.cancelMembership = function (memberId,record,callback) {
 
 exports.suspendMembership = function (memberId,record,callback) {
 
-    Member.findOne({_id:memberId},function (err,memObj) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        memObj.comments = record.comments;
-        memObj.status = Constants.MemberStatus.SUSPENDED;
-
-/*        Member.findByIdAndUpdate(memberId, {
-            $set: {
-                //'validity': validity,
-                'comments': record.comments,
-                'status':Constants.MemberStatus.SUSPENDED
+    if(isNaN(memberId))
+    {
+        Member.findOne({_id:memberId},function (err,memObj) {
+            if(err)
+            {
+                return callback(err,null);
             }
-        },{new:true}, function (err, result) {*/
-        Member.update({_id:memObj._id}, memObj, {new: true}).lean().exec(function (err, result) {
+            memObj.comments = record.comments;
+            memObj.status = Constants.MemberStatus.SUSPENDED;
+
+            /*        Member.findByIdAndUpdate(memberId, {
+             $set: {
+             //'validity': validity,
+             'comments': record.comments,
+             'status':Constants.MemberStatus.SUSPENDED
+             }
+             },{new:true}, function (err, result) {*/
+            Member.update({_id:memObj._id}, memObj, {new: true}).lean().exec(function (err, result) {
+                if (err) {
+                    return callback(err, null);
+                }
+                return callback(null, memObj);
+
+            });
+        });
+
+    }
+    else {
+        Member.findOne({UserID: memberId}, function (err, memObj) {
             if (err) {
                 return callback(err, null);
             }
-            return callback(null, memObj);
+            memObj.comments = record.comments;
+            memObj.status = Constants.MemberStatus.SUSPENDED;
 
+            /*        Member.findByIdAndUpdate(memberId, {
+             $set: {
+             //'validity': validity,
+             'comments': record.comments,
+             'status':Constants.MemberStatus.SUSPENDED
+             }
+             },{new:true}, function (err, result) {*/
+            Member.update({_id: memObj._id}, memObj, {new: true}).lean().exec(function (err, result) {
+                if (err) {
+                    return callback(err, null);
+                }
+                return callback(null, memObj);
+
+            });
         });
-    });
-
+    }
 };
 
 exports.searchMember = function (record,callback) {

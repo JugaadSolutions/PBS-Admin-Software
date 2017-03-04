@@ -67,21 +67,48 @@ exports.getAllRecords=function (record,callback) {
 };
 
 exports.getOneRecord = function (id,callback) {
-    MaintenancePort.findOne({'_id':id},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        MaintenancePort.findOne({'_id':id},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        MaintenancePort.findOne({PortID:id},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
 };
 
 exports.updateMaintenanceport =function (id,record,callback) {
-    MaintenancePort.findByIdAndUpdate(id,record,{new:true},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        MaintenancePort.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        MaintenancePort.findOneAndUpdate({PortID:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
 };

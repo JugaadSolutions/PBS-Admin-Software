@@ -1,3 +1,4 @@
+/*
 var async = require('async'),
     User = require('../models/user'),
     Port = require('../models/port'),
@@ -8,6 +9,7 @@ var async = require('async'),
     vehicle = require('../models/vehicle');
 
 var MemberService = require('../services/transaction-service');
+
 
 
 exports.checkoutApp=function (record,callback) {
@@ -45,6 +47,7 @@ exports.checkoutApp=function (record,callback) {
                 }
                 userDetails=result;
                 details.user=result.UserID;
+                console.log('Card num - '+record.cardId+' User id - '+result._id);
                 return callback(null,result);
             });
         }
@@ -68,6 +71,7 @@ exports.checkoutApp=function (record,callback) {
                 }
                 vehicleDetails=result;
                 details.vehicleId = result.vehicleUid;
+                console.log('Vehicle num - '+record.vehicleId+' Vehicle - '+result._id);
                 return callback(null,result);
             });
         },
@@ -89,6 +93,7 @@ exports.checkoutApp=function (record,callback) {
                 }
                 portDetails = result;
                 details.fromPort = result.PortID;
+                console.log('Port num - '+record.fromPort+' Port - '+result._id);
                 return callback(null,result);
             });
         }
@@ -131,16 +136,16 @@ exports.checkoutApp=function (record,callback) {
         },
         function (callback) {
 
-            /*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
+            /!*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
              if (err) {
              return callback(err, null);
-             }*/
+             }*!/
             details.checkOutTime=checkoutDetails.checkOutTime;
             details.status=checkoutDetails.status;
             details.errorStatus = checkoutDetails.errorStatus;
             details.errorMsg = checkoutDetails.errorMsg+" : "+errormsg;
             return callback(null, null);
-            /* });*/
+            /!* });*!/
 
         }
     ],function (err,result) {
@@ -250,10 +255,10 @@ exports.checkinApp=function (record,callback) {
         },
         function (callback) {
             if (checkinDetails && errorstatus==0 && checkinDetails.errorStatus==0) {
-                /*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
+                /!*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
                  if (err) {
                  return callback(err, null);
-                 }*/
+                 }*!/
                 details.checkInTime=checkinDetails.checkInTime;
                 details.status=checkinDetails.status;
                 if(checkinDetails.user) {
@@ -268,7 +273,7 @@ exports.checkinApp=function (record,callback) {
 
 
                 return callback(null,null);
-                /* });*/
+                /!* });*!/
             }
             else {
                 return callback(null, null);
@@ -284,4 +289,305 @@ exports.checkinApp=function (record,callback) {
     });
 
 
+};*/
+
+var async = require('async'),
+    User = require('../models/user'),
+    Port = require('../models/port'),
+    CheckOut = require('../models/checkout'),
+    CheckIn = require('../models/checkin'),
+    CheckoutError = require('../models/checkoutError'),
+    CheckInError = require('../models/checkinError'),
+    vehicle = require('../models/vehicle');
+
+var MemberService = require('../services/transaction-service');
+
+exports.checkoutApp=function (record,callback) {
+    var vehicleDetails;
+    var requestDetails;
+    var userDetails;
+    var portDetails;
+    var checkoutDetails;
+    var errorstatus=0;
+    var errormsg='';
+    var details = {user :'',
+        vehicleId : '',
+        fromPort:'',
+        checkOutTime:'',
+        status:'',
+        errorStatus:0,
+        errorMsg:''};
+
+    async.series([
+        function (callback) {
+            User.findOne({$or: [{'cardNum':record.cardId}, {'smartCardNumber': record.cardId}]},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.user=record.cardId;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No user found by this id';
+                    details.vehicleId = record.cardId;
+                    return callback(null,null);
+                }
+                userDetails=result;
+                details.user=result.UserID;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            vehicle.findOne({$or: [{'vehicleNumber':record.vehicleId}, {'vehicleRFID': record.vehicleId}]},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No vehicle found by this id';
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
+                }
+                vehicleDetails=result;
+                details.vehicleId = result.vehicleUid;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Port.findOne({_id:record.fromPort},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.fromPort = record.fromPort;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No port found by this id';
+                    details.fromPort = record.fromPort;
+                    return callback(null,null);
+                }
+                portDetails = result;
+                details.fromPort = result.PortID;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            if (errorstatus == 0) {
+                requestDetails = {
+                    user: userDetails._id,
+                    vehicleId: vehicleDetails._id,
+                    fromPort: portDetails._id,
+                    checkOutTime: record.checkOutTime
+                };
+                /*MemberService.checkout(requestDetails,function (err,result) {
+                 if(err)
+                 {
+                 errorstatus=1;
+                 errormsg=errormsg+':'+err;
+                 return callback(null,null);
+                 }
+                 checkoutDetails= result;
+                 return callback(null,result);
+                 });*/
+                CheckOut.create(requestDetails, function (err, result) {
+                    if (err) {
+                        errorstatus=1;
+                        errormsg=errormsg+':'+err;
+                        details.checkOutTime = record.checkOutTime;
+                        details.errorStatus = errorstatus;
+                        details.errorMsg = errormsg;
+                        return callback(null, null);
+                    }
+                    details.status = result.status;
+                    details.checkOutTime = result.checkOutTime;
+                    checkoutDetails = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function(callback) {
+            if(errorstatus == 1)
+            {
+                CheckoutError.create(details,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    details.status = result.status;
+                    details.checkOutTime = result.checkOutTime;
+                    checkoutDetails= result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }
+    ],function (err,result) {
+        if (err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,details);
+    });
+};
+
+exports.checkinApp = function (record,callback) {
+    var vehicleDetails;
+    var requestDetails;
+    var userDetails;
+    var portDetails;
+    var checkoutDetails;
+    var errorstatus=0;
+    var errormsg='';
+    var details = {
+        vehicleId : '',
+        toPort:'',
+        checkInTime:'',
+        status:'',
+        errorStatus:0,
+        errorMsg:''};
+
+    async.series([
+        function (callback) {
+            vehicle.findOne({'vehicleNumber':record.vehicleId},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No vehicle found by this id';
+                    details.vehicleId = record.vehicleId;
+                    return callback(null,null);
+                }
+                vehicleDetails=result;
+                details.vehicleId = result.vehicleUid;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Port.findOne({_id:record.toPort},function (err,result) {
+                if(err)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+':'+err;
+                    details.toPort = record.toPort;
+                    return callback(null,null);
+                }
+                if(!result)
+                {
+                    errorstatus=1;
+                    errormsg=errormsg+': No port found by this id';
+                    details.toPort = record.toPort;
+                    return callback(null,null);
+                }
+                portDetails = result;
+                details.toPort = result.PortID;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            if (errorstatus == 0) {
+                requestDetails = {
+                    vehicleId: vehicleDetails._id,
+                    toPort: portDetails._id,
+                    checkInTime: record.checkInTime
+                };
+                /*MemberService.checkout(requestDetails,function (err,result) {
+                 if(err)
+                 {
+                 errorstatus=1;
+                 errormsg=errormsg+':'+err;
+                 return callback(null,null);
+                 }
+                 checkoutDetails= result;
+                 return callback(null,result);
+                 });*/
+                CheckIn.create(requestDetails, function (err, result) {
+                    if (err) {
+                        errorstatus=1;
+                        errormsg=errormsg+':'+err;
+                        details.checkInTime = record.checkInTime;
+                        details.errorStatus = errorstatus;
+                        details.errorMsg = errormsg;
+                        return callback(null, null);
+                    }
+                    details.status = result.status;
+                    details.checkInTime = result.checkInTime;
+                    checkoutDetails = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function(callback) {
+            if(errorstatus == 1)
+            {
+                CheckInError.create(details,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    details.status = result.status;
+                    details.checkInTime = result.checkInTime;
+                    checkoutDetails= result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }
+        /*,
+         function (callback) {
+
+         /!*Checkout.findOne(checkoutDetails).deepPopulate('user vehicleId fromPort').lean().exec(function (err, result) {
+         if (err) {
+         return callback(err, null);
+         }*!/
+         details.checkOutTime=checkoutDetails.checkOutTime;
+         details.status=checkoutDetails.status;
+         details.errorStatus = checkoutDetails.errorStatus;
+         details.errorMsg = checkoutDetails.errorMsg+" : "+errormsg;
+         return callback(null, null);
+         /!* });*!/
+
+         }*/
+    ],function (err,result) {
+        if (err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,details);
+    });
 };

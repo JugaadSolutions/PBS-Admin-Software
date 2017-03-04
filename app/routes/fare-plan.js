@@ -15,16 +15,32 @@ var router = express.Router();
 router
 
     .get('/:id',function (req,res,next) {
-        FarePlan.findOne({'_id':req.params.id},function (err,result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else {
-                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
-            }
+        if(isNaN(req.params.id))
+        {
+            FarePlan.findById({'_id':req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
 
-        });
+            });
+        }
+        else
+        {
+            FarePlan.findOne({fareplanUid:req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
+        }
     })
 
     .get('/', function (req, res, next) {

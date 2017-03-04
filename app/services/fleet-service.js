@@ -1,11 +1,22 @@
 var async = require('async'),
     Fleetarea = require('../models/fleet-area'),
+    Station = require('../models/station'),
     Fleet=require('../models/fleet');
 
 exports.addFleet=function (record, callback) {
 
     var fleetDetails;
    async.series([
+       function (callback) {
+           Station.findOne({StationID:record.StationId},function (err,result) {
+               if(err)
+               {
+                   return callback(err,null);
+               }
+               record.StationId = result._id;
+               return callback(null,result);
+           });
+       },
     function (callback) {
         record.portCapacity=record.VehicleCapacity;
         Fleet.create(record,function (err,result) {

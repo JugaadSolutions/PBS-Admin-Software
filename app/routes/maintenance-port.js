@@ -16,7 +16,7 @@ router
 
     .get('/',function (req,res,next) {
 
-        MaintenancePort.find({'_type':'Maintenance-area'}).deepPopulate('StationId').lean().exec(function(err,result) {
+        MaintenancePort.find({'_type':'Maintenance-area'}).deepPopulate('StationId vehicleId.vehicleid').lean().exec(function(err,result) {
             if (err) {
                 next(err, req, res, next);
             }

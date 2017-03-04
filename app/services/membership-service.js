@@ -188,15 +188,30 @@ exports.updateMembership = function (id,record,callback) {
                     {
                         record.unsuccessIp.push(result[i].ipAddress);
                     }
-                    Membership.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
+                    if(isNaN(id))
+                    {
+                        Membership.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
 
-                        if (err) {
-                            return callback(err, null);
-                        }
+                            if (err) {
+                                return callback(err, null);
+                            }
 
-                        //membershipDetails = result;
-                        return callback(null, result);
-                    });
+                            //membershipDetails = result;
+                            return callback(null, result);
+                        });
+                    }
+                    else
+                    {
+                        Membership.findOneAndUpdate({membershipId:id}, record, {new: true}, function (err, result) {
+
+                            if (err) {
+                                return callback(err, null);
+                            }
+
+                            //membershipDetails = result;
+                            return callback(null, result);
+                        });
+                    }
                 }
                 else {
                     return callback(null,null);

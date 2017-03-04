@@ -24,7 +24,7 @@ var schema = {
 };
 
 var model = new Schema(schema);
-
+model.index({vehicleId: 1, toPort:1,checkInTime:1 }, { unique: true });
 // Plugins
 model.plugin(abstract);
 

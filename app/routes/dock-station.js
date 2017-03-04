@@ -29,16 +29,30 @@ router
     })
 
     .get('/:id',function (req,res,next) {
-        DockingStation.findOne({'_id':req.params.id},function (err,result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else {
-                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
-            }
-        });
-
+        if(isNaN(req.params.id))
+        {
+            DockingStation.findOne({_id:req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+            });
+        }
+        else
+        {
+            DockingStation.findOne({StationID:req.params.id},function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+            });
+        }
     })
     .get('/:id/cleanstation',function (req,res,next) {
         DockingStationService.getcleanStationsById(req.params.id,function (err,result) {

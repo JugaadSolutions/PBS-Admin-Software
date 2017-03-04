@@ -8,7 +8,8 @@ var async = require('async'),
     DockPort=require('../models/dock-port'),
     DockStation = require('../models/dock-station'),
     Messages = require('../core/messages'),
-    Port = require('../models/port');
+    Port = require('../models/port'),
+    Card = require('../models/card'),
     Membership = require('../models/membership');
 var fleet = require('../models/fleet');
 
@@ -328,7 +329,7 @@ var checkinDetails;
         function (callback) {
             if(checkinDetails.length>0)
             {
-                async.forEach(checkinDetails,function (checkinDetail) {
+                async.forEachLimit(checkinDetails,1,function (checkinDetail) {
                     CheckOut.findOne({
                         'vehicleId': checkinDetail.vehicleId,
                         'status': 'Open',
@@ -384,24 +385,30 @@ var checkinDetails;
                                             memDetails.vehicleId = [];
                                         Member.update({_id:memDetails._id},memDetails, {new: true}).lean().exec(function (err, updatedUser) {
                                             if (err) {
-                                                return console.error('Error '+err);
+                                                return console.error('Error updating Member at reconcilation'+err);
                                             }
+                                            Card.findByIdAndUpdate(memDetails.smartCardId,{$set:{balance:memDetails.creditBalance}},function (err) {
+                                                if (err) {
+                                                    return console.error('Error updating card at reconcilation'+err);
+                                                }
+                                            });
                                             var transactionAssoc = {
                                                 checkInEntry: checkinDetail._id,
                                                 checkOutEntry: result._id
                                             };
+
                                             TransactionAssociation.create(transactionAssoc, function (err, transAssociation) {
                                                 if (err) {
-                                                    return console.error('Error '+err);
+                                                    return console.error('Error creating transaction association at reconcilation'+err);
                                                 }
                                                 CheckIn.findByIdAndUpdate(checkinDetail._id, {$set: {'status': 'Close'}}, {new: true}, function (err, cin) {
                                                     if (err) {
-                                                        return console.error('Error '+err);
+                                                        return console.error('Error updating checkin entry to Close status '+err);
                                                     }
                                                 });
                                                 CheckOut.findByIdAndUpdate(result._id, {$set: {'status': 'Close'}}, {new: true}, function (err, cout) {
                                                     if (err) {
-                                                        return console.error('Error '+err);
+                                                        return console.error('Error updating checkout entry to Close status'+err);
                                                     }
                                                 });
                                                 var transaction = {

@@ -29,6 +29,23 @@ async.series([
     }
     },
     function (callback) {
+        if(isNaN(record.user))
+        {
+            return callback(null,null);
+        }
+        else
+        {
+            User.findOne({UserID:record.user},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                record.user = result._id;
+                return callback(null,result);
+            });
+        }
+    },
+    function (callback) {
         Ticket.create(record,function (err,result) {
             if(err)
             {
