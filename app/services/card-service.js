@@ -9,6 +9,112 @@ var Card = require('../models/card'),
     CardTrack = require('../models/card-track'),
     Messages = require('../core/messages');
 
+exports.createCard = function (record,callback) {
+    
+    var cardDetails;
+    async.series([
+        function (callback) {
+            Station.findOne({stationType:'Control-centre'},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                record.currentLocation = result._id;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Card.create(record,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                cardDetails = result;
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+       if(err)
+       {
+           return callback(err,null);
+       }
+       return callback(null,cardDetails);
+    });
+};
+
+exports.updateCard = function (id,record,callback) {
+
+    var cardDetails;
+    async.series([
+        function (callback) {
+            if(record.currentLocation)
+            {
+                if(isNaN(record.currentLocation))
+                {
+                        return callback(null,null);
+                }
+                else
+                {
+                    Station.findOne({StationID:record.currentLocation},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        record.currentLocation = result._id;
+                        return callback(null,result);
+                    });
+                }
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+
+        function (callback) {
+            if(isNaN(id))
+            {
+                Card.findById(id, function (err, result) {
+                    if (err) {
+                        return callback(err,null);
+                    }
+                    cardDetails = result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                Card.findOne({cardUid:id},function (err, result) {
+                    if (err) {
+                        return callback(err,null);
+                    }
+                    cardDetails = result;
+                    id = result._id;
+                    return callback(null,result);
+                });
+            }
+        }
+        ,
+        function (callback) {
+                Card.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
+                    if (err) {
+                        return callback(err,null);
+                    }
+                    cardDetails = result;
+                    return callback(null,result);
+                });
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,cardDetails);
+    });
+
+};
+
 exports.deactivateCard = function (id, callback) {
 
     var memberObject;

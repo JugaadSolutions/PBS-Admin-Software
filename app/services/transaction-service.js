@@ -121,7 +121,7 @@ exports.getAllTransactions = function (callback) {
                 }
                 return callback(null,result);
             });
-        }/*,
+        },
         function (callback) {
             MemberTransaction.find({}).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
                 if(err)
@@ -140,7 +140,7 @@ exports.getAllTransactions = function (callback) {
                 return callback(null,result);
             });
 
-        }*/
+        }
     ],function (err,result) {
         if(err)
         {
@@ -1395,7 +1395,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
         },
         function (callback) {
             if (record.user) {
-                User.findOne({UserID: record.user}, function (err, result) {
+                User.findOne({CardNum: record.user}, function (err, result) {
                     if (err) {
                         return callback(err, null);
                     }
@@ -1411,7 +1411,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
         function(callback){
             if(record.vehicle)
             {
-                vehicle.findOne({vehicleUid:record.vehicle},function (err,result) {
+                vehicle.findOne({vehicleNumber:record.vehicle},function (err,result) {
                     if(err)
                     {
                         return callback(err,null);

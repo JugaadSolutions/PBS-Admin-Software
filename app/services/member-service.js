@@ -81,6 +81,28 @@ exports.createMember=function (record,callback) {
              });
          }
 
+     }    ,
+     function (callback) {
+         if (record.createdBy) {
+             if(isNaN(record.createdBy))
+             {
+                 return callback(null,null);
+             }
+             else
+             {
+                 User.findOne({UserID:record.createdBy},function (err,result) {
+                     if(err)
+                     {
+                         return callback(err,null);
+                     }
+                     record.createdBy = result._id;
+                     return callback(null,result);
+                 });
+             }
+         }
+         else {
+             return callback(null, null);
+         }
      }
     ,
      function (callback) {
@@ -102,7 +124,7 @@ exports.createMember=function (record,callback) {
 
          if (profilePic) {
 
-             var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails._id+"/";
+             var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails.UserID+"/";
 
              if (!fs.existsSync(dir)){
                  fs.mkdirSync(dir);
@@ -114,7 +136,7 @@ exports.createMember=function (record,callback) {
              var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
              var fileDetails = {
-                 key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails._id + '/ ' + docNumber + '.png',
+                 key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
                  filePath: docFilePath
              };
 
@@ -141,7 +163,7 @@ exports.createMember=function (record,callback) {
 
          if (record.memberprofilePic) {
 
-             var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails._id+"/";
+             var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails.UserID+"/";
 
              if (!fs.existsSync(dir)){
                  fs.mkdirSync(dir);
@@ -153,7 +175,7 @@ exports.createMember=function (record,callback) {
              var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
              var fileDetails = {
-                 key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails._id + '/ ' + docNumber + '.png',
+                 key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
                  filePath: docFilePath
              };
 
@@ -182,7 +204,7 @@ exports.createMember=function (record,callback) {
 
              for (var i = 0; i < documents.length; i++) {
 
-                 var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails._id+"/";
+                 var dir = '/usr/share/nginx/html/mytrintrin/Member/'+memberDetails.UserID+"/";
 
                  if (!fs.existsSync(dir)){
                      fs.mkdirSync(dir);
@@ -201,7 +223,7 @@ exports.createMember=function (record,callback) {
                          filePath: docFilePath
                      };*/
                      var fileDetails = {
-                         key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails._id + '/ ' + docNumber + '.png',
+                         key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
                          filePath: docFilePath
                      };
 
@@ -394,7 +416,7 @@ exports.updateMember = function (record,callback) {
 
             if (record.profilePic.result) {
 
-                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record._id+"/";
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
 
                 if (!fs.existsSync(dir)){
                     fs.mkdirSync(dir);
@@ -406,7 +428,7 @@ exports.updateMember = function (record,callback) {
                 var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
                 var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record._id + '/ ' + docNumber + '.png',
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
                     filePath: docFilePath
                 };
 
@@ -432,7 +454,7 @@ exports.updateMember = function (record,callback) {
 
             if (record.memberprofilePic) {
 
-                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record._id+"/";
+                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
 
                 if (!fs.existsSync(dir)){
                     fs.mkdirSync(dir);
@@ -444,7 +466,7 @@ exports.updateMember = function (record,callback) {
                 var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
                 var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record._id + '/ ' + docNumber + '.png',
+                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
                     filePath: docFilePath
                 };
 
@@ -471,7 +493,7 @@ exports.updateMember = function (record,callback) {
 
                 for (var i = 0; i < record.documents.length; i++) {
 
-                    var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record._id+"/";
+                    var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
 
                     if (!fs.existsSync(dir)){
                         fs.mkdirSync(dir);
@@ -490,7 +512,7 @@ exports.updateMember = function (record,callback) {
                          filePath: docFilePath
                          };*/
                         var fileDetails = {
-                            key: '/usr/share/nginx/html/mytrintrin/Member/' + record._id + '/ ' + docNumber + '.png',
+                            key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
                             filePath: docFilePath
                         };
 
@@ -602,6 +624,9 @@ exports.assignMembership=assignMemberShip;
    // var validity;
     var memberObject;
     var paymentObject;
+        var membershipDetails;
+        var memberDetails;
+        var signedup = false;
     async.series([
 
            /* // Step 1: Method to calculate balance and validity
@@ -631,6 +656,24 @@ exports.assignMembership=assignMemberShip;
                             return callback(err,null);
                         }
                         memberId = result._id;
+                        return callback(null,result);
+                    });
+                }
+            },
+            function (callback) {
+                if(isNaN(membershipId))
+                {
+                    return callback(null,null);
+                }
+                else
+                {
+                    Membership.findOne({membershipId:membershipId},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        membershipId = result._id;
+                        membershipDetails = result;
                         return callback(null,result);
                     });
                 }
@@ -677,12 +720,14 @@ exports.assignMembership=assignMemberShip;
             {
                 if(paymentObject)
                 {
+                    
                     var rec = {
                         transactionNumber:paymentObject.gatewayTransactionId,
                         comments:paymentObject.comments,
                         credit:paymentObject.credit,
                         creditMode:paymentObject.paymentMode
                     };
+                    signedup = true;
                     PaymentTransaction.signedUp(rec,memberObject,function (err,result) {
                         if(err)
                         {
@@ -702,7 +747,29 @@ exports.assignMembership=assignMemberShip;
             {
                 return callback(null,null);
             }
-        }
+        }/*,
+        function (callback) {
+            if(signedup)
+            {
+                return callback(null,null);
+            }
+            else 
+            {
+                var data = {
+                    creditMode:record.creditMode,
+                    transactionNumber:record.transactionNumber,
+                    comments:record.comments,
+                    credit:Number(membershipDetails.userFees+membershipDetails.securityDeposit+memberObject.processingFees+memberObject.smartCardFees)
+                };
+                addCreditToMember(memberId,data,function (err,result) {
+                    if(err)
+                    {
+                        return callback
+                    }
+                });
+            }
+            
+        }*/
 
         ],
 
@@ -811,7 +878,7 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
                     if (err) {
                         return callback(err, null);
                     }
-                    before = result;
+                    before = result.status;
                     result.status = Constants.CardStatus.ASSIGNED;
                     result.membershipId = membershipId;
                     result.assignedTo = memberId;
@@ -828,7 +895,7 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
                         cardObject = result;
                             var data = {
                                 assignedUserId:result.assignedTo,
-                                preStatus:before.status,
+                                preStatus:before,
                                 postStatus:result.status,
                                 cardId:result._id,
                                 changerId:createdBy
@@ -905,12 +972,37 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
 
 };
 
-exports.creditMember=addCreditToMember;
+exports.creditMember=addCreditToMember;/*,
+            function (callback) {
+                if(memberObject.cardNum!=0)
+                {
+                    Card.findOne({cardNumber:memberObject.cardNum},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        result.balance = memberObject.creditBalance;
+                        Card.findByIdAndUpdate(result._id,result,function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            return callback(null,result);
+                        });
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
+            }*/
 function addCreditToMember(id,record,callback) {
 
     var memberObject;
     var updatedMemberObject;
     var isProcessingFeeDeducted = false;
+    var payments;
     var amount = 0;
     var transObject;
     var transactionDetails;
@@ -957,6 +1049,29 @@ function addCreditToMember(id,record,callback) {
                     }
 
                     memberObject = result;
+                    return callback(null, result);
+                });
+            }
+
+        },
+        function (callback) {
+
+            if(isNaN(record.createdBy))
+            {
+
+                    return callback(null, null);
+            }
+            else
+            {
+                User.findOne({UserID:record.createdBy}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (result) {
+                        record.createdBy = result._id;
+                    }
                     return callback(null, result);
                 });
             }
@@ -1009,6 +1124,7 @@ function addCreditToMember(id,record,callback) {
                         if (err) {
                             return callback(err, null);
                         }
+                        payments = result;
                         memberObject.creditBalance = record.credit;
                         Member.findByIdAndUpdate(memberObject._id, memberObject, {new: true}, function (err, result) {
                             if (err) {
@@ -1037,18 +1153,23 @@ function addCreditToMember(id,record,callback) {
                                 return callback(null, result);
                             });
                         });
-
-
                     }
                     else {
-                        PaymentTransaction.newMember(memberObject, record, function (err, result) {
-                            if (err) {
-                                return callback(err, null);
-                            }
-                            updatedMemberObject = result;
-                            return callback(null, result);
-                        });
-
+                        if(payments)
+                        {
+                            updatedMemberObject = memberObject;
+                            return callback(null,null);
+                        }
+                        else
+                        {
+                            PaymentTransaction.newMember(memberObject, record, function (err, result) {
+                                if (err) {
+                                    return callback(err, null);
+                                }
+                                updatedMemberObject = result;
+                                return callback(null, result);
+                            });
+                        }
                     }
                 }
             }
@@ -1267,7 +1388,7 @@ exports.debitMember = function (id, record, callback) {
                 }
 
 
-            },
+            }/*,
             function (callback) {
                 if(memberObject.cardNum!=0)
                 {
@@ -1291,7 +1412,7 @@ exports.debitMember = function (id, record, callback) {
                     return callback(null,null);
                 }
 
-            },
+            }*/,
             function (callback) {
                 if(isNaN(record.createdBy))
                 {
@@ -1919,39 +2040,78 @@ exports.addMember=function (record,callback) {
 
         },
         function (callback) {
-            User.findOne({UserID:record.createdBy},function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                if(!result)
-                {
-                    location = 'Other Location';
-                    return callback(null,result);
-                }
-                record.createdBy = result._id;
-                if(result._type=='registration-employee')
-                {
-                    RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
-                        if(err)
-                        {
-                            return callback(err,null);
-                        }
-                        if(!result)
-                        {
-                            location = 'Other Location';
-                            return callback(null,result);
-                        }
-                        location=reg.location;
+            if(isNaN(record.createdBy))
+            {
+                User.findOne({_id:record.createdBy},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        location = 'Other Location';
                         return callback(null,result);
-                    });
-                }
-                else {
-                    location = 'Other Location';
-                    return callback(null,result);
-                }
+                    }
+                    record.createdBy = result._id;
+                    if(result._type=='registration-employee')
+                    {
+                        RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                location = 'Other Location';
+                                return callback(null,result);
+                            }
+                            location=reg.location;
+                            return callback(null,result);
+                        });
+                    }
+                    else {
+                        location = 'Other Location';
+                        return callback(null,result);
+                    }
 
-            });
+                });
+            }
+            else
+            {
+                User.findOne({UserID:record.createdBy},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        location = 'Other Location';
+                        return callback(null,result);
+                    }
+                    record.createdBy = result._id;
+                    if(result._type=='registration-employee')
+                    {
+                        RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                location = 'Other Location';
+                                return callback(null,result);
+                            }
+                            location=reg.location;
+                            return callback(null,result);
+                        });
+                    }
+                    else {
+                        location = 'Other Location';
+                        return callback(null,result);
+                    }
+
+                });
+            }
         }
         ,
         function (callback) {
@@ -2240,7 +2400,7 @@ exports.addMember=function (record,callback) {
                 var creditData = {
                     transactionNumber: record.transactionNumber,
                     credit:record.creditBalance,
-                    commemts:record.comments,
+                    comments:record.comments,
                     creditMode:record.creditMode
                 };
 
@@ -2256,14 +2416,21 @@ exports.addMember=function (record,callback) {
         }
         ,
         function (callback) {
-            assignCard(memberDetails._id,record.cardNumber,memberDetails.membershipId,memberDetails.createdBy,function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                memberDetails=result;
-                return callback(null,result);
-            });
+            if(memberDetails.smartCardNumber)
+            {
+                return callback(null,null);
+            }
+            else
+            {
+                assignCard(memberDetails._id,record.cardNumber,memberDetails.membershipId,memberDetails.createdBy,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
         }
         ,
         function (callback) {

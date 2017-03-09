@@ -533,12 +533,13 @@ exports.newMember = function (memberObject,record,callback) {
                 {
                     return callback(err,null);
                 }
-                memberShipObject = result;
-                var payValue = Number(memberShipObject.userFees+memberShipObject.securityDeposit+memberShipObject.smartCardFees+memberShipObject.processingFees);
-                if(record.credit<payValue)
-                {
-                    return callback(new Error('Amount you entered is less than Minimum Amount'),null);
-                }
+                    memberShipObject = result;
+                    var payValue = Number(memberShipObject.userFees+memberShipObject.securityDeposit+memberShipObject.smartCardFees+memberShipObject.processingFees);
+                    if(record.credit<payValue)
+                    {
+                        return callback(new Error('Amount you entered is less than Minimum Amount'),null);
+                    }
+
                 return callback(null,result);
             });
         },

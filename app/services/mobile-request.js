@@ -425,6 +425,8 @@ exports.checkoutApp=function (record,callback) {
         function(callback) {
             if(errorstatus == 1)
             {
+                details.errorStatus=errorstatus;
+                details.errorMsg = errormsg;
                 CheckoutError.create(details,function (err,result) {
                     if(err)
                     {
@@ -551,6 +553,8 @@ exports.checkinApp = function (record,callback) {
         function(callback) {
             if(errorstatus == 1)
             {
+                details.errorStatus=errorstatus;
+                details.errorMsg = errormsg;
                 CheckInError.create(details,function (err,result) {
                     if(err)
                     {

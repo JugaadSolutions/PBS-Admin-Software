@@ -21,12 +21,14 @@ var async = require('async'),
     Constants = require('../core/constants'),
     UploadHandler = require('../handlers/upload-handler'),
     RegEmployee = require('../models/registration-staff'),
+    MysoreOne = require('../models/mysoreone-staff'),
     Operator = require('../models/operator'),
     AccountStaff = require('../models/accounts-admin'),
     DockingStation = require('../models/dock-station'),
     Monitorgrp = require('../models/monitor-group'),
     HoldingareaStaff = require('../models/holdingarea-staff'),
     RedistributionEmployee =require('../models/redistribution-staff'),
+    Mysoreone = require('../models/mysoreone-staff'),
     MaintenanceEmployee = require('../models/maintanancecentre-staff');
 
 
@@ -66,6 +68,23 @@ exports.createEmployee=function (record,id,callback) {
                 });
             }
 
+        },
+        function (callback) {
+            if(isNaN(record.createdBy))
+            {
+                return callback(null,null);
+            }
+            else
+            {
+                User.findOne({UserID:record.createdBy},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    record.createdBy = result._id;
+                    return callback(null,result);
+                });
+            }
         },
         function (callback) {
             documents = record.documents;
@@ -142,6 +161,17 @@ exports.createEmployee=function (record,id,callback) {
             if(id==7)
             {
                 HoldingareaStaff.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==8)
+            {
+                Mysoreone.create(record,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -592,6 +622,17 @@ exports.updateEmployee = function (record,callback) {
                     return callback(null, result);
                 });
             }
+            if(record._type=='Mysoreone-employee') {
+                Mysoreone.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    //memberDetails = result;
+                    return callback(null, result);
+                });
+            }
 
             //});
         }
@@ -940,4 +981,63 @@ exports.getCyclesWithEmployee = function (id,callback) {
         }
         return callback(null,vehicleId);
     });
+};
+
+exports.getBothMoneandRegstaff = function (callback) {
+
+    var employees = [];
+    async.series([
+        function (callback) {
+            RegEmployee.find({'_type':'registration-employee'},function (err, result) {
+                if (err) {
+
+                  return callback(err,null);
+                }
+                if(result.length>0)
+                {
+                    for(var i=0;i<result.length;i++)
+                    {
+                        employees.push(result[i]);
+                        if(i==result.length-1)
+                        {
+                            return callback(null,result);
+                        }
+                    }
+                }
+                else
+                {
+                    return callback(null,null)
+                }
+            });
+        },
+        function (callback) {
+            MysoreOne.find({'_type':'Mysoreone-employee'},function (err, result) {
+                if (err) {
+
+                    return callback(err,null);
+                }
+                if(result.length>0)
+                {
+                    for(var i=0;i<result.length;i++)
+                    {
+                        employees.push(result[i]);
+                        if(i==result.length-1)
+                        {
+                            return callback(null,result);
+                        }
+                    }
+                }
+                else
+                {
+                    return callback(null,null)
+                }
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,employees);
+    })
 };

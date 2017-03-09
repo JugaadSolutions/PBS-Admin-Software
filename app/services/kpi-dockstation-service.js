@@ -94,13 +94,13 @@ exports.kpistat = function (portid,time,state) {
                                 /*var boundry1 = moment().set('hour', 8);
                                 var boundry2 = moment().set('hour', 16);*/
                                 var boundry1 = new Date();
-                                boundry1.setHours(8);
-                                boundry2.setMinutes(0);
-                                boundry2.setSeconds(0);
+                                boundry1.setHours(08);
+                                boundry1.setMinutes(00);
+                                boundry1.setSeconds(00);
                                 var boundry2 = new Date();
                                 boundry2.setHours(16);
-                                boundry2.setMinutes(0);
-                                boundry2.setSeconds(0);
+                                boundry2.setMinutes(00);
+                                boundry2.setSeconds(00);
                                 console.log('Boundry 1 : '+boundry1);
                                 console.log('Boundry 2 : '+boundry2);
                                 if(stime<8)
@@ -129,12 +129,12 @@ exports.kpistat = function (portid,time,state) {
                                 var boundry2 = moment().set('hour', 19);*/
                                 var boundry1 = new Date();
                                 boundry1.setHours(11);
-                                boundry2.setMinutes(0);
-                                boundry2.setSeconds(0);
+                                boundry1.setMinutes(00);
+                                boundry1.setSeconds(00);
                                 var boundry2 = new Date();
                                 boundry2.setHours(19);
-                                boundry2.setMinutes(0);
-                                boundry2.setSeconds(0);
+                                boundry2.setMinutes(00);
+                                boundry2.setSeconds(00);
                                 console.log('Boundry 1 : '+boundry1);
                                 console.log('Boundry 2 : '+boundry2);
                                 if(stime<11)
@@ -264,8 +264,8 @@ exports.kpistat = function (portid,time,state) {
                                 boundry1.setSeconds(0);
                                 var boundry2 = new Date();
                                 boundry2.setHours(16);
-                                boundry1.setMinutes(0);
-                                boundry1.setSeconds(0);
+                                boundry2.setMinutes(0);
+                                boundry2.setSeconds(0);
                                 console.log('Boundry 1 : '+boundry1);
                                 console.log('Boundry 2 : '+boundry2);
                                 if(stime<8)

@@ -29,3 +29,4 @@ if (username != '' && password !='') {
 require('./admin');
 require('./user');
 require('./port');
+require('./control-centre');

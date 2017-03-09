@@ -4,7 +4,7 @@ var express = require('express');
 // Application Level Dependencies
 var Card = require('../models/card'),
 
-    //MembershipService = require('../services/membership-service'),
+    CardService = require('../services/card-service'),
 
     //RequestDataHandler = require('../handlers/request-data-handler'),
     Messages = require('../core/messages');
@@ -70,7 +70,7 @@ router
 
     .post('/', function (req, res, next) {
 
-        Card.create(req.body,function (err,result){
+        CardService.createCard(req.body,function (err,result){
 
             if (err) {
 
@@ -90,9 +90,9 @@ router
 
         var existingRecord = req.body;
 
-        if(isNaN(req.params.id))
-        {
-            Card.findByIdAndUpdate(req.params.id, existingRecord, {new: true}, function (err, result) {
+/*        if(isNaN(req.params.id))
+        {*/
+            CardService.updateCard(req.params.id, existingRecord,function (err, result) {
 
                 if (err) {
 
@@ -105,7 +105,7 @@ router
                 }
 
             });
-        }
+/*        }
         else
         {
             Card.findOneAndUpdate({cardUid:req.params.id}, existingRecord, {new: true}, function (err, result) {
@@ -121,7 +121,7 @@ router
                 }
 
             });
-        }
+        }*/
     })
 
 

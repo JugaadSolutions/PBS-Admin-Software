@@ -22,6 +22,7 @@ var CardSchema = mongoose.Schema({
     membershipId: {type: Schema.ObjectId, required: false, ref: 'Membership'},
     status: {type: CardStatus, required: true, default: CardStatus.AVAILABLE},
     cardType: {type: CardType, required: true,default: CardType.REGISTERED_MEMBER},
+    currentLocation : {type:Schema.ObjectId,required:false,ref:'station'},
     issuedDate:{type:Date,required: false}
 
 }, { collection : 'cards' });

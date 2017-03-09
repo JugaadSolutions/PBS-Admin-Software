@@ -22,6 +22,8 @@ module.exports={
     COULD_NOT_INITIALIZE_THE_MAINTENANCE_CENTER_COLLECTION: "Could not initialize the maintenance center collection!",
     COULD_NOT_SANITIZE_THE_REDISTRIBUTION_AREA_COLLECTION: "Could not sanitize the redistribution area collection!",
     COULD_NOT_INITIALIZE_THE_REDISTRIBUTION_AREA_COLLECTION: "Could not initialize the redistribution area collection!",
+    COULD_NOT_SANITIZE_THE_CONTROL_CENTRE_COLLECTION: "Could not sanitize the control centre collection!",
+    COULD_NOT_INITIALIZE_THE_CONTROL_CENTRE_COLLECTION: "Could not initialize the control centre collection!",
 
     DELETING_RECORD_SUCCESSFUL:"Deleting record successful",
     DEBIT_AMOUNT_CANNOT_BE_GREATER_THAN_MEMBER_CREDIT_BALANCE:"Debit amount cannot be greater than member credit balance",

@@ -135,6 +135,33 @@ router
         });
 
     })
+
+    .get('/moneregstaff/emp', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+
+            EmployeeService.getBothMoneandRegstaff( function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
     .get('/mcstaff/emp', function (req, res, next) {
 
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
@@ -183,7 +210,30 @@ router
         });
 
     })
+    .get('/monestaff/emp', function (req, res, next) {
 
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_type':'Mysoreone-employee'}).lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
 
     .get('/leave/emp', function (req, res, next) {
 
@@ -343,6 +393,19 @@ router
 
     .post('/hastaff', function (req, res, next) {
         EmployeeService.createEmployee(req.body,7,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+    .post('/monestaff', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,8,function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

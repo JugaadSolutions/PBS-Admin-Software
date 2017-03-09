@@ -159,6 +159,22 @@ exports.getTicketinfo = function (record,callback) {
           }
         },
         function (callback) {
+            if(isNaN(record.assignedEmp))
+            {
+                return callback(null,null);
+            }
+            else {
+                User.findOne({UserID:record.assignedEmp},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    record.assignedEmp = result._id;
+                    return callback(null,result);
+                });
+            }
+        },
+        function (callback) {
             var data = {
                 ticketdate:{$gte:moment(fdate),$lte:moment(ldate)}
             };

@@ -165,7 +165,7 @@ User.schema.methods.comparePassword = function (passw, cb) {
     }
     else
     {
-        return cb(new Error("Password didn't match"));
+        return cb(new Error("Invalid Current Password"));
     }
 
 };

@@ -156,6 +156,31 @@ exports.createRepair = function (record,callback) {
             });
         },
         function (callback) {
+            if(record.origin)
+            {
+                Station.findOne({StationID:record.location},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    record.location = result._id;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                Ports.findOne({PortID:record.location},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    record.location = result._id;
+                    return callback(null,result);
+                });
+            }
+        }
+        ,
+        function (callback) {
             Vehicle.findOne({$or:[{vehicleNumber: record.vehicleId},{vehicleRFID:record.vehicleId}]},function (err,result) {
                 if(err)
                 {

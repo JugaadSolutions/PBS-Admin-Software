@@ -136,6 +136,8 @@ exports.BridgeCheckout=function (record,callback) {
         function(callback) {
             if(errorstatus == 1)
             {
+                details.errorStatus=errorstatus;
+                details.errorMsg = errormsg;
                 CheckoutError.create(details,function (err,result) {
                     if(err)
                     {
@@ -277,6 +279,8 @@ exports.BridgeCheckin = function (record,callback) {
         function(callback) {
             if(errorstatus == 1)
             {
+                details.errorStatus=errorstatus;
+                details.errorMsg = errormsg;
                 CheckInError.create(details,function (err,result) {
                     if(err)
                     {
