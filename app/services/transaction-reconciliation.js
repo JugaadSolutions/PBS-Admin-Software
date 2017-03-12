@@ -62,7 +62,7 @@ var checkinDetails;
                                 {
                                     return console.log('User id not found : '+result.user);
                                 }
-                                if(userdetails._type=='member'&& (userdetails.status==Constants.MemberStatus.REGISTERED || userdetails.status==Constants.MemberStatus.RENEWED))
+                                if(userdetails._type=='member'&& (userdetails.status==Constants.MemberStatus.REGISTERED))
                                 {
                                     var checkInTime = moment(checkinDetail.checkInTime);
                                     var checkOutTime = moment(result.checkOutTime);
@@ -153,9 +153,12 @@ var checkinDetails;
                                 else
                                 {
                                     if (userdetails.vehicleId.length > 0) {
-                                        for (var i = 0; i < result.vehicleId.length; i++) {
+                                        for (var i = 0; i < userdetails.vehicleId.length; i++) {
                                             if (userdetails.vehicleId[i].vehicleid.equals(checkinDetail.vehicleId)) {
                                                 userdetails.vehicleId.splice(i, 1);
+                                            }
+                                            if(i==userdetails.vehicleId.length-1)
+                                            {
                                                 User.findByIdAndUpdate(userdetails._id,userdetails,function (err) {
                                                     if(err)
                                                     {

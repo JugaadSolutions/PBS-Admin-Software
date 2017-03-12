@@ -715,7 +715,6 @@ exports.timelyCheckout = function (callback) {
                                             {
                                                 result.portStatus = Constants.AvailabilityStatus.EMPTY;
                                             }
-                                            break;
                                         }
                                     }
                                 }
@@ -1064,7 +1063,6 @@ exports.timelyCheckin = function (callback) {
                                                 for (var i = 0; i < result.vehicleId.length; i++) {
                                                     if (result.vehicleId[i].vehicleid.equals(checkinDetail.vehicleId)) {
                                                         result.vehicleId.splice(i, 1);
-                                                        break;
                                                     }
                                                 }
                                             }

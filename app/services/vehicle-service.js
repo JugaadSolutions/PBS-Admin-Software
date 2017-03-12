@@ -85,7 +85,15 @@ exports.addBicycle=function (record, callback) {
                vehicleid:vehicleRecord._id,
                vehicleUid:vehicleRecord.vehicleUid
            };
-           result.vehicleId.push(vehicleDetails);
+                if(result.portStatus==Constants.AvailabilityStatus.EMPTY)
+                {
+                    result.portStatus = Constants.AvailabilityStatus.NORMAL;
+                }
+                result.vehicleId.push(vehicleDetails);
+                if(result.portCapacity==result.vehicleId.length)
+                {
+                    result.portStatus = Constants.AvailabilityStatus.FULL;
+                }
                 Port.findByIdAndUpdate(result._id,result,function (err,result) {
                 if(err)
                 {

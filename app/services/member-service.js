@@ -1999,6 +1999,7 @@ exports.addMember=function (record,callback) {
     var ResetKey;
     var passwordFlag = 0;
     var location;
+    var valid = false;
 
     async.series([
         /*     function (callback) {
@@ -2020,26 +2021,43 @@ exports.addMember=function (record,callback) {
 
          }*/
         function (callback) {
-
-            if (record.password) {
-                password = record.password;
-                record.emailVerified=true;
-                passwordFlag = 1;
-                return callback(null, null);
-            } else {
-                random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
-
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    password=data.split('').reverse().join('');
-                    ResetKey = data;
-                    return callback(null, data);
-                });
-            }
-
+            CardService.cardAvailableForMember(record.cardNumber,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                valid = true;
+                return callback(null,result);
+            });
         },
         function (callback) {
+            if(valid)
+            {
+                if (record.password) {
+                    password = record.password;
+                    record.emailVerified=true;
+                    passwordFlag = 1;
+                    return callback(null, null);
+                } else {
+                    random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        //password=data.split('').reverse().join('');
+                        ResetKey = data;
+                        return callback(null, data);
+                    });
+                }
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function (callback) {
+            if(valid)
+            {
             if(isNaN(record.createdBy))
             {
                 User.findOne({_id:record.createdBy},function (err,result) {
@@ -2092,34 +2110,43 @@ exports.addMember=function (record,callback) {
                     if(result._type=='registration-employee')
                     {
                         RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
-                            if(err)
-                            {
-                                return callback(err,null);
-                            }
-                            if(!result)
-                            {
-                                location = 'Other Location';
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                if(!result)
+                                {
+                                    location = 'Other Location';
+                                    return callback(null,result);
+                                }
+                                location=reg.location;
                                 return callback(null,result);
-                            }
-                            location=reg.location;
+                            });
+                        }
+                        else {
+                            location = 'Other Location';
                             return callback(null,result);
-                        });
-                    }
-                    else {
-                        location = 'Other Location';
-                        return callback(null,result);
-                    }
+                        }
 
-                });
+                    });
+                }
+            }
+            else
+            {
+                return callback(null,null);
             }
         }
         ,
         function (callback) {
+            if(valid)
+            {
+
+
             documents = record.documents;
             profilePic = record.profilePic;
             record.documents = [];
             record.profilePic = '';
-            record.password=password;
+            //record.password=password;
 
             if(record.UserID==0)
             {
@@ -2141,6 +2168,7 @@ exports.addMember=function (record,callback) {
                 Member.create(memData,function (err,result) {
                     if(err)
                     {
+                        valid = false;
                         return callback(err,null);
                     }
                     memberDetails=result;
@@ -2152,7 +2180,6 @@ exports.addMember=function (record,callback) {
                     Name:record.Name,
                     lastName:record.lastName,
                     email:record.email,
-                    password: record.password,
                     phoneNumber:record.phoneNumber,
                     sex:record.sex,
                     city:record.city,
@@ -2171,9 +2198,16 @@ exports.addMember=function (record,callback) {
                     return callback(null,result);
                 });
             }
-
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
         function (callback) {
+            if(valid)
+            {
+
 
             if (profilePic) {
 
@@ -2210,9 +2244,16 @@ exports.addMember=function (record,callback) {
             } else {
                 return callback(null, null);
             }
-
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
         function (callback) {
+            if(valid)
+            {
+
 
             if (record.memberprofilePic) {
 
@@ -2249,10 +2290,18 @@ exports.addMember=function (record,callback) {
             } else {
                 return callback(null, null);
             }
-
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
         ,
         function (callback) {
+            if(valid)
+            {
+
+
             if (documents) {
 
                 for (var i = 0; i < documents.length; i++) {
@@ -2306,8 +2355,16 @@ exports.addMember=function (record,callback) {
             } else {
                 return callback(null, null);
             }
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
         function (callback) {
+            if(valid)
+            {
+
 
             if (filesArrayToWrite.length > 0) {
 
@@ -2323,10 +2380,17 @@ exports.addMember=function (record,callback) {
             } else {
                 return callback(null, null);
             }
-
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
 
         function (callback) {
+            if(valid)
+            {
+
 
             var docArray = [];
 
@@ -2364,9 +2428,17 @@ exports.addMember=function (record,callback) {
                 {
                     return callback(null, null);
                 }
-
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
         function (callback) {
+            if(valid)
+            {
+
+
            if(record.membershipId)
            {
                 Membership.findOne({membershipId:record.membershipId},function (err,result) {
@@ -2389,8 +2461,17 @@ exports.addMember=function (record,callback) {
            {
                return callback(null,null);
            }
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
         function (callback) {
+            if(valid)
+            {
+
+
             if(memberDetails.creditBalance>0)
             {
                 return callback(null,null);
@@ -2413,9 +2494,18 @@ exports.addMember=function (record,callback) {
                     return callback(null,result);
                 });
             }
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
         ,
         function (callback) {
+            if(valid)
+            {
+
+
             if(memberDetails.smartCardNumber)
             {
                 return callback(null,null);
@@ -2431,9 +2521,17 @@ exports.addMember=function (record,callback) {
                     return callback(null,result);
                 });
             }
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
         ,
         function (callback) {
+            if(valid)
+            {
+
 
             if(memberDetails.email!=null && memberDetails.email!='' && memberDetails.email!='undefined')
             {
@@ -2482,7 +2580,11 @@ exports.addMember=function (record,callback) {
             {
                 return callback(null,null);
             }
-
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }/*,
          function (callback) {
          Station.find({stationType:'dock-station'},function (err,result) {

@@ -62,6 +62,10 @@ exports.createReport = function (callback) {
                         }*/
                     }
                 }
+                else
+                {
+                    return callback(null,null);
+                }
             });
         },
         function (callback) {

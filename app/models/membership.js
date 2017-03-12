@@ -23,7 +23,7 @@ var schema = {
 
     userFees: {type: Number, required: true},
     securityDeposit: {type: Number, required: true},
-    smartCardFees: {type: Number, required: true},
+    smartCardFees: {type: Number, required: false,default:0},
     processingFees: {type: Number, required: true},
 
     farePlan: {type: Schema.ObjectId, required: true, ref: "FarePlan"},

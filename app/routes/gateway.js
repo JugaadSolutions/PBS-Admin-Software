@@ -43,7 +43,8 @@ router
     .post('/', function (req, res, next) {
 
     var data = req.body;
-        data.paymentdate = moment(data.paymentdate);
+        data.paymentdate = moment();
+        console.log(data.paymentdate);
         gateway.create(data,function (err,result){
 
             if (err) {

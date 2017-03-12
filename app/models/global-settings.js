@@ -44,7 +44,25 @@ Gs.count({name:'Commissioned-Date'},function (err,count) {
         });
     }
 });
+Gs.count({name:'REQUIRED_FLEET_SIZE'},function (err,count) {
+    if(err)
+    {
+        throw new Error(Messages.COULD_NOT_SANITIZE_THE_USER_COLLECTION + err);
+    }
+    if(count<1)
+    {
 
+        var data = {
+            name:'REQUIRED_FLEET_SIZE',
+            value:[52]
+        };
+        Gs.create(data,function (err) {
+            if (err) {
+                throw new Error('Global setting initialization error ' + err);
+            }
+        });
+    }
+});
 Gs.count({name:'Employee'},function (err,count) {
     if(err)
     {
