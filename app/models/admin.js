@@ -32,7 +32,7 @@ Admin.count({email: "admin@mytrintrin.com"}, function (err, count) {
             //smartCardNumber:"2DR35A6B00000000",
             emailVerified: "true",
             //role: "admin",
-            phoneNumber:"91-80508-09988",
+            phoneNumber:"91-8050809988",
             sex:"Male",
             status:1
         };

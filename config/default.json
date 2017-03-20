@@ -37,6 +37,7 @@
   "emailNotification": {
     "enabled": true
   },
+  "OTPURL":"http://smspush.openhouseplatform.com/smsmessaging/1/outbound/tel%3A%2BMOBKAR/requests",
   "pbsMemberPortal": {
     "url": "http://www.mytrintrin.com/userportal/",
   //  "resetUrl":"http://www.mytrintrin.com/portal/reset.php?key=",

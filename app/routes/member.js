@@ -149,7 +149,34 @@ router
             }
         });
     })
+    .post('/requestotp', function (req, res, next) {
+        MemberService.requestOTP(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+               /* var data = {
+                    otpstatus:'success'
+                };*/
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
 
+        });
+    })
+    .post('/verifyotp', function (req, res, next) {
+        MemberService.verifyOTP(req.body,function (err,result) {
+         if(err)
+         {
+            next(err, req, res, next);
+         }
+         else
+         {
+            res.json({error: false, message: Messages.OTP_VERIFY_SUCCESS, description: '', data: result});
+         }
+         });
+    })
     .post('/search', function (req, res, next) {
         MemberService.searchMember(req.body,function (err,result) {
             if(err)

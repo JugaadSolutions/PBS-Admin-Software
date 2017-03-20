@@ -52,6 +52,8 @@ module.exports={
     NO_CARD_FOUND:"No card found for this ID",
     NO_USER_EXISTS_WITH_THIS_INFO:"No user exists with this information",
 
+    OTP_VERIFY_SUCCESS:"OTP verification success",
+
     PASSWORD_RESET_REQUEST:"Your password reset request",
     PASSWORD_CANNOT_BE_EMPTY:"Password Cannot be empty",
     PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD: "Please enter the correct current password",
