@@ -9,6 +9,7 @@ var async = require('async'),
     Tickets = require('../models/tickets'),
     cleanstation = require('../models/stationcleaning'),
 
+    Messages = require('../core/messages'),
     kpids = require('../models/kpi-dockstation'),
     Port = require('../models/port');
 
@@ -20,10 +21,14 @@ exports.kpistat = function (portid,time,state) {
     var stationDetails;
     async.series([
         function (callback) {
-            Port.findOne({'_id':portid},function (err,result) {
+            Port.findById(portid,function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error(Messages.NO_PORT_FOUND),null);
                 }
                /* if(result.StationId)
                 {*/
@@ -42,8 +47,16 @@ exports.kpistat = function (portid,time,state) {
                         {
                             return callback(err,null);
                         }
-                        stationDetails=result;
-                        return callback(null,result);
+                        if(result)
+                        {
+                            stationDetails=result;
+                            return callback(null,result);
+                        }
+                        else
+                        {
+                            return callback(null,null);
+                        }
+
                     });
                 }
                 else
@@ -191,6 +204,10 @@ exports.kpistat = function (portid,time,state) {
                                     return callback(null, result);
                                 });
                            // }
+                        }
+                        else
+                        {
+                            return callback(null,null);
                         }
                     });
                 }
@@ -357,6 +374,10 @@ exports.kpistat = function (portid,time,state) {
                                 }
                                 return callback(null, result);
                             });
+                        }
+                        else
+                        {
+                            return callback(null,null);
                         }
                     });
                 }
@@ -596,60 +617,60 @@ exports.kpistatinfo= function (record,callback) {
     }else {
 
     }*/
-    if(record.stationState==0)
-    {
-        var ldate = moment(record.todate).add(1, 'days');
-        ldate=ldate.format('YYYY-MM-DD');
-        kpids.find({'starttime':{$gte:moment(record.fromdate),$lte:moment(ldate)},'timeduration':{$gte:record.duration},'updateStatus':1}).deepPopulate('stationid').lean().exec(function (err,result) {
-            if(err)
-            {
-                return callback(err,null);
-            }
-            return callback(null,result);
-        });
-    }else
-    {
-        var ldate = moment(record.todate).add(1, 'days');
-        ldate=ldate.format('YYYY-MM-DD');
-        if(record.stationState==1) {
-            stat = 1;
-        }
-        else
-        {
-            stat=2;
-        }
-        kpids.find({'starttime':{$gte:moment(record.fromdate),$lte:moment(ldate)},'timeduration':{$gte:record.duration},'status':stat,'updateStatus':1}).deepPopulate('stationid').lean().exec(function (err,result) {
-            if(err)
-            {
-                return callback(err,null);
-            }
-            return callback(null,result);
-        });
-    }
+
+   if(record.fromdate && record.todate)
+   {
+       if(record.stationState==0)
+       {
+           var fdate = moment(record.fromdate);
+           fdate=fdate.format('YYYY-MM-DD');
+           var ldate = moment(record.todate).add(1, 'days');
+           ldate=ldate.format('YYYY-MM-DD');
+           kpids.find({'starttime':{$gte:moment(fdate),$lte:moment(ldate)},'timeduration':{$gte:record.duration},'updateStatus':1}).deepPopulate('stationid').lean().exec(function (err,result) {
+               if(err)
+               {
+                   return callback(err,null);
+               }
+               return callback(null,result);
+           });
+       }else
+       {
+           var fdate = moment(record.fromdate);
+           fdate=fdate.format('YYYY-MM-DD');
+           var ldate = moment(record.todate).add(1, 'days');
+           ldate=ldate.format('YYYY-MM-DD');
+           if(record.stationState==1) {
+               stat = 1;
+           }
+           else
+           {
+               stat=2;
+           }
+           kpids.find({'starttime':{$gte:moment(fdate),$lte:moment(ldate)},'timeduration':{$gte:record.duration},'status':stat,'updateStatus':1}).deepPopulate('stationid').lean().exec(function (err,result) {
+               if(err)
+               {
+                   return callback(err,null);
+               }
+               return callback(null,result);
+           });
+       }
+   }
+   else
+   {
+       return callback(new Error('Please provide from date and to date both'),null);
+   }
+
 
 };
 
 exports.kpicleaninfo = function (record,callback) {
-
-    var fdate = moment(record.fromdate);
-    fdate=fdate.format('YYYY-MM-DD');
-    var ldate = moment(record.todate).add(1, 'days');
-    ldate=ldate.format('YYYY-MM-DD');
-    cleanstation.find({'cleaneddate':{$gte:moment(fdate),$lte:moment(ldate)},'cleanCount':1}).sort({'cleaneddate': 'ascending'})/*.deepPopulate('stationId empId')*/.lean().exec(function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
-};
-
-exports.kpiTicketsinfo = function (record,callback) {
-    var ldate = moment(record.todate).add(1, 'days');
-    ldate=ldate.format('YYYY-MM-DD');
-    if(record.complaintType==0)
+    if(record.fromdate && record.todate)
     {
-        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)}}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
+        var fdate = moment(record.fromdate);
+        fdate=fdate.format('YYYY-MM-DD');
+        var ldate = moment(record.todate).add(1, 'days');
+        ldate=ldate.format('YYYY-MM-DD');
+        cleanstation.find({'cleaneddate':{$gte:moment(fdate),$lte:moment(ldate)},'cleanCount':1}).sort({'cleaneddate': 'ascending'})/*.deepPopulate('stationId empId')*/.lean().exec(function (err,result) {
             if(err)
             {
                 return callback(err,null);
@@ -659,13 +680,40 @@ exports.kpiTicketsinfo = function (record,callback) {
     }
     else
     {
-        Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)},'complaintType':Number(record.complaintType)}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
-            if(err)
-            {
-                return callback(err,null);
-            }
-            return callback(null,result);
-        });
+        return callback(new Error('Please provide from date and to date both'),null);
     }
+};
 
+exports.kpiTicketsinfo = function (record,callback) {
+    if(record.fromdate && record.todate)
+    {
+        var fdate = moment(record.fromdate);
+        fdate=fdate.format('YYYY-MM-DD');
+        var ldate = moment(record.todate).add(1, 'days');
+        ldate=ldate.format('YYYY-MM-DD');
+        if(record.complaintType==0)
+        {
+            Tickets.find({'ticketdate':{$gte:moment(fdate),$lte:moment(ldate)}}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+        else
+        {
+            Tickets.find({'ticketdate':{$gte:moment(record.fromdate),$lte:moment(ldate)},'complaintType':Number(record.complaintType)}).sort({'ticketdate': 'ascending'}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+    }
+    else
+    {
+        return callback(new Error('Please provide from date and to date both'),null);
+    }
 };

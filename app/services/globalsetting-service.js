@@ -21,7 +21,7 @@ exports.updateSetting = function (id,record,callback) {
   };
   settingData.name=record.name;
     settingData.value=record.value;
-    Settings.findByIdAndUpdate(id,settingData,{new:true},function (err,result) {
+    Settings.findOneAndUpdate({globalId:id},settingData,{new:true},function (err,result) {
         if(err)
         {
             return callback(err,null);

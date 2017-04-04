@@ -7,6 +7,7 @@ var //DockingUnitService = require('../services/docking-unit-service'),
     //RequestHandler = require('../handlers/request-handler'),
     HoldingPort = require('../models/holding-port'),
     Holdingarea = require('../models/holding-area'),
+    Station = require('../models/station'),
     Messages = require('../core/messages');
 
 // Method to create Docking Port
@@ -15,6 +16,27 @@ var //DockingUnitService = require('../services/docking-unit-service'),
 exports.createPort=function (record,callback) {
     var holdingareaDetails;
     async.series([
+        function (callback) {
+            if(isNaN(record.StationId))
+            {
+                return callback(null,null);
+            }
+            else
+            {
+                Station.findOne({StationID:record.StationId},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error('No station found for the given id'),null);
+                    }
+                    record.StationId = result._id;
+                    return callback(null,result);
+                });
+            }
+        },
         function (callback) {
             HoldingPort.create(record,function (err,result) {
                 if(err)
@@ -28,7 +50,7 @@ exports.createPort=function (record,callback) {
         function (callback) {
             if(holdingareaDetails)
             {
-                Holdingarea.findOne({'_id':holdingareaDetails.StationId},function (err,result) {
+                Holdingarea.findById(holdingareaDetails.StationId,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -74,7 +96,7 @@ exports.getAllRecords=function (record,callback) {
 exports.getOneRecord = function (id,callback) {
     if(isNaN(id))
     {
-        HoldingPort.findOne({'_id':id},function (err,result) {
+        HoldingPort.findById(id,function (err,result) {
             if(err)
             {
                 return callback(err,null);

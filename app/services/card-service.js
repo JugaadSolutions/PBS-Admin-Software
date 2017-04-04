@@ -12,18 +12,23 @@ var Card = require('../models/card'),
 exports.createCard = function (record,callback) {
     
     var cardDetails;
-    async.series([
+    async.waterfall([
         function (callback) {
-            Station.findOne({stationType:'Control-centre'},function (err,result) {
+            Station.findOne({stationType:'Control-centre'},function (err,station) {
                 if(err)
                 {
                     return callback(err,null);
                 }
-                record.currentLocation = result._id;
-                return callback(null,result);
+                if(!station)
+                {
+                    return callback(new Error('No controle centre found to add card'),null);
+                }
+
+                return callback(null,station);
             });
         },
-        function (callback) {
+        function (station,callback) {
+            record.currentLocation = station._id;
             Card.create(record,function (err,result) {
                 if(err)
                 {
@@ -60,6 +65,10 @@ exports.updateCard = function (id,record,callback) {
                         {
                             return callback(err,null);
                         }
+                        if(!result)
+                        {
+                            return callback(new Error('No station found for the given id'),null);
+                        }
                         record.currentLocation = result._id;
                         return callback(null,result);
                     });
@@ -78,6 +87,10 @@ exports.updateCard = function (id,record,callback) {
                     if (err) {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.NO_CARD_FOUND),null);
+                    }
                     cardDetails = result;
                     return callback(null,result);
                 });
@@ -88,6 +101,10 @@ exports.updateCard = function (id,record,callback) {
                     if (err) {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.NO_CARD_FOUND),null);
+                    }
                     cardDetails = result;
                     id = result._id;
                     return callback(null,result);
@@ -96,6 +113,8 @@ exports.updateCard = function (id,record,callback) {
         }
         ,
         function (callback) {
+            if(isNaN(id))
+            {
                 Card.findByIdAndUpdate(id, record, {new: true}, function (err, result) {
                     if (err) {
                         return callback(err,null);
@@ -103,6 +122,11 @@ exports.updateCard = function (id,record,callback) {
                     cardDetails = result;
                     return callback(null,result);
                 });
+            }
+            else
+            {
+                return callback(null,null);
+            }
 
         }
     ],function (err,result) {
@@ -183,7 +207,7 @@ exports.deactivateCard = function (id, callback) {
                     }
 
                     if (!result) {
-                        return callback(null, null);
+                        return callback(new Error(Messages.USER_NOT_FOUND), null);
                     }
 
                     User.findByIdAndUpdate(result._id, {
@@ -197,7 +221,10 @@ exports.deactivateCard = function (id, callback) {
                         if (err) {
                             return callback(err, null);
                         }
-
+                        if(!result)
+                        {
+                            return callback(new Error('Unable to remove card details from the user. Contact Admin'),null);
+                        }
                         memberObject = result;
                         assignedToId = result._id;
                         return callback(null, result);
@@ -206,60 +233,75 @@ exports.deactivateCard = function (id, callback) {
 
             },
         function (callback) {
-                memberObject.lastModifiedAt = new Date();
-            memberObject.unsuccessIp=IPs;
-            memberObject.updateCount=0;
-            memberObject.successIp=[];
-            User.findByIdAndUpdate(memberObject._id, memberObject, {new: true}).lean().exec(function (err, result) {
+                if(memberObject) {
+                    memberObject.lastModifiedAt = new Date();
+                    memberObject.unsuccessIp = IPs;
+                    memberObject.updateCount = 0;
+                    memberObject.successIp = [];
+                    User.findByIdAndUpdate(memberObject._id, memberObject, {new: true}).lean().exec(function (err, result) {
 
-                if (err) {
-                    return callback(err, null);
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        if (!result) {
+                            return callback(new Error('Unable to update canceled details from the user. Contact Admin'));
+                        }
+                        memberObject = result;
+                        return callback(null, result);
+                    });
                 }
-
-                memberObject = result;
-                return callback(null, result);
-            });
-
+                else
+                {
+                    return callback(null,null);
+                }
         },
 
             // Step 3: Method to change card status to inactive
             function (callback) {
 
-                Card.findByIdAndUpdate(cardObject._id, {
-                    $unset: {assignedTo: "",
-                        issuedBy:"",
-                        membershipId:memberObject.membershipId,
-                         issuedDate: ""}
-                }, {new: true}, function (err, result) {
-
-                    if (err) {
-                        return callback(err, null);
-                    }
-
-                    result.status = Constants.CardStatus.AVAILABLE;
-                    result.balance = 0;
-                    Card.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
-                        if(err)
-                        {
-                            return callback(err,null);
+                if(cardObject && memberObject) {
+                    Card.findByIdAndUpdate(cardObject._id, {
+                        $unset: {
+                            assignedTo: "",
+                            issuedBy: "",
+                            membershipId: memberObject.membershipId,
+                            issuedDate: ""
                         }
-                        cardObject = result;
-                                trackdata.assignedUserId=memberObject._id;
-                                trackdata.preStatus=before;
-                                trackdata.postStatus=result.status;
-                                trackdata.cardId=result._id;
+                    }, {new: true}, function (err, result) {
 
-
-                        CardTrack.create(trackdata,function (err,result) {
-                            if(err)
-                            {
-                                return callback(err,null);
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        if(!result)
+                        {
+                            return callback(new Error('Unable to remove user details from Card'),null);
+                        }
+                        result.status = Constants.CardStatus.AVAILABLE;
+                        result.balance = 0;
+                        Card.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
                             }
-                            return callback(null,result);
+                            cardObject = result;
+                            trackdata.assignedUserId = memberObject._id;
+                            trackdata.preStatus = before;
+                            trackdata.postStatus = result.status;
+                            trackdata.cardId = result._id;
+
+
+                            CardTrack.create(trackdata, function (err, result) {
+                                if (err) {
+                                    return callback(err, null);
+                                }
+                                return callback(null, result);
+                            });
                         });
                     });
-                });
-
+                }
+                else
+                {
+                    return callback(null,null);
+                }
             }
 
         ],
@@ -270,8 +312,14 @@ exports.deactivateCard = function (id, callback) {
                 return callback(err, null);
             }
 
-            return callback(err, cardObject);
-
+            if(cardObject)
+            {
+                return callback(err, cardObject);
+            }
+            else
+            {
+                return callback();
+            }
         }
     );
 };

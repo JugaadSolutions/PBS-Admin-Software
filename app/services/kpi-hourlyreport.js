@@ -89,6 +89,10 @@ exports.createReport = function (callback) {
                         }
                     }
                 }
+                else
+                {
+                    return callback(null,null);
+                }
             });
         },
         function (callback) {
@@ -135,6 +139,10 @@ exports.createReport = function (callback) {
                         }
                     }
                 }
+                else
+                {
+                    return callback(null,null);
+                }
             });
         },
         function (callback) {
@@ -158,6 +166,7 @@ exports.createReport = function (callback) {
                 {
                     return callback(err,null);
                 }
+
                     return callback(null,result);
             });
         }
@@ -166,15 +175,21 @@ exports.createReport = function (callback) {
         {
             return callback(err,null);
         }
-        return callback(null,null);
+        return callback(null,result);
     });
 };
 
 exports.getReport = function (record,callback) {
 
     var allReports = [];
+
+    var fdate = moment(record.fromdate);
+    fdate=fdate.format('YYYY-MM-DD');
+    var ldate = moment(record.todate).add(1, 'days');
+    ldate=ldate.format('YYYY-MM-DD');
     if(record.duration==25)
     {
+
         kpiHourly.find({'dateAndTime':{$gte:moment(fdate),$lte:moment(ldate)/*,$gt:[{$hour:'$dateAndTime'},6]*/}},function (err,result) {
             if(err)
             {
@@ -185,10 +200,10 @@ exports.getReport = function (record,callback) {
     }
     else if(record.duration==0)
     {
-        var fdate = moment(record.fromdate);
+       /* var fdate = moment(record.fromdate);
         fdate=fdate.format('YYYY-MM-DD');
         var ldate = moment(record.todate).add(1, 'days');
-        ldate=ldate.format('YYYY-MM-DD');
+        ldate=ldate.format('YYYY-MM-DD');*/
         kpiHourly.find({'dateAndTime':{$gte:moment(fdate),$lte:moment(ldate)/*,$gt:[{$hour:'$dateAndTime'},6]*/}},function (err,result) {
             if(err)
             {
@@ -218,10 +233,10 @@ exports.getReport = function (record,callback) {
         });
     }
     else {
-        var fdate = moment(record.fromdate);
+       /* var fdate = moment(record.fromdate);
         fdate=fdate.format('YYYY-MM-DD');
         var ldate = moment(record.todate).add(1, 'days');
-        ldate=ldate.format('YYYY-MM-DD');
+        ldate=ldate.format('YYYY-MM-DD');*/
         kpiHourly.find({'dateAndTime':{$gte:moment(fdate),$lte:moment(ldate)/*,$gt:[{$hour:'$dateAndTime'},6]*/}},function (err,result) {
             if(err)
             {
@@ -232,7 +247,7 @@ exports.getReport = function (record,callback) {
                 for(var i=0;i<result.length;i++)
                 {
                     var report = result[i];
-                    console.log('Hours : '+moment(report.dateAndTime).get('h'));
+                    //console.log('Hours : '+moment(report.dateAndTime).get('h'));
                     if(moment(report.dateAndTime).get('h')==record.duration+5)
                     {
                         allReports.push(report);
@@ -260,12 +275,13 @@ exports.getcardReport = function (record,callback) {
     var notrans;
     var totalTrans;
     var res;
+    var fdate = moment(record.fromdate);
+    fdate=fdate.format('YYYY-MM-DD');
+    var ldate = moment(record.todate).add(1, 'days');
+    ldate=ldate.format('YYYY-MM-DD');
     async.series([
         function (callback) {
-            var fdate = moment(record.fromdate);
-            fdate=fdate.format('YYYY-MM-DD');
-            var ldate = moment(record.todate).add(1, 'days');
-            ldate=ldate.format('YYYY-MM-DD');
+
             Checkout.count({checkOutTime:{$gte:moment(fdate),$lte:moment(ldate)},duration:{$lte:Number(record.duration)}},function (err,result) {
                 if(err)
                 {
@@ -276,10 +292,10 @@ exports.getcardReport = function (record,callback) {
             });
         },
         function (callback) {
-            var fdate = moment(record.fromdate);
+/*            var fdate = moment(record.fromdate);
             fdate=fdate.format('YYYY-MM-DD');
             var ldate = moment(record.todate).add(1, 'days');
-            ldate=ldate.format('YYYY-MM-DD');
+            ldate=ldate.format('YYYY-MM-DD');*/
             Checkout.count({checkOutTime:{$gte:moment(fdate),$lte:moment(ldate)}},function (err,result) {
                 if(err)
                 {
@@ -298,6 +314,9 @@ exports.getcardReport = function (record,callback) {
         {
             res=(notrans/totalTrans)*100;
             return callback(null,res);
+        }
+        else {
+            return callback(null,null);
         }
     });
 };

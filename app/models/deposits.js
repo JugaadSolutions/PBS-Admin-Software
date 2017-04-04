@@ -14,7 +14,7 @@ const Loc=Constants.Loc;
 var DepositSchema = mongoose.Schema({
     depositUid: Number,
     cashCollectionDate:{type:Date,required:true,default:Date.now()},
-    location:{type:Loc,required:true,default:Loc.REG_CENTRE},
+    location:{type:String,required:true},
     //regCentreName:{type:String,required:false},
     depositDate:{type:Date,required:true, default:Date.now()},
     amount:{type:Number,required:true},

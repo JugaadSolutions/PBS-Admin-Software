@@ -25,6 +25,8 @@ exports.getkioskReport= function (record,callback) {
     var res;
     async.series([
         function (callback) {
+        if(record.fromdate && record.todate)
+        {
             var fdate = moment(record.fromdate);
             fdate=fdate.format('YYYY-MM-DD');
             var ldate = moment(record.todate).add(1, 'days');
@@ -37,20 +39,33 @@ exports.getkioskReport= function (record,callback) {
                 notrans=result;
                 return callback(null,result);
             });
+        }
+        else
+        {
+            return callback(new Error('Please provide from date and to date both'),null);
+        }
+
         },
         function (callback) {
-            var fdate = moment(record.fromdate);
-            fdate=fdate.format('YYYY-MM-DD');
-            var ldate = moment(record.todate).add(1, 'days');
-            ldate=ldate.format('YYYY-MM-DD');
-            kiosk.count({dateTime:{$gte:moment(fdate),$lte:moment(ldate)}},function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                totalTrans=result;
-                return callback(null,result);
-            });
+            if(record.fromdate && record.todate)
+            {
+                var fdate = moment(record.fromdate);
+                fdate=fdate.format('YYYY-MM-DD');
+                var ldate = moment(record.todate).add(1, 'days');
+                ldate=ldate.format('YYYY-MM-DD');
+                kiosk.count({dateTime:{$gte:moment(fdate),$lte:moment(ldate)}},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    totalTrans=result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(new Error('Please provide from date and to date both'),null);
+            }
         }
     ],function (err,result) {
         if(err)
@@ -61,6 +76,10 @@ exports.getkioskReport= function (record,callback) {
         {
             res=(notrans/totalTrans)*100;
             return callback(null,res);
+        }
+        else
+        {
+            return callback(null,null);
         }
     });
 };

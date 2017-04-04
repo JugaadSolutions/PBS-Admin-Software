@@ -27,9 +27,8 @@ var schema = {
     fareplanUid:Number,
     planName: {type: String, required: true, unique: true},
     plans: {type: [Plans], required: true},
-
     status: {type: FarePlanStatus, required: true, default: FarePlanStatus.ACTIVE},
-    lastSyncedAt:{type:Date,required:false,default:Date.now},
+    lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'},
     updateCount:{type: Number, required: false,default:0},
     unsuccessIp:{type:[String],required:false,default:[]},
     successIp:{type:[String],required:false,default:[]}

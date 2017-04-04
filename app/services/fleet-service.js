@@ -13,12 +13,16 @@ exports.addFleet=function (record, callback) {
                {
                    return callback(err,null);
                }
+               if(!result)
+               {
+                   return callback(new Error('No station found by given id'),null);
+               }
                record.StationId = result._id;
                return callback(null,result);
            });
        },
     function (callback) {
-        record.portCapacity=record.VehicleCapacity;
+       // record.portCapacity=record.portCapacity;
         Fleet.create(record,function (err,result) {
             if(err)
             {
@@ -31,7 +35,7 @@ exports.addFleet=function (record, callback) {
        function (callback) {
            if(fleetDetails)
            {
-               Fleetarea.findOne({'_id':fleetDetails.StationId},function (err,result) {
+               Fleetarea.findById(fleetDetails.StationId,function (err,result) {
                    if(err)
                    {
                        return callback(err,null);
@@ -60,14 +64,14 @@ exports.addFleet=function (record, callback) {
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,fleetDetails);
     });
     
 };
 
 exports.getAllRecords=function (callback) {
 
-    Fleet.find({'_type':'Fleet'}).deepPopulate('StationId').lean().exec(function (err,result) {
+    Fleet.find({_type:'Fleet'}).deepPopulate('StationId').lean().exec(function (err,result) {
         if(err)
         {
             return callback(err,null);
@@ -78,7 +82,7 @@ exports.getAllRecords=function (callback) {
 };
 
 exports.getOneRecord = function (id,callback) {
-    Fleet.findById(id,function (err,result) {
+    Fleet.findOne({PortID:id},function (err,result) {
         if(err)
         {
             return callback(err,null);
@@ -88,7 +92,7 @@ exports.getOneRecord = function (id,callback) {
 };
 
 exports.updateFleetport = function (id,record,callback) {
-  Fleet.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+  Fleet.findOneAndUpdate({PortID:id},record,{new:true},function (err,result) {
       if(err)
       {
           return callback(err,null);

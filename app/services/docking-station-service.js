@@ -17,99 +17,9 @@ var DockStation=require('../models/dock-station'),
 var cleanstation = require('../models/stationcleaning');
 
 var DockService = require('../services/docking-port-service');
-// Application Level Dependencies
-/*var DockingStation = require('../models/docking-station'),
-    Member = require('../models/user'),
-    Vehicle = require('../models/vehicle'),
-    DockingUnit = require('../models/docking-unit'),
-    DockingPort = require('../models/docking-port'),
-
-    DockingUnitService = require('../services/docking-unit-service'),
-
-    //RequestHandler = require('../handlers/request-handler'),
-    Messages = require('../core/messages');*/
-
-// Method to create docking station
-/*
-exports.createStation = function (record, callback) {
-
-    var dockingStation;
-    var dockingStationObject;
-
-    async.series([
-
-            // Step 1: Method to create docking station
-            function (callback) {
-
-               /!* var newRecord = DockingStation(record);
-
-                newRecord.save(function (err, result) {
-
-                    if (err) {
-                        return callback(err, null);
-                    }
-
-                    dockingStationObject = {
-                        stationNumber: result.stationNumber,
-                        name: result.name,
-                        stationIPAddress: result.ipAddress,
-                        ipAddress: [],
-                        serverReferenceId: result._id,
-                        dockingStationId: result._id,
-                        status: result.status
-                    };
-
-                    dockingStation = result;
-                    return callback(null, result);
-
-                });*!/
-
-                dockingStationObject = {
-                    stationNumber: record.stationNumber,
-                    name: record.name
-                    /!*stationIPAddress: result.ipAddress,
-                    ipAddress: [],
-                    serverReferenceId: result._id,
-                    dockingStationId: result._id,
-                    status: result.status*!/
-                };
-                DockingStation.create(dockingStationObject,function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    dockingStation=result;
-                    return callback(null,result);
-                });
-
-            }/!*,
-
-            // Step 2: Method to update local bridges
-            function (callback) {
-
-                var httpMethod = 'POST',
-                    uri = 'dockingstation';
-
-                RequestHandler.updateLocalBridges(dockingStationObject, httpMethod, uri);
-                return callback(null, null);
-
-            }*!/
-        ],
-
-        function (err, result) {
-
-            if (err) {
-                return callback(err, null);
-            }
-
-            return callback(err, dockingStation);
-
-        });
-
-};*/
 
 
-exports.createDS = function (record,callback) {
+/*exports.createDS = function (record,callback) {
     var stationDetails;
     var stationDetailsUpdated;
     var allportInfo=[];
@@ -138,14 +48,15 @@ exports.createDS = function (record,callback) {
             var count = Number(stationDetails.noofPorts)/4;
             for (var i = 3; i < 3+(count); i++) {
 
-                /*if (j > 4) {
+                /!*if (j > 4) {
                  j = 1;
-                 }*/
+                 }*!/
                 for(var port=1;port<=4;port++) {
                     var portsDetails = {
                         StationId: stationDetails._id,
                         FPGA: i,
                         ePortNumber: port,
+                        DockingStationName:stationDetails.name,
                         Name: stationDetails.name +"-Unit-"+i+" PORT-" + port
                     };
 
@@ -154,11 +65,11 @@ exports.createDS = function (record,callback) {
                             return callback(err, null);
                         }
 
-                        /* DockStation.findById(stationDetails._id,function (err,rec) {
+                        /!* DockStation.findById(stationDetails._id,function (err,rec) {
                          if(err)
                          {
                          return callback(err,null);
-                         }*/
+                         }*!/
 
                         var portInfo = {
                             dockingPortId: result._id
@@ -168,7 +79,7 @@ exports.createDS = function (record,callback) {
                         {
                             callback(null,allportInfo);
                         }
-/*                        stationDetails.portIds.push(portInfo);
+/!*                        stationDetails.portIds.push(portInfo);
                         DockStation.findByIdAndUpdate(stationDetails._id, stationDetails, function (err, records) {
                             if (err) {
                                 return callback(err, null);
@@ -176,7 +87,7 @@ exports.createDS = function (record,callback) {
                             //stationDetails=records;
                             stationDetailsUpdated = records;
                             // return callback(null,records);
-                        });*/
+                        });*!/
 
 
                         //});
@@ -256,6 +167,185 @@ exports.createDS = function (record,callback) {
     });
 
 
+};*/
+exports.createDS = function (record,callback) {
+    var stationDetails;
+    var stationDetailsUpdated;
+    var allportInfo=[];
+    var portArray = [];
+
+    async.waterfall([
+        function (callback) {
+            DockStation.create(record,function (err,result) {
+                if(err)
+                {
+                    if (err.name === 'MongoError' && err.code === 11000) {
+                        // Duplicate username
+                        err.name = 'UniqueFieldError';
+                        err.message = 'Station name, Ipaddress and subnet fields must be unique, please check your inputs';
+                        err.statusCode=400;
+                        return callback(err,null);
+                    }else {
+                        return callback(err, null);
+                    }
+                }
+                stationDetails=result;
+                return callback(null,stationDetails);
+            });
+        },
+        function (stationDetails,callback) {
+            // var j=1;
+            var count = Number(stationDetails.noofPorts)/4;
+            for (var i = 3; i < 3+(count); i++) {
+
+                /*if (j > 4) {
+                 j = 1;
+                 }*/
+                for(var port=1;port<=4;port++) {
+                    var portsDetails = {
+                        StationId: stationDetails._id,
+                        FPGA: i,
+                        ePortNumber: port,
+                        DockingStationName:stationDetails.name,
+                        Name: stationDetails.name +"-Unit-"+i+" PORT-" + port
+                    };
+                    portArray.push(portsDetails);
+                    if(i==(3+(count))-1 && port==4)
+                    {
+                        DockService.createPort(portArray, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            if(result.length>0)
+                            {
+                                for(var k=0;k<result.length;k++)
+                                {
+                                    var portInfo = {
+                                        dockingPortId: result[k]._id
+                                    };
+                                    allportInfo.push(portInfo);
+                                    if(k==result.length-1)
+                                    {
+                                        return callback(null,allportInfo);
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                return callback(new Error('No ports created'),null);
+                            }
+                        });
+                    }
+
+                }
+                // j = j + 1;
+            }
+
+            //callback(null,allportInfo);
+        },
+        function (allportInfo,callback) {
+            if(allportInfo.length>0)
+            {
+                for(var i=0;i<allportInfo.length;i++)
+                {
+                    stationDetails.portIds.push(allportInfo[i]);
+                    if(i==allportInfo.length-1)
+                    {
+                        DockStation.findByIdAndUpdate(stationDetails._id, stationDetails,{new:true}, function (err, records) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            //stationDetails=records;
+                            stationDetailsUpdated = records;
+                            return callback(null,stationDetailsUpdated);
+                        });
+                    }
+                }
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+
+
+        function (stationDetailsUpdated,callback) {
+            if(stationDetailsUpdated)
+            {
+                Membership.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+                    if(err)
+                    {
+                        //return console.error('Unable to push data to users while creating dock-station');
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        },
+        function (result,callback) {
+            if(stationDetailsUpdated)
+            {
+                Fareplan.update({},{$push:{unsuccessIp:stationDetailsUpdated.ipAddress}},{ multi: true },function (err,result) {
+                    if(err)
+                    {
+                        //return console.error('Unable to push data to users while creating dock-station');
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        },
+        function (result,callback) {
+            if(stationDetailsUpdated) {
+                Users.update({}, {$push: {unsuccessIp: stationDetailsUpdated.ipAddress}}, {multi: true}, function (err, result) {
+                    if (err) {
+                        //return console.error('Unable to push data to users while creating dock-station');
+                        return callback(err, null);
+                    }
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function (result,callback) {
+            if(stationDetailsUpdated) {
+                Vehicle.update({}, {$push: {unsyncedIp: stationDetailsUpdated.ipAddress}}, {multi: true}, function (err, result) {
+                    if (err) {
+                        //return console.error('Unable to push data to users while creating dock-station');
+                        return callback(err, null);
+                    }
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,stationDetailsUpdated);
+    });
+
+
 };
 
 exports.getAllStations = function (record,callback) {
@@ -266,6 +356,10 @@ exports.getAllStations = function (record,callback) {
         if(err)
         {
            return callback(err,null);
+        }
+        if(!result)
+        {
+            return callback(new Error('No Docking Hub found. Please create docking hub.'),null);
         }
         for(var i=0;i<result.length;i++)
         {
@@ -338,17 +432,25 @@ exports.getstationdetail = function (id,callback) {
         if (err) {
             return callback(err, null);
         }
-        details.bicycleCapacity=result.portIds.length;
-        details._id = result._id;
-        for(var j=0;j<result.portIds.length;j++)
+        if(result)
         {
-            var ports=result.portIds[j];
-            if(ports.dockingPortId.portStatus==Constants.AvailabilityStatus.FULL)
+            details.bicycleCapacity=result.portIds.length;
+            details._id = result._id;
+            for(var j=0;j<result.portIds.length;j++)
             {
-                details.bicycleCount = details.bicycleCount+1;
+                var ports=result.portIds[j];
+                if(ports.dockingPortId.portStatus==Constants.AvailabilityStatus.FULL)
+                {
+                    details.bicycleCount = details.bicycleCount+1;
+                }
             }
+            return callback(null,details);
         }
-        return callback(null,details);
+        else
+        {
+            return callback(null,null);
+        }
+
     });
 };
 
@@ -365,7 +467,7 @@ exports.updateDockstation = function (id,record,callback) {
     }
     else
     {
-        DockStation.findOneIdAndUpdate({StationID:id},record,{new:true},function (err,result) {
+        DockStation.findOneAndUpdate({StationID:id},record,{new:true},function (err,result) {
             if(err)
             {
                 return callback(err,null);
@@ -384,31 +486,79 @@ exports.createCleanedEntry = function (record,callback) {
     async.series([
 
         function (callback) {
+        if(record.stationIdnew && !isNaN(record.stationIdnew) )
+        {
             DockStation.findOne({StationID:record.stationIdnew},function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
                 }
+                if(!result)
+                {
+                    return callback(new Error('No station found by the given id'),null);
+                }
                 record.stationId = result._id;
                 return callback(null,result);
             });
+        }
+        else
+        {
+            return callback(null,null);
+        }
         },
         function (callback) {
-            var fdate = moment(record.cleaneddate);
-            fdate=fdate.format('YYYY-MM-DD');
-             cleanstation.find({stationId:record.stationId,cleaneddate:fdate},function (err,result) {
-                 if(err)
-                 {
-                     return callback(err,null);
-                 }
-                 if(result.length>0)
-                 {
-                     record.cleanCount = result.length+1;
-                 }
-                 return callback(null,result);
-             });
+            if(record.cleaneddate)
+            {
+                var fdate = moment(record.cleaneddate);
+                fdate=fdate.format('YYYY-MM-DD');
+                cleanstation.find({stationId:record.stationId,cleaneddate:fdate},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(result.length>0)
+                    {
+                        record.cleanCount = result.length+1;
+                        return callback(null,result);
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
+
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
         },
         function (callback) {
+            if(record.createdBy)
+            {
+                Users.findOne({UserID:record.createdBy},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error('Logged in user not found'),null);
+                    }
+                    record.createdBy = result._id;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+        ,
+        function (callback) {
+            record.fromtime=moment(record.fromtime);
+            record.totime = moment(record.totime);
             cleanstation.create(record,function (err,result) {
                 if(err)
                 {

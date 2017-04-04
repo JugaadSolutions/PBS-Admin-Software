@@ -25,7 +25,7 @@ exports.addBicycle=function (record, callback) {
                 return callback(new Error(Messages.FLEET_FULL));
             }
             fleetRecord = result;
-            return callback();
+            return callback(null,result);
             });
         },
         function (callback) {
@@ -103,7 +103,7 @@ exports.addBicycle=function (record, callback) {
                 {
                     return callback(new Error(Messages.RECORD_EXISTS));
                 }
-                return callback();
+                return callback(null,result);
             });
         });
 
@@ -118,7 +118,7 @@ exports.addBicycle=function (record, callback) {
                 {
                     for(var i=0;i<result.length;i++)
                     {
-                        vehicleRecord.unsyncedIp.push(result[i].StationID);
+                        vehicleRecord.unsyncedIp.push(result[i].ipAddress);
                     }
                     Vehicle.findByIdAndUpdate(vehicleRecord._id, vehicleRecord, {new: true}, function (err, result) {
 

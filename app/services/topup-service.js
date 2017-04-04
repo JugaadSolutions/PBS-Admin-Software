@@ -57,6 +57,9 @@ exports.createTopup = function (record,callback) {
                         topupDetails = result;
                         return callback(null, result);
                     });
+                } else
+                {
+                    return callback(null,null);
                 }
             });
         }

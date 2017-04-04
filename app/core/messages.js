@@ -40,11 +40,11 @@ module.exports={
     INVALID_USERNAME_OR_PASSWORD:"Invalid username or password",
     INVALID_CARD_NUMBER_PLEASE_TRY_AGAIN:"Invalid card number, Try another card",
 
-    YOUR_EMAIL_IS_NOT_YET_VERIFIED_PLEASE_VERIFY_BEFORE_LOGGING_IN:"Your ",
+    YOUR_EMAIL_IS_NOT_YET_VERIFIED_PLEASE_VERIFY_BEFORE_LOGGING_IN:"Your email is not yet verified. Please verify before login",
 
     LOGIN_SUCCESSFUL:"Login Successful",
 
-    NO_MEMBER_FOUND:"No member found by this id",
+    NO_MEMBER_FOUND:"No user found by this id",
     NO_MEMBERSHIP_FOUND:"No membership found by this id",
     NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE:"No such record exists in the database",
     NO_DOCKING_UNIT_FOUND: "No docking unit found!",

@@ -57,6 +57,15 @@ exports.processError = function (err, callback) {
             };
             break;
 
+        case "CardError":
+            status = 400;
+            response = {
+                error: true,
+                message: 'This card has already been assigned to a user',
+                description: 'This card has already been assigned to a user',
+                data: {UserId:err.message}
+            };
+            break;
         case "UserError":
             status = 400;
             response = {

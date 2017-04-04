@@ -148,6 +148,10 @@ exports.createMembership = function (record,callback) {
                        return callback(null, result);
                    });
                }
+               else
+               {
+                   return callback(null,null);
+               }
            });
        }
    ],function (err,result) {

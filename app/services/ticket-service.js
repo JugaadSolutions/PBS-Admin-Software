@@ -4,6 +4,7 @@
 var Constants = require('../core/constants'),
     moment = require('moment'),
     async = require('async'),
+    Messages = require('../core/messages'),
     User = require('../models/user'),
     Ticket = require('../models/tickets');
 
@@ -23,6 +24,10 @@ async.series([
             {
                 return callback(err,null);
             }
+            if(!result)
+            {
+                return callback(new Error('Logged in user id not found'),null);
+            }
             record.createdBy = result._id;
             return callback(null,result);
         });
@@ -39,6 +44,10 @@ async.series([
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error(Messages.USER_NOT_FOUND),null);
                 }
                 record.user = result._id;
                 return callback(null,result);
@@ -153,6 +162,10 @@ exports.getTicketinfo = function (record,callback) {
                   {
                       return callback(err,null);
                   }
+                  if(!result)
+                  {
+                      return callback(new Error(Messages.NO_MEMBER_FOUND),null);
+                  }
                   record.createdBy = result._id;
                   return callback(null,result);
               });
@@ -168,6 +181,10 @@ exports.getTicketinfo = function (record,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND),null);
                     }
                     record.assignedEmp = result._id;
                     return callback(null,result);
@@ -213,4 +230,39 @@ exports.getTicketinfo = function (record,callback) {
         return callback(null,ticketInfo);
     });
 
+};
+
+exports.getTicketByUser = function (id,callback) {
+  var tics;
+    async.waterfall([
+        function (callback) {
+            User.findOne({UserID:id},function (err,userDetails) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!userDetails)
+                {
+                    return callback(new Error(Messages.NO_MEMBER_FOUND));
+                }
+                return callback(null,userDetails);
+            });
+        },
+        function (userDetails,callback) {
+            Ticket.find({user:userDetails._id},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                tics = result;
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,tics);
+    });
 };

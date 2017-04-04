@@ -81,8 +81,16 @@ exports.createEmployee=function (record,id,callback) {
                     {
                         return callback(err,null);
                     }
-                    record.createdBy = result._id;
-                    return callback(null,result);
+                    if(result)
+                    {
+                        record.createdBy = result._id;
+                        return callback(null,result);
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
+
                 });
             }
         },
@@ -99,6 +107,10 @@ exports.createEmployee=function (record,id,callback) {
                     {
                      return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
+                    }
                     memberDetails=result;
                     return callback(null,result);
                 });
@@ -109,6 +121,10 @@ exports.createEmployee=function (record,id,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
                     }
                     memberDetails=result;
                     return callback(null,result);
@@ -121,6 +137,10 @@ exports.createEmployee=function (record,id,callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
+                    }
                     memberDetails=result;
                     return callback(null,result);
                 });
@@ -131,6 +151,10 @@ exports.createEmployee=function (record,id,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
                     }
                     memberDetails=result;
                     return callback(null,result);
@@ -143,6 +167,10 @@ exports.createEmployee=function (record,id,callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
+                    }
                     memberDetails=result;
                     return callback(null,result);
                 });
@@ -153,6 +181,10 @@ exports.createEmployee=function (record,id,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
                     }
                     memberDetails=result;
                     return callback(null,result);
@@ -165,6 +197,10 @@ exports.createEmployee=function (record,id,callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
+                    }
                     memberDetails=result;
                     return callback(null,result);
                 });
@@ -175,6 +211,10 @@ exports.createEmployee=function (record,id,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
                     }
                     memberDetails=result;
                     return callback(null,result);
@@ -192,26 +232,28 @@ exports.createEmployee=function (record,id,callback) {
                 //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
                 var docNumber =memberDetails.UserID+ uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
+                if(profilePic.result) {
 
-                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                    var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Employee/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                record.profilePic = docNumber;
-                memberDetails.profilePic = docNumber;
+                    record.profilePic = docNumber;
+                    memberDetails.profilePic = docNumber;
+                }
                 return callback(null, null);
 
             } else {
@@ -293,96 +335,122 @@ exports.createEmployee=function (record,id,callback) {
 
         },
         function (callback) {
-            Station.find({stationType:'dock-station'},function (err,result) {
-                if(err)
-                {
-                    console.log('Error fetching station');
-                }
-                if(result.length>0)
-                {
-                    for(var i=0;i<result.length;i++)
+            if(memberDetails)
+            {
+                Station.find({stationType:'dock-station'},function (err,result) {
+                    if(err)
                     {
-                        IPs.push(result[i].ipAddress);
-                        if(i==result.length-1)
+                        console.log('Error fetching station');
+                    }
+                    if(result.length>0)
+                    {
+                        for(var i=0;i<result.length;i++)
                         {
-                            return callback(null,result);
+                            IPs.push(result[i].ipAddress);
+                            if(i==result.length-1)
+                            {
+                                return callback(null,result);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    return callback(null,null);
-                }
-            });
-
+                    else
+                    {
+                        return callback(null,null);
+                    }
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
         },
 
         function (callback) {
 
             var docArray = [];
 
-            User.findById(memberDetails._id, function (err, result) {
-
-                if (err) {
-                    return callback(err, null);
-                }
-
-                if (documents) {
-
-                    for (var i = 0; i < documents.length; i++) {
-
-                        var docDetails = {
-                            documentType: documents[i].documentType,
-                            documentNumber: documents[i].documentNumber,
-                            documentCopy: documents[i].documentCopy,
-                            documentName: documents[i].documentName,
-                            description: documents[i].description
-                        };
-
-                        docArray.push(docDetails);
-                    }
-                }
-
-/*                if (record.profilePic) {
-                    result.picture = record.profilePic;
-                }*/
-                result.documents = docArray;
-                result.unsuccessIp=IPs;
-                result.resetPasswordKey = ResetKey;
-                result.resetPasswordKeyValidity = moment().add(2,'hours');
-                result.profilePic = record.profilePic;
-                User.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+            if(memberDetails) {
+                User.findById(memberDetails._id, function (err, result) {
 
                     if (err) {
                         return callback(err, null);
                     }
 
-                    memberDetails = result;
-                    return callback(null, result);
-                });
+                    if (documents) {
 
-            });
+                        for (var i = 0; i < documents.length; i++) {
+
+                            var docDetails = {
+                                documentType: documents[i].documentType,
+                                documentNumber: documents[i].documentNumber,
+                                documentCopy: documents[i].documentCopy,
+                                documentName: documents[i].documentName,
+                                description: documents[i].description
+                            };
+
+                            docArray.push(docDetails);
+                        }
+                    }
+
+                    /*                if (record.profilePic) {
+                     result.picture = record.profilePic;
+                     }*/
+                    result.documents = docArray;
+                    result.unsuccessIp = IPs;
+                    result.resetPasswordKey = ResetKey;
+                    result.resetPasswordKeyValidity = moment().add(2, 'hours');
+                    result.profilePic = record.profilePic;
+                    if(result._id)
+                    {
+                        User.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+
+                            if (err) {
+                                return callback(err, null);
+                            }
+
+                            memberDetails = result;
+                            return callback(null, result);
+                        });
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
+                });
+            }
+            else {
+                return callback(null,null);
+            }
         },
         function (callback) {
 
-            var data = {
-                profileName: memberDetails.Name,
-                //password: password
-                link: config.get('pbsMemberPortal.resetUrl')+ResetKey
-            };
+            if(memberDetails) {
+                if(memberDetails.email)
+                {
+                    var data = {
+                        profileName: memberDetails.Name,
+                        //password: password
+                        link: config.get('pbsMemberPortal.resetUrl') + ResetKey
+                    };
 
-            var htmlString = swig.renderFile('./templates/member-registered.html', data);
+                    var htmlString = swig.renderFile('./templates/member-registered.html', data);
 
-            var emailMessage = {
-                "subject": Messages.SIGN_UP_SUCCESSFUL,
-                "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
-                "html": htmlString,
-                "to": [memberDetails.email]
-            };
+                    var emailMessage = {
+                        "subject": Messages.SIGN_UP_SUCCESSFUL,
+                        "text": EmailNotificationHandler.renderSignUpTemplate(TemplatesMessage.signUp, data),
+                        "html": htmlString,
+                        "to": [memberDetails.email]
+                    };
 
-            EmailNotificationHandler.sendMail(emailMessage);
+                    EmailNotificationHandler.sendMail(emailMessage);
 
-            return callback(null, null);
+                }
+                return callback(null, null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
 
 
@@ -405,7 +473,7 @@ exports.updateEmployee = function (record,callback) {
     async.series([
         function (callback) {
 
-            if (record.profilePic.result) {
+            if (record.profilePic) {
 
                 var dir = '/usr/share/nginx/html/mytrintrin/Employee/'+record.UserID+"/";
 
@@ -416,24 +484,26 @@ exports.updateEmployee = function (record,callback) {
                 var docNumber = record.UserID + uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
 
-                var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                if(record.profilePic.result) {
+                    var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Employee/' + record.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Employee/' + record.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                record.profilePic = docNumber;
+                    record.profilePic = docNumber;
+                }
                 return callback(null, null);
 
             } else {
@@ -736,7 +806,10 @@ exports.addCard = function (memberId, cardNumber, callback) {
                     if (err) {
                         return callback(err, null);
                     }
-
+                    if(!result)
+                    {
+                        return callback(new Error('Error while checking the card availability for employee'),null);
+                    }
                     result.status = Constants.CardStatus.ACTIVE;
                     result.assignedTo = memberId;
                     result.assignedToName = memberName;
@@ -746,7 +819,10 @@ exports.addCard = function (memberId, cardNumber, callback) {
                         if (err) {
                             return callback(err, null);
                         }
-
+                        if(!result)
+                        {
+                            return callback(new Error('Error while updating employee details to a card '),null);
+                        }
                         cardObject = result;
                         return callback(null, result);
                     });
@@ -756,56 +832,63 @@ exports.addCard = function (memberId, cardNumber, callback) {
             ,
             // Step 3: Method to update member card details
             function (callback) {
-
-                User.findOne({'_id':memberId},function (err,result) {
-                    if(err)
-                    {
-                        return console.error('Error : '+err);
-                    }
-
-
-                DockingStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
-                    if(err)
-                    {
-                        return console.error('Error : '+err);
-                    }
-                    result.unsuccessIp=[];
-                    for(var i=0;i<ds.length;i++)
-                    {
-                        result.unsuccessIp.push(ds[i].ipAddress);
-                    }
-                    //result.unsuccessIp = ds;
-                    result.successIp=[];
-                    result.updateCount=0;
-                    result.cardNum=cardObject.cardNumber;
-                    result.smartCardId = cardObject._id;
-                    result.smartCardNumber = cardObject.cardRFID;
-                    User.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
-                        if (err)
-                        {
-                            return console.error('Error : '+err);
+                if(memberId) {
+                    User.findById(memberId, function (err, result) {
+                        if (err) {
+                            return console.error('Error : ' + err);
                         }
-                        memberObject = result;
-                        return callback(null, result);
+                        if(!result)
+                        {
+                            return callback(new Error("Couldn't able to find user to update card details"),null);
+                        }
+                        DockingStation.find({'stationType': 'dock-station'}, 'ipAddress', function (err, ds) {
+                            if (err) {
+                                return console.error('Error : ' + err);
+                            }
+                            result.unsuccessIp = [];
+                            for (var i = 0; i < ds.length; i++) {
+                                result.unsuccessIp.push(ds[i].ipAddress);
+                            }
+                            //result.unsuccessIp = ds;
+                            result.successIp = [];
+                            result.updateCount = 0;
+                            result.cardNum = cardObject.cardNumber;
+                            result.smartCardId = cardObject._id;
+                            result.smartCardNumber = cardObject.cardRFID;
+                            User.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                                if (err) {
+                                    return console.error('Error : ' + err);
+                                }
+                                if(!result)
+                                {
+                                    return callback(new Error("Couldn't able to update card details to user"),null);
+                                }
+                                memberObject = result;
+                                return callback(null, result);
+                            });
+                        });
+
+                        /*                User.findByIdAndUpdate(memberId, {
+                         $set: {
+                         'cardNum':cardObject.cardNumber,
+                         'smartCardId': cardObject._id,
+                         'smartCardNumber': cardObject.cardRFID
+                         }
+                         }, {new: true}, function (err, result) {
+
+                         if (err) {
+                         return callback(err, null);
+                         }
+
+                         memberObject = result;
+                         return callback(null, result);
+                         });*/
                     });
-                });
-
-/*                User.findByIdAndUpdate(memberId, {
-                    $set: {
-                        'cardNum':cardObject.cardNumber,
-                        'smartCardId': cardObject._id,
-                        'smartCardNumber': cardObject.cardRFID
-                    }
-                }, {new: true}, function (err, result) {
-
-                    if (err) {
-                        return callback(err, null);
-                    }
-
-                    memberObject = result;
-                    return callback(null, result);
-                });*/
-                });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
             }
 
         ],
@@ -826,7 +909,38 @@ exports.addCard = function (memberId, cardNumber, callback) {
 exports.addLeaveDetails = function (record,callback) {
 
     var leave;
+    var userDetails;
     async.series([
+        function (callback) {
+            User.findOne({UserID:record.empid},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.USER_NOT_FOUND),null);
+                    }
+                record.empid = result._id;
+                return callback(null,result);
+
+            });
+        },
+        function (callback) {
+            User.findOne({UserID:record.createdBy},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error('Logged in user not found'),null);
+                }
+                record.createdBy = result._id;
+                return callback(null,result);
+
+            });
+        },
         function (callback) {
             LeaveTrack.create(record,function (err,result) {
                 if(err)
@@ -838,16 +952,11 @@ exports.addLeaveDetails = function (record,callback) {
             });
         },
         function (callback) {
-            User.findOne({'_id':record.empid},function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
                 var l = {
                     leavetrackId:leave._id
                 };
-                result.leavetrackIds.push(l);
-                    User.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+            userDetails.leavetrackIds.push(l);
+                    User.findByIdAndUpdate(userDetails._id,userDetails,{new:true},function (err,result) {
                         if(err)
                         {
                             return callback(err,null);
@@ -855,7 +964,6 @@ exports.addLeaveDetails = function (record,callback) {
                         return callback(null,result);
                     });
 
-            });
         }
     ],function (err,result) {
         if(err)
@@ -871,7 +979,7 @@ exports.getOneEmployeeLeaveInfo = function (id,callback) {
     var leave;
     var allleaves;
     async.series([
-        function (callback) {
+       /* function (callback) {
             LeaveTrack.findOne({'_id':id},function (err,result) {
                 if(err)
                 {
@@ -880,9 +988,23 @@ exports.getOneEmployeeLeaveInfo = function (id,callback) {
                 leave = result;
                 return callback(null,result);
             });
-        },
+        },*/
+       function (callback) {
+           User.findOne({UserID:id},function (err,result) {
+               if(err)
+               {
+                   return callback(err,null);
+               }
+               if(!result)
+               {
+                   return callback(new Error(Messages.USER_NOT_FOUND),null);
+               }
+               id = result._id;
+               return callback(null,result);
+           });
+       },
         function (callback) {
-            LeaveTrack.find({'empid':leave.empid}).deepPopulate('empid createdBy').sort('-createdDate').lean().exec(function (err,result) {
+            LeaveTrack.find({'empid':id}).deepPopulate('empid createdBy').sort('-createdDate').lean().exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
@@ -913,6 +1035,10 @@ exports.getCyclesWithEmployee = function (id,callback) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error('Logged in user not found'),null);
                 }
                 if(result._type=='redistribution-employee')
                 {
@@ -948,6 +1074,10 @@ exports.getCyclesWithEmployee = function (id,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error('This User is not assigned to any Redistribution Vehicle'),null);
                     }
                     vehicleId.rv = [];
                     if(result.vehicleId.length>0)
@@ -988,7 +1118,7 @@ exports.getBothMoneandRegstaff = function (callback) {
     var employees = [];
     async.series([
         function (callback) {
-            RegEmployee.find({'_type':'registration-employee'},function (err, result) {
+            RegEmployee.find({_type:'registration-employee'},function (err, result) {
                 if (err) {
 
                   return callback(err,null);
@@ -1011,7 +1141,7 @@ exports.getBothMoneandRegstaff = function (callback) {
             });
         },
         function (callback) {
-            MysoreOne.find({'_type':'Mysoreone-employee'},function (err, result) {
+            MysoreOne.find({_type:'Mysoreone-employee'},function (err, result) {
                 if (err) {
 
                     return callback(err,null);

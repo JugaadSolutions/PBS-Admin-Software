@@ -75,6 +75,8 @@ exports.BridgeCheckout=function (record,callback) {
         },
         function (callback) {
             Port.findOne({PortID:record.fromPort},function (err,result) {
+
+
                 if(err)
                 {
                     errorstatus=1;
@@ -101,7 +103,8 @@ exports.BridgeCheckout=function (record,callback) {
                     user: userDetails._id,
                     vehicleId: vehicleDetails._id,
                     fromPort: portDetails._id,
-                    checkOutTime: record.checkOutTime
+                    checkOutTime: record.checkOutTime,
+                    vehicleUid:vehicleDetails.vehicleUid
                 };
                 /*MemberService.checkout(requestDetails,function (err,result) {
                  if(err)

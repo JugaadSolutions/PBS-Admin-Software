@@ -15,7 +15,10 @@ exports.calculateFarePlan = function (id, duration, callback) {
         if (err) {
             return console.error('Calculate Fare plan error : '+err);
         }
-
+        if(!result)
+        {
+            return callback(new Error('Fareplan not found for this id'),null);
+        }
         fee = 250;
         for (var i = 0; i < result.plans.length; i++) {
 
@@ -64,6 +67,10 @@ exports.createFareplan = function (record,callback) {
                         return callback(null, result);
                     });
                 }
+                else
+                {
+                    return callback(null,null);
+                }
             });
         }
     ],function (err,result) {
@@ -82,7 +89,7 @@ exports.updateFareplan = function (id,record,callback) {
     Station.find({stationType:'dock-station'},function (err,result) {
         if(err)
         {
-            console.log('Error fetching station');
+            console.log('Error fetching station in fare plan');
         }
         if(result.length>0)
         {

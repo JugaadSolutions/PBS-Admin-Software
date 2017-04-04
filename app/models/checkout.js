@@ -23,6 +23,7 @@ var schema = {
     errorMsg:{type: String, required: false},
     updateStatus:{type: Number, required: false,default:0},
     duration:{type: Number, required: false,default:0},
+    vehicleUid:{type: Number, required: false,default:0},
     checkOutInitiatedTime: {type: Date, required: false},
     checkOutCompletionTime: {type: Date, required: false}
 };

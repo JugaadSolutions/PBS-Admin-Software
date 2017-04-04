@@ -17,22 +17,47 @@ var router = express.Router();
 router
 
     .get('/:id',function (req,res,next) {
-        Ticket.find({'_id':req.params.id}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err, result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else {
-                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
-            }
+        if(isNaN(req.params.id))
+        {
+            Ticket.find({_id:req.params.id}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err, result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
 
-        });
+            });
+        }
+        else
+        {
+            Ticket.find({uuId:req.params.id}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err, result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
+        }
+    })
+    .get('/user/:id',function (req,res,next) {
+        TicketService.getTicketByUser(req.params.id,function (err,result) {
+                if(err)
+                {
+                    next(err, req, res, next);
+                }
+                else {
+                    res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+                }
+
+            });
+
     })
     .get('/', function (req, res, next) {
-
-        //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
-
-        // Card.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
         Ticket.find({}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err, result) {
             if (err) {
 

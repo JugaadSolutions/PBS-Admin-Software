@@ -110,7 +110,7 @@ exports.createDS = function (record,callback) {
 };
 
 exports.updateHoldingarea = function (id,record,callback) {
-    HoldingArea.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+    HoldingArea.findOneAndUpdate({PortID:id},record,{new:true},function (err,result) {
         if(err)
         {
             return callback(err,null);

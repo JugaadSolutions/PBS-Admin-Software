@@ -6,7 +6,9 @@ var express = require('express'),
     kpireportservice = require('../services/kpi-hourlyreport'),
     kpivehicleservice = require('../services/kpi-vehicle-service'),
     kioskService = require('../services/kiosk-service'),
+    Webinfo = require('../models/websiteInfo'),
     kpidsservice = require('../services/kpi-dockstation-service');
+var webinfoService = require('../services/webinfo-service');
 var router = express.Router();
 
 /* GET users listing. */
@@ -15,7 +17,79 @@ var router = express.Router();
  });*/
 
 router
+    .get('/webinfo', function (req, res, next) {
 
+        //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+        // Card.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
+        Webinfo.find({},function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .post('/webinfo/details', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        webinfoService.getWebinfo(req.body,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+    .post('/webinfo', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        webinfoService.createWebinfo(req.body,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.RECORD_CREATED_SUCCESS,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
     .post('/hourlyreport', function (req, res, next) {
 
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);

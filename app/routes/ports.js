@@ -6,6 +6,8 @@ var //DockingStation = require('../models/docking-station'),
 
     //RedistributionVehicleService = require('../services/redistribution-vehicle-service'),
     Ports = require('../models/port'),
+    PortReports = require('../models/port-reports'),
+    PortService = require('../services/port-service'),
 //RequestDataHandler = require('../handlers/request-data-handler'),
 Messages = require('../core/messages');
 
@@ -45,6 +47,55 @@ router
         });
     })
 
+    .get('/report/:id',function (req,res,next) {
+        PortReports.findOne({portinfoUid:req.params.id},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
+
+
+    .get('/allreport/info', function (req, res, next) {
+
+        PortReports.find({}, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: 'Fetching record successful', description: '', data: result});
+
+            }
+
+        });
+    })
+
+
+    .post('/report', function (req, res, next) {
+
+        PortService.createPortReport(req.body,function (err,result){
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+
+            }
+
+        });
+
+    })
 
     .put('/:id', function (req, res, next) {
 

@@ -96,8 +96,15 @@ exports.createMember=function (record,callback) {
                         {
                             return callback(err,null);
                         }
-                        record.createdBy = result._id;
-                        return callback(null,result);
+                        if(result)
+                        {
+                            record.createdBy = result._id;
+                            return callback(null,result);
+                        }
+                        else
+                        {
+                            return callback(null,null);
+                        }
                     });
                 }
             }
@@ -117,8 +124,16 @@ exports.createMember=function (record,callback) {
                 {
                     return callback(err,null);
                 }
-                memberDetails=result;
-                return callback(null,result);
+                if(result)
+                {
+                    memberDetails=result;
+                    return callback(null,result);
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
             });
         },
         function (callback) {
@@ -133,26 +148,27 @@ exports.createMember=function (record,callback) {
                 //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
                 var docNumber =memberDetails.UserID+ uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
+                if(profilePic.result) {
+                    var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
-
-                record.profilePic = docNumber;
-                memberDetails.profilePic = docNumber;
+                    record.profilePic = docNumber;
+                    memberDetails.profilePic = docNumber;
+                }
                 return callback(null, null);
 
             } else {
@@ -172,25 +188,26 @@ exports.createMember=function (record,callback) {
                 //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
                 var docNumber =memberDetails.UserID+ uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
+                if(record.memberprofilePic.result) {
+                    var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
-
-                record.memberprofilePic = docNumber;
+                    record.memberprofilePic = docNumber;
+                }
                 //memberDetails.memberprofilePic = docNumber;
                 return callback(null, null);
 
@@ -278,44 +295,68 @@ exports.createMember=function (record,callback) {
 
             var docArray = [];
 
-            Member.findById(memberDetails._id, function (err, result) {
+            if(memberDetails._id)
+            {
+                Member.findById(memberDetails._id, function (err, result) {
 
-                if (err) {
-                    return callback(err, null);
-                }
-
-                if (documents) {
-
-                    for (var i = 0; i < documents.length; i++) {
-
-                        var docDetails = {
-                            documentType: documents[i].documentType,
-                            documentNumber: documents[i].documentNumber,
-                            documentCopy: documents[i].documentCopy,
-                            documentName: documents[i].documentName,
-                            description: documents[i].description
-                        };
-
-                        docArray.push(docDetails);
-                    }
-                }
-
-                /*             if (record.profilePic) {
-                 result.picture = record.profilePic;
-                 }*/
-                result.documents = docArray;
-                result.resetPasswordKey = ResetKey;
-                result.resetPasswordKeyValidity = moment().add(2,'hours');
-                result.profilePic = record.profilePic;
-                //Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
-                Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
                     if (err) {
                         return callback(err, null);
                     }
-                    return callback(null, result);
-                });
+                    if(result) {
+                        if (documents) {
 
-            });
+                            for (var i = 0; i < documents.length; i++) {
+
+                                var docDetails = {
+                                    documentType: documents[i].documentType,
+                                    documentNumber: documents[i].documentNumber,
+                                    documentCopy: documents[i].documentCopy,
+                                    documentName: documents[i].documentName,
+                                    description: documents[i].description
+                                };
+
+                                docArray.push(docDetails);
+                            }
+                        }
+
+                        /*             if (record.profilePic) {
+                         result.picture = record.profilePic;
+                         }*/
+                        result.documents = docArray;
+                        result.resetPasswordKey = ResetKey;
+                        result.resetPasswordKeyValidity = moment().add(2, 'hours');
+                        result.profilePic = record.profilePic;
+                        //Member.findByIdAndUpdate(result._id, result, {new: true}, function (err, result) {
+                        if(result._id)
+                        {
+                            Member.update({_id: result._id}, result, {new: true}).lean().exec(function (err, result) {
+                                if (err) {
+                                    return callback(err, null);
+                                }
+                                if(!result)
+                                {
+                                        return callback(new Error("Coundn't able to update profile pic and documents"),null);
+                                }
+                                return callback(null, result);
+                            });
+                        }
+                        else
+                        {
+                            return callback(null,null);
+                        }
+
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
         },
         function (callback) {
 
@@ -415,7 +456,7 @@ exports.updateMember = function (record,callback) {
     async.series([
         function (callback) {
 
-            if (record.profilePic.result) {
+            if (record.profilePic) {
 
                 var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
 
@@ -425,25 +466,26 @@ exports.updateMember = function (record,callback) {
                 //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
                 var docNumber = record.UserID + uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
+                if(record.profilePic.result) {
+                    var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var decodedDoc = new Buffer(record.profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
-
-                record.profilePic = docNumber;
+                    record.profilePic = docNumber;
+                }
                 return callback(null, null);
 
             } else {
@@ -463,25 +505,26 @@ exports.updateMember = function (record,callback) {
                 //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
                 var docNumber = record.UserID + uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
+                if(record.memberprofilePic.result) {
+                    var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
-
-                record.memberprofilePic = docNumber;
+                    record.memberprofilePic = docNumber;
+                }
                 return callback(null, null);
 
             } else {
@@ -594,15 +637,27 @@ exports.updateMember = function (record,callback) {
              }*/
             record.documents = docArray;
             memberDetails=record;
-            Member.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
-
-                if (err) {
-                    return callback(err, null);
+            Member.findOne({UserID:record.UserID},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
                 }
+                if(!result)
+                {
+                    return callback(new Error(Messages.USER_NOT_FOUND),null);
+                }
+                record._id = result._id;
+                Member.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
 
-                //memberDetails = result;
-                return callback(null, result);
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    //memberDetails = result;
+                    return callback(null, result);
+                });
             });
+
 
             //});
         }
@@ -656,6 +711,10 @@ function assignMemberShip (memberId, membershipId,callback) {
                         {
                             return callback(err,null);
                         }
+                        if(!result)
+                        {
+                            return callback(new Error("Couldn't able to find user to assign to membership"),null);
+                        }
                         memberId = result._id;
                         return callback(null,result);
                     });
@@ -673,30 +732,45 @@ function assignMemberShip (memberId, membershipId,callback) {
                         {
                             return callback(err,null);
                         }
-                        membershipId = result._id;
-                        membershipDetails = result;
-                        return callback(null,result);
+                        if(result)
+                        {
+                            membershipId = result._id;
+                            membershipDetails = result;
+                            return callback(null,result);
+                        }
+                        else
+                        {
+                            return callback(null,null);
+                        }
+
                     });
                 }
             },
 
             function (callback) {
+                if(isNaN(membershipId))
+                {
+                    Member.findByIdAndUpdate(memberId, {
+                        $set: {
+                            //'validity': validity,
+                            'membershipId': membershipId,
+                            'status':Constants.MemberStatus.REGISTERED
+                        }
+                    },{new:true}, function (err, result) {
 
-                Member.findByIdAndUpdate(memberId, {
-                    $set: {
-                        //'validity': validity,
-                        'membershipId': membershipId,
-                        'status':Constants.MemberStatus.REGISTERED
-                    }
-                },{new:true}, function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        memberObject = result;
+                        return callback(null, result);
 
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    memberObject = result;
-                    return callback(null, result);
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
 
-                });
             },
             function (callback) {
                 if(Number(memberObject.creditBalance)>0 && memberObject.processingFeesDeducted==false) {
@@ -785,7 +859,7 @@ function assignMemberShip (memberId, membershipId,callback) {
         }
     );
 
-};
+}
 
 exports.addCard = assignCard;
 function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
@@ -1616,14 +1690,22 @@ exports.cancelMembership = function (memberId,record,callback) {
         function (callback) {
             if(isNaN(memberId))
             {
-                Member.findOne({'_id':memberId},function (err,result) {
+                Member.findById({'_id':memberId},function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
-                    memberObject=result;
-                    smartCardId=result.smartCardId;
-                    return callback(null,result);
+                    if(result)
+                    {
+                        memberObject=result;
+                        smartCardId=result.smartCardId;
+                        return callback(null,result);
+                    }
+                    else
+                    {
+                        return callback(new Error(Messages.USER_NOT_FOUND),null);
+                    }
+
                 });
             }
             else
@@ -1633,10 +1715,17 @@ exports.cancelMembership = function (memberId,record,callback) {
                     {
                         return callback(err,null);
                     }
-                    memberId = result._id;
-                    memberObject=result;
-                    smartCardId=result.smartCardId;
-                    return callback(null,result);
+                    if(result)
+                    {
+                        memberId = result._id;
+                        memberObject=result;
+                        smartCardId=result.smartCardId;
+                        return callback(null,result);
+                    }
+                    else
+                    {
+                        return callback(new Error(Messages.USER_NOT_FOUND,null));
+                    }
                 });
             }
 
@@ -1782,12 +1871,20 @@ exports.cancelMembership = function (memberId,record,callback) {
                     {
                         return callback(err,null);
                     }
-                    finalTransaction=result;
-                    /*console.log(i);
-                     if(i==transactionList.length-1)
-                     {*/
-                    return callback(null,result);
-                    //}
+                    if(result.length>0)
+                    {
+                        finalTransaction=result;
+                        /*console.log(i);
+                         if(i==transactionList.length-1)
+                         {*/
+                        return callback(null,result);
+                        //}
+                    }
+                    else
+                    {
+                        return callback(new Error("Coundn't to complete cancel process"),null);
+                    }
+
                 });
                 // }
 
@@ -1820,13 +1917,12 @@ exports.cancelMembership = function (memberId,record,callback) {
                     result.securityDeposit = memberObject.securityDeposit;
                     result.processingFeesDeducted=false;
                     memberObject = result;
-                    Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err, result) {
+                    Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err) {
                         if(err)
                         {
                             return callback(err, null);
                         }
                         // memberObject = result;
-                        return callback(null, result);
                     });
 
 
@@ -1961,13 +2057,26 @@ exports.searchMember = function (record,callback) {
     {
         if(findMem!='')
         {
-            Member.find({$or: [{Name: new RegExp(findMem, 'i')}, {email: new RegExp(findMem, 'i')},{address:new RegExp(findMem, 'i')},{phoneNumber:new RegExp(findMem, 'i')}],_type:'member'},function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                return callback(null,result);
-            });
+            if(isNaN(findMem))
+            {
+                Member.find({$or: [{Name: new RegExp(findMem, 'i')}, {email: new RegExp(findMem, 'i')},{lastName:new RegExp(findMem, 'i')},{phoneNumber:new RegExp(findMem, 'i')},{smartCardNumber: new RegExp(findMem, 'i')}],_type:'member'},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                Member.find({cardNum:findMem,_type:'member'},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
         }
         else
         {
@@ -2102,10 +2211,10 @@ exports.addMember=function (record,callback) {
                             {
                                 return callback(err,null);
                             }
-                            if(!result)
+                            if(!reg)
                             {
                                 location = 'Other Location';
-                                return callback(null,result);
+                                return callback(null,null);
                             }
                             location=reg.location;
                             return callback(null,result);
@@ -2134,10 +2243,11 @@ exports.addMember=function (record,callback) {
                 var memData = {
                     Name:record.Name,
                     lastName:record.lastName,
-                    email:record.email,
+                    //email:record.email,
                     password: record.password,
-                    phoneNumber:record.phoneNumber,
+                    //phoneNumber:record.phoneNumber,
                     sex:record.sex,
+                    address:record.address,
                     city:record.city,
                     state:record.state,
                     country:record.country,
@@ -2146,6 +2256,17 @@ exports.addMember=function (record,callback) {
                     resetPasswordKey:ResetKey,
                     resetPasswordKeyValidity:moment().add(2,'hours')
                 };
+                if(record.phoneNumber)
+                {
+                    if(record.phoneNumber.length>8)
+                    {
+                        memData.phoneNumber = record.phoneNumber;
+                    }
+                }
+                if(record.email)
+                {
+                    memData.email = record.email;
+                }
                 Member.create(memData,function (err,result) {
                     if(err)
                     {
@@ -2160,9 +2281,10 @@ exports.addMember=function (record,callback) {
                 var memData = {
                     Name:record.Name,
                     lastName:record.lastName,
-                    email:record.email,
-                    phoneNumber:record.phoneNumber,
+                    //email:record.email,
+                    //phoneNumber:record.phoneNumber,
                     sex:record.sex,
+                    address:record.address,
                     city:record.city,
                     state:record.state,
                     country:record.country,
@@ -2170,6 +2292,17 @@ exports.addMember=function (record,callback) {
                     registeredLocation:location
 
                 };
+                if(record.phoneNumber)
+                {
+                    if(record.phoneNumber.length>8)
+                    {
+                        memData.phoneNumber = record.phoneNumber;
+                    }
+                }
+                if(record.email)
+                {
+                    memData.email = record.email;
+                }
                 if(record.UserID)
                 {
                     Member.findOneAndUpdate({UserID:record.UserID},memData,{new:true},function (err,result) {
@@ -2469,7 +2602,16 @@ exports.addMember=function (record,callback) {
                 CardService.cardAvailableForMember(record.cardNumber,function (err,result) {
                     if(err)
                     {
-                        return callback(err,null);
+                        if(err.message=="This card has already been assigned to a user")
+                        {
+                            err.name = "CardError";
+                            err.message=memberDetails.UserID;
+                            return callback(err,null);
+                        }
+                        else
+                        {
+                            return callback(err,null);
+                        }
                     }
                     valid = true;
                     return callback(null,result);

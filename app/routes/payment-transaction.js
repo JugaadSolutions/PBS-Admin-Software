@@ -96,7 +96,7 @@ router
 
    //     PaymentTransaction.find({'memberId':req.params.id,'paymentDescription':'Credit note'}).lean().exec(function (err, result) {
 
-        PaymentTransactionService.getMembertrans(req.params.id,function (err,result) {
+        PaymentTransactionService.getMembertrans(req.params.id,1,function (err,result) {
 
 
             if (err) {
@@ -141,6 +141,71 @@ router
                         response= {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
                 }
 */
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+                res.json(response);
+
+            }
+
+        });
+
+    })
+
+    .get('/card/:id', function (req, res, next) {
+
+        // var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+        //     PaymentTransaction.find({'memberId':req.params.id,'paymentDescription':'Credit note'}).lean().exec(function (err, result) {
+
+        PaymentTransactionService.getMembertrans(req.params.id,2,function (err,result) {
+
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+                /* var response;
+                 var allPayments=[];
+                 var details={
+                 createdAt:'',
+                 invoiceNo:'',
+                 paymentMode:'',
+                 credit:''
+                 };
+                 if(result!=null)
+                 {
+
+                 for(var i=0; i<result.length;i++)
+                 {
+                 var data = result[i];
+                 //console.log(JSON.stringify(data));
+                 //console.log(data.createdAt);
+                 details.createdAt=moment(data._doc.createdAt).format('DD-MM-YYYY, h:mm:s a');
+                 details.invoiceNo=data.invoiceNo;
+                 details.paymentMode=data.paymentMode;
+                 details.credit=data.credit;
+                 //data._doc.createdAt=moment(data.createdAt).format('DD-MM-YYYY, h:mm:s a').toString();
+                 //data.paytm = moment(data.createdAt).format('DD-MM-YYYY, h:mm:s a');
+                 allPayments.push(details);
+                 }
+
+                 response={
+                 error: false,
+                 message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                 description: '',
+                 data: allPayments
+                 };
+                 }
+                 else
+                 {
+                 response= {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+                 }
+                 */
                 var response = result != null ? {
                     error: false,
                     message: Messages.FETCHING_RECORDS_SUCCESSFUL,
@@ -321,6 +386,21 @@ router
             }
 
         });
+
+    })
+    .post('/totalregwise', function (req, res, next) {
+        PaymentTransactionService.totalCashRegWise(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+
     })
 
 ;

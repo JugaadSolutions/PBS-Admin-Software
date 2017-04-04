@@ -91,7 +91,7 @@ Vehicle.schema.pre('update',function (next) {
          User.updateCount=0;
          User.successIp=[];*/
         var lastModifieddate = new Date();
-        Vehicle.findOneAndUpdate({}, { $set: { unsyncedIp: IPs ,updateCount:0,syncedIp:[],lastModifiedAt:lastModifieddate} });
+        Vehicle.findOneAndUpdate({}, { $set: { unsyncedIp: IPs ,updateCount:0,syncedIp:[],lastModifieddate:lastModifieddate} });
         next();
     });
     console.log('Update Vehicle ');

@@ -17,7 +17,7 @@ var PaymentTransactionSchema = mongoose.Schema({
     paymentThrough:{type:PayThrough,required:false},
     gatewayTransactionId:{type:String,required:false},
     comments:{type:String,required:false},
-    location:{type:Loc,required:true,default:Loc.REG_CENTRE},
+    location:{type:String,required:true,default:Loc.REG_CENTRE},
     debit:{type:Number,required:false,default:0},
     credit:{type:Number,required:false,default:0},
     balance:{type:Number,required:true},
