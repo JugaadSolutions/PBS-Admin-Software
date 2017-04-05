@@ -800,7 +800,8 @@ function assignMemberShip (memberId, membershipId,callback) {
                             transactionNumber:paymentObject.gatewayTransactionId,
                             comments:paymentObject.comments,
                             credit:paymentObject.credit,
-                            creditMode:paymentObject.paymentMode
+                            creditMode:paymentObject.paymentMode,
+                            createdBy:memberObject.createdBy
                         };
                         signedup = true;
                         PaymentTransaction.signedUp(rec,memberObject,function (err,result) {
@@ -1001,7 +1002,7 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
             ,
             // Step 3: Method to update member card details
             function (callback) {
-                Member.findOne({'_id':memberId},function (err,result) {
+                Member.findById(memberId,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -1045,7 +1046,7 @@ function assignCard(memberId, cardNumber, membershipId,createdBy, callback) {
         }
     );
 
-};
+}
 
 exports.creditMember=addCreditToMember;/*,
  function (callback) {
@@ -1219,6 +1220,10 @@ function addCreditToMember(id,record,callback) {
                             {
                                 return callback(err,null);
                             }
+                            if(!result)
+                            {
+                                return callback(new Error("Couldn't find the top up plan for the given credit details"),null);
+                            }
                             record.credit = result.topupId;
                             PaymentTransaction.topUp(memberObject, record, function (err, result) {
                                 if (err) {
@@ -1277,7 +1282,7 @@ function addCreditToMember(id,record,callback) {
         return callback(null,updatedMemberObject);
     });
 
-};
+}
 
 exports.topupMember = function (id,record,callback) {
     var memberObject;
@@ -1341,6 +1346,10 @@ exports.topupMember = function (id,record,callback) {
 
                     if (err) {
                         return callback(err, null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error('Logged in user id missing'),null);
                     }
                     record.createdBy = result._id;
                     return callback(null, result);
@@ -1491,7 +1500,7 @@ exports.debitMember = function (id, record, callback) {
             function (callback) {
                 if(isNaN(record.createdBy))
                 {
-                    User.findOne({'_id':record.createdBy}).lean().exec(function (err,result) {
+                    User.findById(record.createdBy).lean().exec(function (err,result) {
                         if(err)
                         {
                             return callback(err,null);
@@ -1617,7 +1626,7 @@ exports.cancelMembershiprequest = function (id,callback) {
 
             if(isNaN(id))
             {
-                User.findOne({'_id':id},function (err,result) {
+                User.findById(id,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -1690,7 +1699,7 @@ exports.cancelMembership = function (memberId,record,callback) {
         function (callback) {
             if(isNaN(memberId))
             {
-                Member.findById({'_id':memberId},function (err,result) {
+                Member.findById(memberId,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -1778,6 +1787,7 @@ exports.cancelMembership = function (memberId,record,callback) {
                         balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
                     };
                     transactionList.push(cancelmembership2);
+                    memberObject.securityDeposit = 0;
                 }
                 else if(memberObject.creditBalance<0)
                 {
@@ -1837,6 +1847,7 @@ exports.cancelMembership = function (memberId,record,callback) {
                         balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
                     };
                     transactionList.push(cancelmembership2);
+                    memberObject.securityDeposit = 0;
                 }
 
 
@@ -1897,12 +1908,12 @@ exports.cancelMembership = function (memberId,record,callback) {
         }
         ,
         function (callback) {
-            if(finalTransaction)
+            if(finalTransaction.length>0)
             {
                 Member.findByIdAndUpdate(memberId, {
                     $unset: {
-                        membershipId: memberObject.membershipId,
-                        validity:memberObject.validity
+                        membershipId:'',
+                        validity:''
                     }
                 },{new:true}, function (err, result) {
 
@@ -1917,17 +1928,15 @@ exports.cancelMembership = function (memberId,record,callback) {
                     result.securityDeposit = memberObject.securityDeposit;
                     result.processingFeesDeducted=false;
                     memberObject = result;
-                    Member.update({_id:result._id}, result, {new: true}).lean().exec(function (err) {
+                    Member.update({_id:result._id}, result).exec(function (err) {
                         if(err)
                         {
                             return callback(err, null);
                         }
                         // memberObject = result;
+                        return callback();
                     });
-
-
                 });
-
             }
             else
             {
@@ -1939,7 +1948,7 @@ exports.cancelMembership = function (memberId,record,callback) {
         function (callback) {
             if(memberObject.cardNum)
             {
-                if(memberObject.cardNum!=0) {
+                if(Number(memberObject.cardNum)!=0) {
                     CardService.deactivateCard(memberObject.cardNum, function (err, result) {
                         if (err) {
                             return callback(err, null);
@@ -2000,10 +2009,14 @@ exports.suspendMembership = function (memberId,record,callback) {
 
     if(isNaN(memberId))
     {
-        Member.findOne({_id:memberId},function (err,memObj) {
+        Member.findById(memberId,function (err,memObj) {
             if(err)
             {
                 return callback(err,null);
+            }
+            if(!memObj)
+            {
+                return callback(new Error(Messages.USER_NOT_FOUND),null);
             }
             memObj.comments = record.comments;
             memObj.status = Constants.MemberStatus.SUSPENDED;
@@ -2029,6 +2042,10 @@ exports.suspendMembership = function (memberId,record,callback) {
         Member.findOne({UserID: memberId}, function (err, memObj) {
             if (err) {
                 return callback(err, null);
+            }
+            if(!memObj)
+            {
+                return callback(new Error(Messages.USER_NOT_FOUND),null);
             }
             memObj.comments = record.comments;
             memObj.status = Constants.MemberStatus.SUSPENDED;
@@ -2146,6 +2163,10 @@ exports.addMember=function (record,callback) {
                     if (err) {
                         return callback(err, null);
                     }
+                    if(!data)
+                    {
+                        return callback(new Error("Couldn't able to generate random key, Please try again"),null);
+                    }
                     //password=data.split('').reverse().join('');
                     ResetKey = data;
                     return callback(null, data);
@@ -2157,7 +2178,7 @@ exports.addMember=function (record,callback) {
 
             if(isNaN(record.createdBy))
             {
-                User.findOne({_id:record.createdBy},function (err,result) {
+                User.findById(record.createdBy,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -2334,26 +2355,29 @@ exports.addMember=function (record,callback) {
                 //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
                 var docNumber =memberDetails.UserID+ uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
+                if(profilePic.result)
+                {
+                    var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
+                    record.profilePic = docNumber;
+                    memberDetails.profilePic = docNumber;
+                }
 
-                record.profilePic = docNumber;
-                memberDetails.profilePic = docNumber;
                 return callback(null, null);
 
             } else {
@@ -2373,25 +2397,29 @@ exports.addMember=function (record,callback) {
                 var docNumber =memberDetails.UserID+ uuid.v4();
                 var docFilePath = dir+ docNumber+".png";
 
-                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
+                if(record.memberprofilePic.result)
+                {
+                    var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
 
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
+                    var fileDetails = {
+                        key: '/usr/share/nginx/html/mytrintrin/Member/' + memberDetails.UserID + '/ ' + docNumber + '.png',
+                        filePath: docFilePath
+                    };
 
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
+                    // Method to write Multiple files
+                    var writeFiles = {
+                        filePath: docFilePath,
+                        file: decodedDoc,
+                        fileName: docNumber
+                    };
 
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
+                    filesArrayToWrite.push(writeFiles);
+                    filesArray.push(fileDetails);
 
-                record.memberprofilePic = docNumber;
-                memberDetails.memberprofilePic = docNumber;
+                    record.memberprofilePic = docNumber;
+                    memberDetails.memberprofilePic = docNumber;
+                }
+
                 return callback(null, null);
 
             } else {
@@ -2633,6 +2661,10 @@ exports.addMember=function (record,callback) {
                         {
                             return callback(err,null);
                         }
+                        if(!result)
+                        {
+                            return callback(new Error(Messages.NO_MEMBERSHIP_FOUND),null);
+                        }
                         memberDetails.membershipId = result._id;
                         record.creditBalance = Number(result.userFees+result.securityDeposit+result.smartCardFees+result.processingFees);
                         assignMemberShip(memberDetails._id,memberDetails.membershipId,function (err,result) {
@@ -2693,8 +2725,6 @@ exports.addMember=function (record,callback) {
         function (callback) {
             if(valid)
             {
-
-
                 if(memberDetails.smartCardNumber)
                 {
                     return callback(null,null);
@@ -2720,8 +2750,6 @@ exports.addMember=function (record,callback) {
         function (callback) {
             if(valid)
             {
-
-
                 if(memberDetails.email!=null && memberDetails.email!='' && memberDetails.email!='undefined')
                 {
                     if(passwordFlag==1)
@@ -2812,253 +2840,6 @@ exports.addMember=function (record,callback) {
 
 };
 
-exports.addSignedupMember = function (record,callback) {
-
-    var documents = [];
-    var profilePic = {};
-    var filesArray = [];
-    var filesArrayToWrite = [];
-    var location;
-    var memberDetails;
-    async.series([
-        function (callback) {
-            User.findOne({UserID:record.createdBy},function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
-                }
-                if(!result)
-                {
-                    location = 'Other Location';
-                    return callback(null,result);
-                }
-                record.createdBy = result._id;
-                if(result._type=='registration-employee')
-                {
-                    RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,reg) {
-                        if(err)
-                        {
-                            return callback(err,null);
-                        }
-                        if(!result)
-                        {
-                            record.registeredLocation = 'Other Location';
-                            return callback(null,result);
-                        }
-                        record.registeredLocation=reg.location;
-                        return callback(null,result);
-                    });
-                }
-                else {
-                    record.registeredLocation = 'Other Location';
-                    return callback(null,result);
-                }
-
-            });
-        }
-        ,
-        function (callback) {
-
-            if (profilePic) {
-
-                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
-
-                if (!fs.existsSync(dir)){
-                    fs.mkdirSync(dir);
-                }
-                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
-                var docNumber =record.UserID+ uuid.v4();
-                var docFilePath = dir+ docNumber+".png";
-
-                var decodedDoc = new Buffer(profilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
-
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
-
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
-
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
-
-                record.profilePic = docNumber;
-                memberDetails.profilePic = docNumber;
-                return callback(null, null);
-
-            } else {
-                return callback(null, null);
-            }
-
-        },
-        function (callback) {
-
-            if (record.memberprofilePic) {
-
-                var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
-
-                if (!fs.existsSync(dir)){
-                    fs.mkdirSync(dir);
-                }
-                //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
-                var docNumber =record.UserID+ uuid.v4();
-                var docFilePath = dir+ docNumber+".png";
-
-                var decodedDoc = new Buffer(record.memberprofilePic.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
-
-                var fileDetails = {
-                    key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
-                    filePath: docFilePath
-                };
-
-                // Method to write Multiple files
-                var writeFiles = {
-                    filePath: docFilePath,
-                    file: decodedDoc,
-                    fileName: docNumber
-                };
-
-                filesArrayToWrite.push(writeFiles);
-                filesArray.push(fileDetails);
-
-                record.memberprofilePic = docNumber;
-                memberDetails.memberprofilePic = docNumber;
-                return callback(null, null);
-
-            } else {
-                return callback(null, null);
-            }
-
-        }
-        ,
-        function (callback) {
-            if (documents) {
-
-                for (var i = 0; i < documents.length; i++) {
-
-                    var dir = '/usr/share/nginx/html/mytrintrin/Member/'+record.UserID+"/";
-
-                    if (!fs.existsSync(dir)){
-                        fs.mkdirSync(dir);
-                    }
-                    //var docFilePath = "./temp/doc" + i + Date.now() + ".png";
-                    var docNumber = i + uuid.v4();
-                    var docFilePath = dir+ docNumber+".png";
-
-                    // Check if there is a new document available
-                    if (documents[i].documentCopy.result) {
-
-                        var decodedDoc = new Buffer(documents[i].documentCopy.result.replace(/^data:image\/(png|gif|jpeg);base64,/, ''), 'base64');
-
-                        /*var fileDetails = {
-                         key: config.get('aws.bucket') + config.get('awsFolders.member') + memberObject.memberId + '/' + docNumber + '.png',
-                         filePath: docFilePath
-                         };*/
-                        var fileDetails = {
-                            key: '/usr/share/nginx/html/mytrintrin/Member/' + record.UserID + '/ ' + docNumber + '.png',
-                            filePath: docFilePath
-                        };
-
-                        // Method to write Multiple files
-                        var writeFiles = {
-                            filePath: docFilePath,
-                            file: decodedDoc,
-                            fileName: docNumber
-                        };
-
-                        filesArrayToWrite.push(writeFiles);
-                        filesArray.push(fileDetails);
-
-                        documents[i].documentCopy = docNumber;
-
-                    }
-
-                    // removing document name if type not Other
-                    if (documents[i].documentType != "Other") {
-                        documents[i].documentName = "";
-                    }
-
-                    //filesToDelete.push(docFilePath);
-                }
-
-                return callback(null, null);
-            } else {
-                return callback(null, null);
-            }
-        },
-        function (callback) {
-
-            if (filesArrayToWrite.length > 0) {
-
-                UploadHandler.writeFile(filesArrayToWrite, function (err) {
-
-                    if (err) {
-                        return callback(err, null);
-                    }
-
-                    return callback(null, null);
-                });
-
-            } else {
-                return callback(null, null);
-            }
-
-        },
-
-        function (callback) {
-
-            var docArray = [];
-
-            if (documents) {
-
-                for (var i = 0; i < documents.length; i++) {
-
-                    var docDetails = {
-                        documentType: documents[i].documentType,
-                        documentNumber: documents[i].documentNumber,
-                        documentCopy: documents[i].documentCopy,
-                        documentName: documents[i].documentName,
-                        description: documents[i].description
-                    };
-
-                    docArray.push(docDetails);
-                }
-                record.documents = docArray;
-                /*memberDetails.resetPasswordKey = ResetKey;
-                 memberDetails.resetPasswordKeyValidity = moment().add(2,'hours');*/
-//                memberDetails.profilePic = record.profilePic;
-
-                Member.findOneAndUpdate({UserID:record.UserID},record,{new:true},function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    memberDetails = result;
-                    return callback(null,result);
-                });
-
-                //return callback(null, null);
-            }
-            else
-            {
-                return callback(null, null);
-            }
-
-        }
-    ],function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    })
-};
-
 exports.requestOTP = otprequest;
 function otprequest(record,callback) {
 
@@ -3070,6 +2851,10 @@ function otprequest(record,callback) {
 
                 if (err) {
                     return callback(err, null);
+                }
+                if(!data)
+                {
+                    return callback(new Error("Couldn't able to generate random key, Please try again"),null);
                 }
                 otp=data;
                 if(record.phoneNumber.length>10)
@@ -3107,7 +2892,7 @@ function otprequest(record,callback) {
                 }
                 else
                 {
-                    return callback(null,null);
+                    return callback(new Error(Messages.USER_NOT_FOUND),null);
                 }
             });
         }
@@ -3188,7 +2973,7 @@ function otprequest(record,callback) {
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,data);
     })
 }
 

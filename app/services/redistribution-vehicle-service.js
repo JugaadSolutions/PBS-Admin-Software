@@ -55,18 +55,32 @@ exports.createDS = function (record,callback) {
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,redistributionDetails);
     });
 
 
 };
 
 exports.updateRedistributionVehicle =function (id,record,callback) {
-  RedistributionVehicle.findByIdAndUpdate(id,record,{new:true},function (err,result) {
-      if(err)
-      {
-          return callback(err,null);
-      }
-      return callback(null,result);
-  });
+    if(isNaN(id))
+    {
+        RedistributionVehicle.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        RedistributionVehicle.findOneAndUpdate({PortID:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
 };

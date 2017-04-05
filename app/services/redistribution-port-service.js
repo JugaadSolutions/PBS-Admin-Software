@@ -29,23 +29,47 @@ exports.createPort=function (record,callback) {
         function (callback) {
             if(redistributionDetails)
             {
-                RedistributionVehicle.findOne({'_id':redistributionDetails.StationId},function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    var portDetails = {
-                        dockingPortId:redistributionDetails._id
-                    };
-                    result.portIds.push(portDetails);
-                    RedistributionVehicle.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                if(isNaN(redistributionDetails.StationId))
+                {
+                    RedistributionVehicle.findById(redistributionDetails.StationId,function (err,result) {
                         if(err)
                         {
                             return callback(err,null);
                         }
-                        return callback(null,result);
+                        var portDetails = {
+                            dockingPortId:redistributionDetails._id
+                        };
+                        result.portIds.push(portDetails);
+                        RedistributionVehicle.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            return callback(null,result);
+                        });
                     });
-                });
+                }
+                else
+                {
+                    RedistributionVehicle.findOne({StationID:redistributionDetails.StationId},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        var portDetails = {
+                            dockingPortId:redistributionDetails._id
+                        };
+                        result.portIds.push(portDetails);
+                        RedistributionVehicle.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            return callback(null,result);
+                        });
+                    });
+                }
+
             }
             else
                 {

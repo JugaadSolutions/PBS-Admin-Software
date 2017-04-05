@@ -97,15 +97,69 @@ exports.addReply = function (id,record,callback) {
         var ticket;
         async.series([
             function (callback) {
-                Ticket.findOne({_id:id},function (err,result) {
+            if(isNaN(id))
+            {
+                Ticket.findById(id,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to find the ticket to add reply"),null);
+                    }
                     ticket=result;
+                    id = result._id;
                     return callback(null,result);
                 });
+            }
+            else
+            {
+                Ticket.findOne({uuId:id},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to find the ticket to add reply"),null);
+                    }
+                    ticket=result;
+                    id = result._id;
+                    return callback(null,result);
+                });
+            }
+
             },
+            function (callback) {
+                if(record.replierId)
+                {
+                    if(isNaN(record.replierId))
+                    {
+                        return callback(null,null);
+                    }
+                    else
+                    {
+                        User.findOne({UserID:record.replierId},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                return callback(new Error("Coundn't find the commenter id"),null);
+                            }
+                            record.replierId = result._id;
+                            return callback(null,result);
+                        });
+                    }
+                }
+                else
+                {
+                    return callback(new Error("Coundn't find the commenter id"),null);
+                }
+            }
+            ,
             function (callback) {
                 if(ticket)
                 {
@@ -243,13 +297,13 @@ exports.getTicketByUser = function (id,callback) {
                 }
                 if(!userDetails)
                 {
-                    return callback(new Error(Messages.NO_MEMBER_FOUND));
+                    return callback(new Error(Messages.NO_MEMBER_FOUND),null);
                 }
                 return callback(null,userDetails);
             });
         },
         function (userDetails,callback) {
-            Ticket.find({user:userDetails._id},function (err,result) {
+            Ticket.find({user:userDetails._id}).deepPopulate('user assignedEmp createdBy transactions.replierId').lean().exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);

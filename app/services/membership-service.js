@@ -61,7 +61,13 @@ exports.calculateValidity = function (membershipId, memberId, callback) {
 
                     });
 
-                } /*else {
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
+                /*else {
                     Membership.findById(membershipId, function (err, result) {
 
                         if (err) {

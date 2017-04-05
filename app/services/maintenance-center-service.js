@@ -11,6 +11,7 @@ var MaintenanceDetails = require('../models/maintenance-details'),
     Vehicle = require('../models/vehicle'),
     Station = require('../models/station'),
     Ports = require('../models/port'),
+    Messages = require('../core/messages'),
     MaintenanceCenter=require('../models/maintenance-center');
 
 
@@ -27,13 +28,27 @@ exports.createDS = function (record,callback) {
 };
 
 exports.updateMaintenancecenter = function (id,record,callback) {
-    MaintenanceCenter.findByIdAndUpdate(id,record,{new:true},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        MaintenanceCenter.findByIdAndUpdate(id,record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        MaintenanceCenter.findOneAndUpdate({StationID:id},record,{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
 };
 
 exports.createMaintenance = function (record,callback) {
@@ -45,6 +60,10 @@ exports.createMaintenance = function (record,callback) {
                 {
                     return callback(err,null);
                 }
+                if(!result)
+                {
+                    return callback(new Error('No employee found by this id'),null);
+                }
                 record.employeeId =result._id;
                 return callback(null,result);
             });
@@ -54,6 +73,10 @@ exports.createMaintenance = function (record,callback) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error('Logged in user id missing'),null);
                 }
                 record.createdBy =result._id;
                 return callback(null,result);
@@ -67,6 +90,10 @@ exports.createMaintenance = function (record,callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to find station by the given location"),null);
+                    }
                     record.location = result._id;
                     return callback(null,result);
                 });
@@ -77,6 +104,10 @@ exports.createMaintenance = function (record,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to find maintenance centre by the given location"),null);
                     }
                     record.location = result._id;
                     return callback(null,result);
@@ -89,6 +120,10 @@ exports.createMaintenance = function (record,callback) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error(Messages.VEHICLE_NOT_FOUND),null);
                 }
                 record.vehicleId = result._id;
                 return callback(null,result);
@@ -141,6 +176,10 @@ exports.createRepair = function (record,callback) {
                 {
                     return callback(err,null);
                 }
+                if(!result)
+                {
+                    return callback(new Error('No employee found by this id'),null);
+                }
                 record.employeeId =result._id;
                 return callback(null,result);
             });
@@ -150,6 +189,10 @@ exports.createRepair = function (record,callback) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error('Logged in user id missing'),null);
                 }
                 record.createdBy =result._id;
                 return callback(null,result);
@@ -163,6 +206,10 @@ exports.createRepair = function (record,callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to find station by the given location"),null);
+                    }
                     record.location = result._id;
                     return callback(null,result);
                 });
@@ -173,6 +220,10 @@ exports.createRepair = function (record,callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to find maintenance centre by the given location"),null);
                     }
                     record.location = result._id;
                     return callback(null,result);
@@ -185,6 +236,10 @@ exports.createRepair = function (record,callback) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error(Messages.VEHICLE_NOT_FOUND),null);
                 }
                 record.vehicleId = result._id;
                 return callback(null,result);
@@ -207,7 +262,7 @@ exports.createRepair = function (record,callback) {
                     return callback(err,null);
                 }
                 var data = {
-                    detailsId:result._id
+                    detailsId:repairDetails._id
                 };
                 result.repairs.push(data);
                 Vehicle.findByIdAndUpdate(result._id,result,{new:true},function (err,result) {

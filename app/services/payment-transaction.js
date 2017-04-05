@@ -466,6 +466,10 @@ exports.topUp = function (memberObject,record,callback) {
                 {
                     return callback(err,null);
                 }
+                if(!result)
+                {
+                    return callback(new Error("Couldn't find the top up plan for the given credit details"),null);
+                }
                 topupDetails = result;
                 record.credit = result.userFees;
                 return callback(null,result);
@@ -536,6 +540,10 @@ exports.newMember = function (memberObject,record,callback) {
                 if(err)
                 {
                     return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error(Messages.NO_MEMBERSHIP_FOUND),null);
                 }
                     memberShipObject = result;
                     var payValue = Number(memberShipObject.userFees+memberShipObject.securityDeposit+memberShipObject.smartCardFees+memberShipObject.processingFees);
@@ -699,7 +707,7 @@ exports.newMember = function (memberObject,record,callback) {
         ,
 
         function (callback) {
-            if(finalTransaction)
+            if(finalTransaction.length>0)
             {
                 var len = finalTransaction.length-1;
                 Member.findByIdAndUpdate(memberObject._id,{
@@ -836,7 +844,7 @@ exports.cashCollection = function (record,callback) {
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,payDetails);
     });
 };
 /*
@@ -1047,12 +1055,52 @@ exports.dashboardDetails=function (callback) {
 };
 
 exports.depositCash = function (record,callback) {
-    Deposits.create(record,function (err,result) {
+    var depInfo;
+    async.series([
+        function (callback) {
+            if(record.createdBy)
+            {
+                if(isNaN(record.createdBy))
+                {
+                    return callback(null,null);
+                }
+                else
+                {
+                    User.findOne({UserID:record.createdBy},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
+                            return callback(new Error("Logged in user id missing"),null);
+                        }
+                        record.createdBy = result._id;
+                            return callback(null,result);
+                    });
+                }
+            }
+            else
+            {
+                return callback(new Error("Logged in user id missing"),null);
+            }
+        },
+        function (callback) {
+            Deposits.create(record,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                depInfo = result;
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
         if(err)
         {
             return callback(err,null);
         }
-        return callback(null,result);
+        return callback(null,depInfo);
     });
 };
 
@@ -1114,12 +1162,14 @@ function totalcash (record,callback) {
             return callback(null,dateArray);
         },
        function (callback) {
+           var fdate = moment(record.fromdate);
+           fdate=fdate.format('YYYY-MM-DD');
            var ldate = moment(record.todate).add(1, 'days');
            ldate=ldate.format('YYYY-MM-DD');
            //console.log(ldate);
            if(record.location=='All')
            {
-               Payments.find({'createdAt':{$gte:moment(record.fromdate),$lte:moment(ldate)},paymentDescription:{$in:['Registration','Topup','Refund']} }).sort('createdAt').lean().exec(function (err,result) {
+               Payments.find({'createdAt':{$gte:moment(fdate),$lte:moment(ldate)},paymentDescription:{$in:['Registration','Topup','Refund']} }).sort('createdAt').lean().exec(function (err,result) {
                    if(err)
                    {
                        return callback(err,null);
@@ -1132,14 +1182,14 @@ function totalcash (record,callback) {
                    }
                    else
                    {
-                       return callback(null,null);
+                       return callback(new Error(Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE),null);
                    }
 
                });
            }
            else
            {
-               Payments.find({'createdAt':{$gte:moment(record.fromdate),$lte:moment(ldate)},paymentDescription: {$in:['Registration','Topup','Refund']},'location':record.location}).sort('createdAt').lean().exec(function (err,result) {
+               Payments.find({'createdAt':{$gte:moment(fdate),$lte:moment(ldate)},paymentDescription: {$in:['Registration','Topup','Refund']},'location':record.location}).sort('createdAt').lean().exec(function (err,result) {
                    if(err)
                    {
                        return callback(err,null);
@@ -1152,7 +1202,7 @@ function totalcash (record,callback) {
                    }
                    else
                    {
-                       return callback(null,null);
+                       return callback(new Error(Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE),null);
                    }
 
                });
@@ -1381,17 +1431,25 @@ exports.createcashClosure = function (record,callback) {
 };
 
 exports.getCashclosures = function (record,callback) {
-    var fdate = moment(record.fromdate);
-    fdate=fdate.format('YYYY-MM-DD');
-    var ldate = moment(record.todate).add(1, 'days');
-    ldate=ldate.format('YYYY-MM-DD');
-    Cashclosure.find({dateTime:{$gte:moment(fdate),$lt:moment(ldate)}},function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+
+    if(record.fromdate && record.todate)
+    {
+        var fdate = moment(record.fromdate);
+        fdate=fdate.format('YYYY-MM-DD');
+        var ldate = moment(record.todate).add(1, 'days');
+        ldate=ldate.format('YYYY-MM-DD');
+        Cashclosure.find({dateTime:{$gte:moment(fdate),$lt:moment(ldate)}},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        return callback(new Error("Please provide from date and to date both"),null);
+    }
 };
 
 /*

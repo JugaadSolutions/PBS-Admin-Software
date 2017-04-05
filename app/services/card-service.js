@@ -212,9 +212,9 @@ exports.deactivateCard = function (id, callback) {
 
                     User.findByIdAndUpdate(result._id, {
                         $unset: {
-                            cardNum:id,
-                            smartCardId: result.smartCardId,
-                            smartCardNumber: result.smartCardNumber
+                            cardNum:'',
+                            smartCardId: '',
+                            smartCardNumber: ''
                         }
                     }, {new: true}).lean().exec(function (err, result) {
 
@@ -264,7 +264,7 @@ exports.deactivateCard = function (id, callback) {
                         $unset: {
                             assignedTo: "",
                             issuedBy: "",
-                            membershipId: memberObject.membershipId,
+                            membershipId: "",
                             issuedDate: ""
                         }
                     }, {new: true}, function (err, result) {
