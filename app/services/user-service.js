@@ -103,7 +103,7 @@ exports.changePassword = function (userId, updatedData, callback) {
 
     if(isNaN(userId))
     {
-        User.findOne({'_id':userId}, function (err, record) {
+        User.findById(userId, function (err, record) {
 
             if (err) {
                 return callback(err, null);
@@ -199,7 +199,10 @@ exports.forgotPassword = function (email, callback) {
                     if (err) {
                         return callback(err, null);
                     }
-
+                    if(!data)
+                    {
+                        return callback(new Error("Couldn't able to generate random key, Please try again"),null);
+                    }
                     ResetKey = data;
                     return callback(null, data);
                 });

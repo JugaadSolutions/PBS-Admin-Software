@@ -20,7 +20,7 @@ var TransactionAssociation = require('../models/transaction-association'),
 
 
 exports.ReconcileTransaction=function () {
-var checkinDetails;
+    var checkinDetails;
     var balance;
     var comments = '-';
     async.series([
@@ -75,11 +75,16 @@ var checkinDetails;
                                         {
                                             return console.error('Reconciliation Membership Error : '+err);
                                         }
-
-
+                                        if(!membership)
+                                        {
+                                            return console.error('Reconciliation Membership Error : Could not able to find membership plan');
+                                        }
                                         FarePlanService.calculateFarePlan(membership.farePlan, duration, function (err, creditUsed) {
 
                                             if (err) {
+                                                return console.log('Error Fare plan calculation'+err);
+                                            }
+                                            if (!creditUsed) {
                                                 return console.log('Error Fare plan calculation'+err);
                                             }
                                             balance = Number(userdetails.creditBalance) - creditUsed;
@@ -93,6 +98,10 @@ var checkinDetails;
                                                 if(err)
                                                 {
                                                     return console.log('Error finding member '+err);
+                                                }
+                                                if(!result)
+                                                {
+                                                    return console.log('Error finding member to update balance after checkin');
                                                 }
                                                 memDetails.creditBalance = balance;
                                                 memDetails.vehicleId = [];

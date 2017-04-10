@@ -352,7 +352,7 @@ exports.getAllStations = function (record,callback) {
 
     var allstations=[];
 
-    DockStation.find({"stationType": "dock-station"}).deepPopulate('portIds portIds.dockingPortId portIds.dockingPortId.vehicleId.vehicleid').lean().exec(function (err,result) {
+    DockStation.find({stationType: "dock-station"}).deepPopulate('portIds portIds.dockingPortId portIds.dockingPortId.vehicleId.vehicleid').lean().exec(function (err,result) {
         if(err)
         {
            return callback(err,null);
@@ -557,8 +557,8 @@ exports.createCleanedEntry = function (record,callback) {
         }
         ,
         function (callback) {
-            record.fromtime=moment(record.fromtime);
-            record.totime = moment(record.totime);
+            //record.fromtime=moment(record.fromtime);
+            //record.totime = moment(record.totime);
             cleanstation.create(record,function (err,result) {
                 if(err)
                 {

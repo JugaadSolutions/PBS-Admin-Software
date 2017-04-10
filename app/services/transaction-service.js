@@ -1,6 +1,8 @@
 /**
  * Created by root on 3/10/16.
  */
+
+
 var async = require('async'),
     moment = require('moment'),
     CheckOut=require('../models/checkout'),
@@ -15,7 +17,7 @@ var async = require('async'),
     DockStation = require('../models/dock-station'),
     Station = require('../models/station'),
     Port = require('../models/port'),
-MemberTransaction = require('../models/transaction');
+    MemberTransaction = require('../models/transaction');
  var fleet = require('../models/fleet');
 
 var TransactionReconciliation = require('./transaction-reconciliation');
@@ -233,6 +235,10 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.USER_NOT_FOUND),null);
+                    }
                     id=result.UserID;
                     return callback(null,result);
                 });
@@ -248,6 +254,11 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
 
                     if (err) {
                         return callback(err, null);
+                    }
+
+                    if(res.length<=0)
+                    {
+                        return callback(new Error("No rides found"),null);
                     }
                     var result = [];
                     res.forEach(function(r){
@@ -278,6 +289,10 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
 
                             if (err) {
                                 return callback(err, null);
+                            }
+                            if(res.length<=0)
+                            {
+                                return callback(new Error("No rides found"),null);
                             }
                             var result = [];
                             res.forEach(function (r) {
@@ -641,68 +656,12 @@ exports.timelyCheckout = function (callback) {
 
                 return callback(null,result);
             });
-
-        }/*,
-         function (callback) {
-         if(checkoutDetails.length>0)
-         {
-         async.forEach(checkoutDetails,function (checkoutDetail) {
-         DockPort.find({'portStatus':Constants.AvailabilityStatus.FULL},function (err,result) {
-         if(err)
-         {
-         return callback(err,null);
-         }
-         if(!result)
-         {
-         return callback(null,null);
-         }
-         for(var i=0;i<result.length;i++)
-         {
-         if(!result[i]._id.equals(checkoutDetail.fromPort))
-         {
-         if(checkoutDetail.vehicleId.equals(result[i].vehicleId[0].vehicleid))
-         {
-         result[i].vehicleId=[];
-         result[i].portStatus=Constants.AvailabilityStatus.EMPTY;
-         DockPort.findByIdAndUpdate(result[i]._id,result[i],{new:true},function (err,result) {
-         if(err)
-         {
-         return callback(err,null);
-         }
-         });
-         }
-         }
-         }
-         });
-
-         },function (err) {
-         console.error('Error : '+err);
-         //callback();
-         });
-         return callback(null,null);
-         }
-         else
-         {
-         return callback(null,null);
-         }
-
-         }*/
+        }
         ,
         function (callback) {
             if(checkoutDetails.length>0)
             {
                 async.forEach(checkoutDetails,function (checkoutDetail) {
-                    /*                    async.series([
-                     function (callback) {
-
-                     }
-                     ],function (err,result) {
-                     if(err)
-                     {
-                     return callback(err,null);
-                     }
-                     return callback(null,result);
-                     });*/
                     vehicle.findById(checkoutDetail.vehicleId,function (err,result) {
                         if(err)
                         {
@@ -719,6 +678,10 @@ exports.timelyCheckout = function (callback) {
                                     return console.error('Error : '+err);
                                 }
                             });
+                        }
+                        else
+                        {
+                            return console.error("No vehicle found");
                         }
                     });
                     Port.findById(checkoutDetail.fromPort,function (err,result) {
@@ -796,6 +759,10 @@ exports.timelyCheckout = function (callback) {
                                                 if(err)
                                                 {
                                                     return console.error('Error : '+err);
+                                                }
+                                                if(ds.length<=0)
+                                                {
+                                                    return callback(new Error("No docking station found to update for sync"));
                                                 }
                                                 result.unsuccessIp=[];
                                                 for(var i=0;i<ds.length;i++)
@@ -1147,6 +1114,10 @@ exports.timelyCheckin = function (callback) {
                                                             {
                                                                 return console.error('Error : '+err);
                                                             }
+                                                            if(ds.length<=0)
+                                                            {
+                                                                return callback(new Error("No docking station found to update for sync"));
+                                                            }
                                                             result.lastModifiedAt=new Date();
                                                             result.unsuccessIp=[];
                                                             for(var i=0;i<ds.length;i++)
@@ -1167,10 +1138,18 @@ exports.timelyCheckin = function (callback) {
                                                             });
                                                         });
                                                     }
+                                                    else
+                                                    {
+                                                        return console.error('Error : station not found inside checkin');
+                                                    }
                                                 });
                                             }
                                         });
 
+                                    }
+                                    else
+                                    {
+                                        return console.error('Checkin Time User Error');
                                     }
                                 });
                             }
@@ -1486,7 +1465,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                     }
                     else
                     {
-                        return callback(null,null);
+                        return callback(new Error(Messages.USER_NOT_FOUND),null);
                     }
                 });
             }
@@ -1510,7 +1489,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                     }
                     else
                     {
-                        return callback(null,null);
+                        return callback(new Error(Messages.VEHICLE_NOT_FOUND),null);
                     }
                 });
             }
@@ -1526,7 +1505,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                 {
                     return callback(err,null);
                 }
-                if(result)
+                if(result.length>0)
                 {
                     for(var i=0;i<result.length;i++)
                     {
@@ -1537,8 +1516,13 @@ exports.getAllCompletedTransactions = function (record,callback) {
                             }
                         }
                     }
+                    return callback(null,result);
                 }
-                return callback(null,result);
+                else
+                {
+                    return callback(new Error(Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE),null);
+                }
+
             });
         }
     ],function (err,result) {

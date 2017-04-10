@@ -14,19 +14,39 @@ exports.addBicycle=function (record, callback) {
 
     async.series([
         function (callback) {
+        if(isNaN(record.fleetId))
+        {
             Port.findById(record.fleetId,function (err,result) {
-            if(err)
-            {
-                return callback(err,null);
-            }
+                if(err)
+                {
+                    return callback(err,null);
+                }
 
-            if(result.portCapacity==result.vehicleId.length)
-            {
-                return callback(new Error(Messages.FLEET_FULL));
-            }
-            fleetRecord = result;
-            return callback(null,result);
+                if(result.portCapacity==result.vehicleId.length)
+                {
+                    return callback(new Error(Messages.FLEET_FULL));
+                }
+                fleetRecord = result;
+                return callback(null,result);
             });
+        }
+        else
+        {
+            Port.findOne({PortID:record.fleetId},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+
+                if(result.portCapacity==result.vehicleId.length)
+                {
+                    return callback(new Error(Messages.FLEET_FULL));
+                }
+                fleetRecord = result;
+                return callback(null,result);
+            });
+        }
+
         },
         function (callback) {
             if(record.createdBy)
@@ -35,6 +55,10 @@ exports.addBicycle=function (record, callback) {
                     if(err)
                     {
                         return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Logged in user id missing"),null);
                     }
                     record.createdBy = result._id;
                     return callback(null,result);
@@ -81,6 +105,10 @@ exports.addBicycle=function (record, callback) {
            {
                return callback(err,null);
            }
+           if(!result)
+           {
+               return callback(new Error("Fleet not found"),null);
+           }
            var vehicleDetails={
                vehicleid:vehicleRecord._id,
                vehicleUid:vehicleRecord.vehicleUid
@@ -112,7 +140,7 @@ exports.addBicycle=function (record, callback) {
             Station.find({stationType:'dock-station'},function (err,result) {
                 if(err)
                 {
-                    console.log('Error fetching station');
+                    return console.log('Error fetching station');
                 }
                 if(result.length>0)
                 {
@@ -130,11 +158,12 @@ exports.addBicycle=function (record, callback) {
                         return callback(null, result);
                     });
                 }
+                else
+                {
+                    return callback(null,null);
+                }
             });
-
         }
-
-
     ],function (err,result) {
         if(err)
         {
@@ -382,13 +411,24 @@ exports.updateVehicle = function (id,record,callback) {
     }
     else
     {
-        Vehicle.update({vehicleUid:id},record,{new:true},function (err,result) {
+        Vehicle.findOne({vehicleUid:id},function (err,result) {
             if(err)
             {
                 return callback(err,null);
             }
-            return callback(null,result);
+            if(!result)
+            {
+                return callback(new Error(Messages.VEHICLE_NOT_FOUND),null);
+            }
+            Vehicle.update({_id:result._id},record,{new:true},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
         });
+
     }
 
 };

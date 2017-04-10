@@ -1,3 +1,5 @@
+var json2csv = require('json2csv');
+var fields = ['DATE', 'PAYER', 'TRANSACTION NO','TRANSACTION TYPE','PAYMODE','AMOUNT'];
 var async = require('async'),
     moment = require('moment'),
     MembershipService=require('../services/membership-service'),

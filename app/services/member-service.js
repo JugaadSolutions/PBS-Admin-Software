@@ -1291,6 +1291,15 @@ exports.topupMember = function (id,record,callback) {
     var transactionDetails;
     async.series([
         function (callback) {
+            if(record.credit && record.creditMode && record.transactionNumber)
+            {
+                return callback(null,null);
+            }
+            else {
+                return callback(new Error("Fields missing for topup"),null);
+            }
+        },
+        function (callback) {
 
             if(isNaN(id))
             {
@@ -1378,7 +1387,7 @@ exports.topupMember = function (id,record,callback) {
         function (callback) {
             if(transactionDetails)
             {
-                return callback(new Error('This payment has already been completed'),null);
+                return callback(new Error('This transaction number already exists, Please provide correct transaction id'),null);
             }
             else {
 
@@ -2843,6 +2852,7 @@ exports.addMember=function (record,callback) {
 exports.requestOTP = otprequest;
 function otprequest(record,callback) {
 
+    var resData={};
     var otp;
     var msg = " is your OTP for registering at Trin Trin. OTP is valid for 30 mins. If this is not done by you contact 0821-2333000";
     async.waterfall([
@@ -2943,17 +2953,17 @@ function otprequest(record,callback) {
                 {
                     if(otpdata.outboundSMSMessageRequest.deliveryInfoList.deliveryInfo.deliveryStatus=='Submitted')
                     {
-                        var data = {
-                            otpstatus:'success'
-                        };
-                        return callback(null,data);
+
+                        resData.otpstatus='success';
+
+                        return callback(null,resData);
                     }
                     else
                     {
-                        var data = {
-                            otpstatus:otpdata.outboundSMSMessageRequest.deliveryInfoList.deliveryInfo.deliveryStatus
-                        };
-                        return callback(null,data);
+
+                        resData.otpstatus=otpdata.outboundSMSMessageRequest.deliveryInfoList.deliveryInfo.deliveryStatus;
+
+                        return callback(null,resData);
                     }
                 }
                 else
@@ -2973,8 +2983,8 @@ function otprequest(record,callback) {
         {
             return callback(err,null);
         }
-        return callback(null,data);
-    })
+        return callback(null,resData);
+    });
 }
 
 exports.verifyOTP = function (record,callback) {

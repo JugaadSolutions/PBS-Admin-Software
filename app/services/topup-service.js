@@ -17,6 +17,10 @@ exports.createTopup = function (record,callback) {
                     {
                         return callback(err,null);
                     }
+                    if(!result)
+                    {
+                        return callback("Logged in user id missing",null);
+                    }
                     record.createdBy= result._id;
                     return callback(null,result);
                 });
