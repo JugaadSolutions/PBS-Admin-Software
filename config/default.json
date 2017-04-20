@@ -13,6 +13,9 @@
       "size":500
     }
   },
+  "SDC":{
+    "baseUrl":"http://43.251.80.73:13060/api/"
+  },
   "logging": {
     "general": {
       "level": "debug",
@@ -42,6 +45,8 @@
     "url": "http://www.mytrintrin.com/userportal/",
   //  "resetUrl":"http://www.mytrintrin.com/portal/reset.php?key=",
     "resetUrl":"http://www.mytrintrin.com/userportal/app/resetpassword.html?rskey=",
+    "iosResetUrl":"http://www.mytrintrin.com/ios/app/resetpassword.html?rskey=",
+    "appResetUrl":"intent://com.mytrintrin.www.linktest/#Intent;scheme=mytrintrin;package=com.mytrintrin.www.linktest;S.content=",
     "emailVerifySuccessful": "public/email-verification-success",
     "emailVerificationFailed": "public/email-verification-failed",
     "paymentSuccessful": "payment-successful",

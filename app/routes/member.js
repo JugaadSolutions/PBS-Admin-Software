@@ -123,7 +123,6 @@ router
 
         });
     })
-
     .post('/add', function (req, res, next) {
         MemberService.addMember(req.body,function (err,result) {
             if(err)
@@ -135,18 +134,6 @@ router
                 res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
             }
 
-        });
-    })
-    .post('/add/signedup', function (req, res, next) {
-        MemberService.addSignedupMember(req.body,function (err,result) {
-            if(err)
-            {
-                next(err, req, res, next);
-            }
-            else
-            {
-                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
-            }
         });
     })
     .post('/requestotp', function (req, res, next) {
@@ -231,8 +218,6 @@ router
         });
 
     })
-
-
 
     .post('/:id/cancelmembership', function (req, res, next) {
 
@@ -363,8 +348,5 @@ router
         });
 
     })
-
-
-
 ;
 module.exports = router;

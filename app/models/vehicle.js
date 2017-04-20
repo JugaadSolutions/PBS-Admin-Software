@@ -13,6 +13,7 @@ var abstract = require('./abstract'),
     uuid = require('node-uuid'),
     DockStation = require('../models/dock-station'),
  autoIncrement = require('mongoose-auto-increment'),
+    Port = require('../models/port'),
     Constants = require('../core/constants');
 
 //Messages = require('../core/messages'),
@@ -97,6 +98,59 @@ Vehicle.schema.pre('update',function (next) {
     console.log('Update Vehicle ');
     //this.Name = 'TEST1234';
     next();
+});
+
+Vehicle.schema.pre('save',function (next) {
+    var Vehicle = this;
+    var IPs=[];
+    /*    Syncronizer.updatesync(User,function (err,result) {
+     if(err)
+     {
+     next();
+     }
+     console.log('User synced');
+     next();
+     });*/
+
+    DockStation.find({'stationType':'dock-station'},function (err,result) {
+        if(err)
+        {
+            console.error(err);
+            next(err);
+        }
+        for(var i=0;i<result.length;i++)
+        {
+            IPs.push(result[i].ipAddress);
+        }
+        console.log(IPs.toString());
+        /*        User.unsuccessIp=IPs;
+         User.updateCount=0;
+         User.successIp=[];*/
+        var lastModifieddate = new Date();
+        Vehicle.lastModifieddate = lastModifieddate;
+        Vehicle.unsyncedIp=IPs;
+        Vehicle.updateCount = 0;
+        Vehicle.syncedIp=[];
+        /*Vehicle.findOneAndUpdate({}, { $set: { unsyncedIp: IPs ,updateCount:0,syncedIp:[],lastModifieddate:lastModifieddate} });*/
+        next();
+    });
+    console.log('Update Vehicle');
+    //next();
+});
+
+Vehicle.schema.post('save',function (doc) {
+    var Vehicle = doc;
+    var vehicleDetails={
+        vehicleid:Vehicle._id,
+        vehicleUid:Vehicle.vehicleUid
+    };
+    Port.findByIdAndUpdate(Vehicle.fleetId,{$push:{vehicleId:vehicleDetails}},function (err) {
+        if(err)
+        {
+          return console.error('Error while updating fleet with new bicycle : '+err);
+        }
+    });
+
 });
 
 module.exports = Vehicle;

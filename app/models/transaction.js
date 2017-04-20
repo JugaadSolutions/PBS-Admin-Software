@@ -23,6 +23,11 @@ var schema = {
     duration: {type: Number, required: false},
     creditsUsed: {type: Number, required: false, default: 0},
     creditBalance: {type: Number, required: false},
+    synced:{type:Boolean,required:false,default:false},
+    uid: {type: Number, required: false},
+    vid: {type: Number, required: false},
+    fportid: {type: Number, required: false},
+    tportid: {type: Number, required: false},
     status: {type: String, required: true,default:'Close'}
 
 };

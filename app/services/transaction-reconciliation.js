@@ -12,7 +12,7 @@ var async = require('async'),
     Card = require('../models/card'),
     Membership = require('../models/membership');
 var fleet = require('../models/fleet');
-
+var RequestService = require('../services/request-service');
 var TransactionAssociation = require('../models/transaction-association'),
     Constants = require('../core/constants'),
     FarePlanService = require('../services/fare-plan-service'),
@@ -25,7 +25,7 @@ exports.ReconcileTransaction=function () {
     var comments = '-';
     async.series([
         function (callback) {
-            CheckIn.find({'status':'Open','errorStatus':0,'updateStatus':1}).sort({'checkInTime': 'ascending'}).exec(function (err,result) {
+            CheckIn.find({'status':'Open','errorStatus':0,'updateStatus':1}).sort({'checkInTime': 'ascending'}).deepPopulate('toPort vehicleId').exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
@@ -48,12 +48,12 @@ exports.ReconcileTransaction=function () {
                         status: 'Open',
                         updateStatus:1,
                         checkOutTime: {$lt:moment(checkinDetail.checkInTime)}
-                    }).sort({checkOutTime: -1}).exec(function (err, result) {
+                    }).sort({checkOutTime: -1}).deepPopulate('user vehicleId fromPort ').exec(function (err, result) {
                         if (err) {
                             return console.error('Error : '+err);
                         }
                         if(result) {
-                            User.findById(result.user).deepPopulate('membershipId').lean().exec(function (err,userdetails) {
+                            User.findById(result.user._id).deepPopulate('membershipId').lean().exec(function (err,userdetails) {
                                 if(err)
                                 {
                                     return console.error('Reconciliation User Error : '+err);
@@ -134,15 +134,19 @@ exports.ReconcileTransaction=function () {
                                                             }
                                                         });
                                                         var transaction = {
-                                                            user: result.user,
-                                                            vehicle: result.vehicleId,
-                                                            fromPort: result.fromPort,
-                                                            toPort: checkinDetail.toPort,
+                                                            user: result.user._id,
+                                                            vehicle: result.vehicleId._id,
+                                                            fromPort: result.fromPort._id,
+                                                            toPort: checkinDetail.toPort._id,
                                                             checkOutTime: result.checkOutTime,
                                                             checkInTime: checkinDetail.checkInTime,
                                                             duration: duration,
                                                             creditsUsed: creditUsed,
                                                             creditBalance: balance,
+                                                            uid:result.user.UserID,
+                                                            vid:result.vehicleId.vehicleUid,
+                                                            fportid:result.fromPort.PortID,
+                                                            tportid:checkinDetail.toPort.PortID,
                                                             status: 'Close'
                                                         };
                                                         Transaction.create(transaction, function (err) {
@@ -248,4 +252,84 @@ exports.ReconcileTransaction=function () {
         }*/
 
     });
+};
+
+
+exports.syncTransaction = function () {
+
+    async.waterfall([
+        function(callback)
+        {
+            Transaction.find({synced:false}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,trans) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(trans.length>0)
+                {
+                    return callback(null,trans);
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
+            });
+        },
+        function (trans,callback) {
+            if(trans)
+            {
+                for(var i=0;i<trans.length;i++)
+                {
+                    var httpMethod = 'POST',
+                        uri = 'transactions/reconsiled',
+                        requestBody = {
+
+                            "user": trans[i].user.UserID,
+                            "vehicle": trans[i].vehicle.vehicleUid,
+                            "fromPort": trans[i].fromPort.PortID,
+                            "toPort":trans[i].toPort.PortID,
+                            "checkOutTime":trans[i].checkOutTime,
+                            "checkInTime":trans[i].checkInTime,
+                            "duration":trans[i].duration,
+                            "creditsUsed":trans[i].creditsUsed,
+                            "creditBalance":trans[i].creditBalance,
+                            "status":trans[i].status
+                        };
+
+                    RequestService.sdcRequestHandler(httpMethod, uri, requestBody,function (err,result) {
+                        if(err)
+                        {
+                            console.log('Checkout Connection Error');
+                            return callback(err,null);
+                        }
+                        if(!result)
+                        {
+                            return callback(new Error("Unable to Update Data"),null);
+                        }
+                        Transaction.findOneAndUpdate({user:result.user,vehicle:result.vehicle,fromPort:result.fromPort,toPort:result.toPort,
+                            checkOutTime:result.checkOutTime,checkInTime:result.checkInTime,duration:result.duration,creditsUsed:result.creditsUsed,
+                            creditBalance:result.creditBalance,status:result.status},
+                            {$set:{synced:true}},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                        });
+                    });
+                }
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+
+    ],function (err,result) {
+        if(err)
+        {
+            return console.log(err);
+        }
+        return ;
+    })
 };

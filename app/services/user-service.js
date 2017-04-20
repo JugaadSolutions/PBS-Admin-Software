@@ -95,100 +95,151 @@ exports.changePassword = function (userId, updatedData, callback) {
 
     var newPassword = updatedData.newPassword;
     var currentPassword = updatedData.currentPassword;
-
-    if (!newPassword || !currentPassword) {
-        var emptyPasswordError = new Error(Messages.PASSWORD_CANNOT_BE_EMPTY);
-        return callback(emptyPasswordError, null);
-    }
-
-    if(isNaN(userId))
-    {
-        User.findById(userId, function (err, record) {
-
-            if (err) {
-                return callback(err, null);
+    var passValidation=false;
+    async.series([
+        function (callback) {
+            if (!newPassword || !currentPassword) {
+                var emptyPasswordError = new Error(Messages.PASSWORD_CANNOT_BE_EMPTY);
+                return callback(emptyPasswordError, null);
             }
-
-            if (!record) {
-                var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
-                return callback(recordNotFoundError, null);
-            }
-
-            record.comparePassword(currentPassword, function (err, isMatch) {
-
-                if (err) {
-                    return callback(err, null);
-                }
-
-                if (!isMatch) {
-                    var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
-                    return callback(passwordsNoMatchError, null);
-                }
-
-                record.password = newPassword;
-
-                record.save(function (err) {
-
-                    if (err) {
-                        return callback(err, null);
+            else {
+                if (updatedData.newPassword.length >= 6) {
+                    //if password contains both lower and uppercase characters, increase strength value
+                    if (updatedData.newPassword.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/)) {
+                        //if it has numbers and characters, increase strength value
+                        if (updatedData.newPassword.match(/([0-9])/)) {
+                            //if it has one special character, increase strength value
+                            if (updatedData.newPassword.match(/([!,%,&,@,#,$,^,*,?,_,~])/)) {
+                                if (updatedData.cpassword == updatedData.newPassword) {
+                                    passValidation = true;
+                                    return callback(null,null);
+                                }
+                                else {
+                                    return callback(new Error("Password and confirm password doesn't match"));
+                                }
+                            } else {
+                                return callback(new Error("Password  doesn't match the policy"));
+                            }
+                        }
+                        else {
+                            return callback(new Error("Password  doesn't match the policy"));
+                        }
                     }
-
-                    return callback(null, true);
-
-                });
-
-            });
-
-        });
-    }
-    else
-    {
-        User.findOne({UserID:userId}, function (err, record) {
-
-            if (err) {
-                return callback(err, null);
-            }
-
-            if (!record) {
-                var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
-                return callback(recordNotFoundError, null);
-            }
-
-            record.comparePassword(currentPassword, function (err, isMatch) {
-
-                if (err) {
-                    return callback(err, null);
-                }
-
-                if (!isMatch) {
-                    var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
-                    return callback(passwordsNoMatchError, null);
-                }
-
-                record.password = newPassword;
-
-                record.save(function (err) {
-
-                    if (err) {
-                        return callback(err, null);
+                    else {
+                        return callback(new Error("Password  doesn't match the policy"));
                     }
+                }
+                else {
+                    return callback(new Error("Password doesn't match the policy"));
+                }
+            }
+        },
+        function (callback) {
+            if(passValidation)
+            {
+                if(isNaN(userId))
+                {
+                    User.findOne({'_id':userId}, function (err, record) {
 
-                    return callback(null, true);
+                        if (err) {
+                            return callback(err, null);
+                        }
 
-                });
+                        if (!record) {
+                            var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
+                            return callback(recordNotFoundError, null);
+                        }
 
-            });
+                        record.comparePassword(currentPassword, function (err, isMatch) {
 
-        });
-    }
+                            if (err) {
+                                return callback(err, null);
+                            }
+
+                            if (!isMatch) {
+                                var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
+                                return callback(passwordsNoMatchError, null);
+                            }
+
+                            record.password = newPassword;
+
+                            record.save(function (err) {
+
+                                if (err) {
+                                    return callback(err, null);
+                                }
+
+                                return callback(null, true);
+
+                            });
+
+                        });
+
+                    });
+                }
+                else
+                {
+                    User.findOne({UserID:userId}, function (err, record) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+
+                        if (!record) {
+                            var recordNotFoundError = new Error(Messages.NO_MEMBER_FOUND);
+                            return callback(recordNotFoundError, null);
+                        }
+
+                        record.comparePassword(currentPassword, function (err, isMatch) {
+
+                            if (err) {
+                                return callback(err, null);
+                            }
+
+                            if (!isMatch) {
+                                var passwordsNoMatchError = new Error(Messages.PLEASE_ENTER_THE_CORRECT_CURRENT_PASSWORD);
+                                return callback(passwordsNoMatchError, null);
+                            }
+
+                            record.password = newPassword;
+
+                            record.save(function (err) {
+
+                                if (err) {
+                                    return callback(err, null);
+                                }
+
+                                return callback(null, true);
+
+                            });
+
+                        });
+
+                    });
+                }
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,true);
+    });
 
 };
 
-exports.forgotPassword = function (email, callback) {
+exports.forgotPassword = function (record, callback) {
 
     var ResetKey;
     var userObject;
 
+    var email = record.email;
     async.series([
 
             // Step 1: Method generate new password
@@ -247,11 +298,25 @@ exports.forgotPassword = function (email, callback) {
                 if(userObject)
                 {
                     var data = {
-                        profileName: userObject.Name,
+                        profileName: userObject.Name//,
                         // ResetKey: ResetKey,
-                        link: config.get('pbsMemberPortal.resetUrl')+ResetKey
+                        //link: config.get('pbsMemberPortal.resetUrl')+ResetKey
                     };
-
+                    if(record.origin)
+                    {
+                        if(record.origin=='ios')
+                        {
+                            data.link= config.get('pbsMemberPortal.iosResetUrl')+ResetKey
+                        }
+                        else
+                        {
+                            data.link= config.get('pbsMemberPortal.appResetUrl')+ResetKey+";end"
+                        }
+                    }
+                    else
+                    {
+                        data.link= config.get('pbsMemberPortal.resetUrl')+ResetKey
+                    }
                     var htmlString = swig.renderFile('./templates/forgot-password.html', data);
 
                     var emailMessage = {
@@ -289,52 +354,109 @@ exports.forgotPassword = function (email, callback) {
 
 exports.resetPassword = function (record,callback) {
     var user;
+    var passValidation=false;
     async.series([
         function (callback) {
-            User.findOne({'resetPasswordKey':record.resetkey},function (err,result) {
-                if(err)
+            if (record.newPassword.length >= 6)
+            {
+                //if password contains both lower and uppercase characters, increase strength value
+                if (record.newPassword.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/))
                 {
-                    return callback(err,null);
+                    //if it has numbers and characters, increase strength value
+                    if (record.newPassword.match(/([0-9])/))
+                    {
+                        //if it has one special character, increase strength value
+                        if (record.newPassword.match(/([!,%,&,@,#,$,^,*,?,_,~])/))
+                        {
+                            if(record.cpassword==record.newPassword)
+                            {
+                                passValidation=true;
+                                return callback(null,null);
+                            }
+                            else
+                            {
+                                return callback(new Error("Password and confirm password doesn't match"));
+                            }
+                        } else {
+                            return callback(new Error("Password  doesn't match the policy"));
+                        }
+                    }
+                    else {
+                        return callback(new Error("Password  doesn't match the policy"));
+                    }
                 }
-                //user=result;
-                if(!result)
-                {
-                    return callback(new Error('Your password reset link is expired'),null);
+                else {
+                    return callback(new Error("Password  doesn't match the policy"));
                 }
+            }
+            else {
+                return callback(new Error("Password doesn't match the policy"));
+            }
+        },
+        function (callback) {
+            if(passValidation)
+            {
+
+                User.findOne({'resetPasswordKey':record.resetkey},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    //user=result;
+                    if(!result)
+                    {
+                        return callback(new Error('Your password reset link is expired'),null);
+                    }
                     var durationMin = moment.duration(moment(result.resetPasswordKeyValidity).diff(moment()));
                     var duration = durationMin.asMinutes();
                     if(duration<0)
                     {
                         return callback(new Error('Your password reset validity expired'),null);
                     }
-                 user=result;
+                    user=result;
+                    return callback(null,null);
+                });
+
+            }
+            else
+            {
                 return callback(null,null);
-            });
+            }
         },
         function (callback) {
-            if(user)
+            if(passValidation)
             {
-                user.resetPasswordKey = '';
-                user.emailVerified = true;
-                user.resetPasswordKeyValidity = '';
-                user.password = record.newPassword;
-                user.save(function (err) {
 
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    return callback(null, true);
-                });
+                if(user)
+                {
+                    user.resetPasswordKey = '';
+                    user.emailVerified = true;
+                    user.resetPasswordKeyValidity = '';
+                    user.password = record.newPassword;
+                    user.save(function (err) {
+
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        return callback(null, true);
+                    });
+                }
+                else {
+                    return callback(null,null);
+                }
+
             }
-            else {
+            else
+            {
                 return callback(null,null);
             }
         }
+
     ],function (err,result) {
         if(err)
         {
             return callback(err,null);
         }
         return callback(null,true);
-    })
+    });
 };

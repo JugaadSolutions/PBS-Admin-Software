@@ -22,11 +22,25 @@ exports.createPort=function (record,callback) {
 };
 
 exports.updateDockport=function (id,record,callback) {
-  DockPort.findByIdAndUpdate(id,{$set:{'portStatus':record.portStatus}},{new:true},function (err,result) {
-      if(err)
-      {
-          return callback(err,null);
-      }
-      return callback(null,result);
-  });
+    if(isNaN(id))
+    {
+        DockPort.findByIdAndUpdate(id,{$set:{'portStatus':record.portStatus}},{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        DockPort.findOneAndUpdate(id,{$set:{'portStatus':record.portStatus}},{new:true},function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
 };

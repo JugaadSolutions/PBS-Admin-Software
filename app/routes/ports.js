@@ -29,7 +29,6 @@ router
         });
     })
 
-
     .get('/', function (req, res, next) {
 
         Ports.find({}, function (err, result) {
@@ -60,7 +59,6 @@ router
         });
     })
 
-
     .get('/allreport/info', function (req, res, next) {
 
         PortReports.find({}, function (err, result) {
@@ -77,7 +75,6 @@ router
 
         });
     })
-
 
     .post('/report', function (req, res, next) {
 

@@ -61,6 +61,18 @@ setInterval(function () {
     });
 },3000);
 
+/*setInterval(function () {
+//setTimeout(function () {
+    //console.log('Timeout');
+    TransactionReconciliation.syncTransaction(function (err,result) {
+        if(err)
+        {
+            console.log('Transaction not synced');
+            return;
+        }
+    });
+},60000);*/
+
 setInterval(function () {
 //setTimeout(function () {
     //console.log('Timeout');

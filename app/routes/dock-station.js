@@ -68,8 +68,8 @@ router
 
     })
 
-    .get('/cleanstation/info',function (req,res,next) {
-        DockingStationService.getCleanedstatrec(function (err,result) {
+    .post('/cleanstation/info',function (req,res,next) {
+        DockingStationService.getCleanedstatrec(req.body,function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

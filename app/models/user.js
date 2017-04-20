@@ -102,57 +102,55 @@ UserSchema.plugin(abstract);
 
 UserSchema.plugin(autoIncrement.plugin,{model:User,field:'UserID',startAt: 1, incrementBy: 1});
 
-/*
 User.schema.pre('save', function (next) {
 
     var user = this;
 
-    if (this.isNew) {
+    if (this.isModified('password') || this.isNew) {
 
-/!*        bcrypt.genSalt(10, function (err, salt) {
+        bcrypt.genSalt(10, function (err, salt) {
 
             if (err) {
 
                 return next(err);
 
             }
-            bcrypt.hash(user.password, salt, function (err, hash) {
 
-                if (err) {
+            if(user.password)
+            {
+                bcrypt.hash(user.password, salt, function (err, hash) {
 
-                    return next(err);
+                    if (err) {
 
-                }
+                        return next(err);
 
-                user.password = hash;
+                    }
+
+                    user.password = hash;
+                    next();
+
+                });
+            }
+            else
+            {
                 next();
+            }
 
-            });
 
-        });*!/
-        var hash = crypto.createHash('md5').update(user.password).digest('hex');
-        user.password = hash;
-        next();
+        });
 
-    }
-/!*    else if(this.isModified('password'))
-    {
-        user.password = hash;
-        next();
-    }*!/
-    else {
+    } else {
 
         return next();
 
     }
 
 });
-*/
 
 // Model Methods
 User.schema.methods.comparePassword = function (passw, cb) {
 
-/*    bcrypt.compare(passw, this.password, function (err, isMatch) {
+    bcrypt.compare(passw, this.password, function (err, isMatch) {
 
         if (err) {
 
@@ -160,19 +158,8 @@ User.schema.methods.comparePassword = function (passw, cb) {
 
         }
         cb(null, isMatch);
-    });*/
-    //var hash = crypto.createHash('md5').update(passw).digest('hex');
-    if(passw==this.password)
-    {
-        cb(null,true);
-    }
-    else
-    {
-        return cb(new Error("Invalid Current Password"));
-    }
-
+    });
 };
-
 
 User.schema.pre('update',function (next) {
     var User = this;

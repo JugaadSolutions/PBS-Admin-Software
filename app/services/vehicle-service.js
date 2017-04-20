@@ -7,7 +7,7 @@ var async = require('async'),
     DockingStation = require('../models/dock-station'),
     Messages = require('../core/messages');
 
-exports.addBicycle=function (record, callback) {
+/*exports.addBicycle=function (record, callback) {
 
     var vehicleRecord;
     var fleetRecord;
@@ -77,7 +77,6 @@ exports.addBicycle=function (record, callback) {
                 vehicleNumber:record.vehicleNumber,
                 vehicleRFID:record.vehicleRFID,
                 currentAssociationId:fleetRecord._id
-
             };
             if(record.createdBy)
             {
@@ -171,7 +170,221 @@ exports.addBicycle=function (record, callback) {
         }
         return callback(null,vehicleRecord);
     });
+};*/
+
+exports.addBicycle=function (record, callback) {
+
+    var vehicleRecord;
+    var fleetRecord;
+
+    async.waterfall([
+        function (callback) {
+            if(isNaN(record.fleetId))
+            {
+                Port.findById(record.fleetId,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.NO_PORT_FOUND,null));
+                    }
+                    if(result.portCapacity==result.vehicleId.length)
+                    {
+                        if(result.portStatus==Constants.AvailabilityStatus.NORMAL)
+                        {
+                            Port.findByIdAndUpdate(result._id,{$set:{portStatus:Constants.AvailabilityStatus.FULL}},function (err,result) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                fleetRecord = result;
+                                return callback(new Error(Messages.FLEET_FULL));
+                            });
+                        }
+                        else
+                        {
+                            return callback(new Error(Messages.FLEET_FULL));
+                        }
+                    }
+                    if(result.portCapacity==result.vehicleId.length+1)
+                    {
+                        Port.findByIdAndUpdate(result._id,{$set:{portStatus:Constants.AvailabilityStatus.FULL}},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            fleetRecord = result;
+                            return callback(null,result);
+                        });
+                    }
+                    fleetRecord = result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                Port.findOne({PortID:record.fleetId},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error(Messages.NO_PORT_FOUND,null));
+                    }
+                    if(result.portCapacity==result.vehicleId.length)
+                    {
+                        if(result.portStatus==Constants.AvailabilityStatus.NORMAL)
+                        {
+                            Port.findByIdAndUpdate(result._id,{$set:{portStatus:Constants.AvailabilityStatus.FULL}},function (err,result) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                fleetRecord = result;
+                                return callback(new Error(Messages.FLEET_FULL));
+                            });
+                        }
+                        else
+                        {
+                            return callback(new Error(Messages.FLEET_FULL));
+                        }
+
+                    }
+                    if(result.portCapacity==result.vehicleId.length+1)
+                    {
+                        Port.findByIdAndUpdate(result._id,{$set:{portStatus:Constants.AvailabilityStatus.FULL}},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            fleetRecord = result;
+                            return callback(null,result);
+                        });
+                    }
+                    fleetRecord = result;
+                    return callback(null,result);
+                });
+            }
+
+        },
+        function (result,callback) {
+            if(record.createdBy)
+            {
+                User.findOne({UserID:record.createdBy},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Logged in user id missing"),null);
+                    }
+                    record.createdBy = result._id;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }
+        ,
+        function (result,callback) {
+            var addVehicle={
+                fleetId:fleetRecord._id,
+                vehicleNumber:record.vehicleNumber,
+                vehicleRFID:record.vehicleRFID,
+                currentAssociationId:fleetRecord._id
+            };
+            if(record.createdBy)
+            {
+                addVehicle.createdBy = record.createdBy;
+            }
+            //record.push(addAssociation);
+            Vehicle.create(addVehicle,function (err,vehi) {
+                if(err)
+                {
+                    err.name = "UniqueFieldError";
+                    err.message = addVehicle.vehicleNumber+':'+addVehicle.vehicleRFID;
+                    return callback(err,null);
+                }
+                vehicleRecord = vehi;
+                return callback(null,vehi);
+            });
+        },
+        function (vehi,callback) {
+
+            if(vehi)
+            {
+                /*var vehicleDetails={
+                    vehicleid:vehi._id,
+                    vehicleUid:vehi.vehicleUid
+                };*/
+                if(fleetRecord.portStatus==Constants.AvailabilityStatus.EMPTY)
+                {
+                    fleetRecord.portStatus = Constants.AvailabilityStatus.NORMAL;
+                    Port.findByIdAndUpdate(fleetRecord._id,{$set:{portStatus:Constants.AvailabilityStatus.NORMAL}},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });
+                }
+                //fleetRecord.vehicleId.push(vehicleDetails);
+                else if(fleetRecord.portCapacity==fleetRecord.vehicleId.length)
+                {
+                    fleetRecord.portStatus = Constants.AvailabilityStatus.FULL;
+                    Port.findByIdAndUpdate(fleetRecord._id,{$set:{portStatus:Constants.AvailabilityStatus.FULL}},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        return callback(null,result);
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }/*,
+        function (callback) {
+            if(vehicleRecord)
+            {
+                Vehicle.update({_id:vehicleRecord._id}, vehicleRecord, {new: true}).lean().exec(function (err, result) {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    vehicleRecord = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+        }*/
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,vehicleRecord);
+    });
 };
+
 
 exports.getAllRecords=function (record,callback) {
 
@@ -441,7 +654,8 @@ exports.summery = function (callback) {
         mc:0,
         rv:0,
         users:0,
-        fleet:0
+        fleet:0,
+        totalFleet:0
     };
     async.series([
         function (callback) {
@@ -459,7 +673,7 @@ exports.summery = function (callback) {
                     }
                    if(port._type=='Fleet')
                    {
-                        data.fleet = data.fleet+port.vehicleId.length;
+                        data.totalFleet = data.totalFleet+port.vehicleId.length;
                    }
                     if(port._type=='Redistribution-vehicle')
                     {
@@ -486,6 +700,49 @@ exports.summery = function (callback) {
                 data.users = count;
                 return callback(null,count);
             });
+        },
+        function (callback) {
+               Port.findOne({_type:'Fleet'},function (err,result) {
+                   if(err)
+                   {
+                       return callback(err,null);
+                   }
+                   /*if(result.length>0)
+                   {
+                       for(var i=0;i<result.length;i++)
+                       {
+                           var portdata = result[i];
+                           Vehicle.count({currentAssociationId:portdata._id},function (err,count) {
+                               if(err)
+                               {
+                                   return callback(err,null);
+                               }
+                               data.fleet = data.fleet+count;
+                               if(i==result.length-1)
+                               {
+                                   return callback(null,result);
+                               }
+                           });
+
+                       }
+                   }*/
+                   if(result)
+                   {
+                       Vehicle.count({currentAssociationId:result._id},function (err,count) {
+                           if(err)
+                           {
+                               return callback(err,null);
+                           }
+                           data.fleet = data.fleet+count;
+                               return callback(null,result);
+                       });
+                   }
+                   else
+                   {
+                      return callback(null,null);
+                   }
+               });
+
         }
     ],function (err,result) {
        if(err)

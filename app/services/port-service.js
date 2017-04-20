@@ -11,7 +11,7 @@ var async = require('async'),
 exports.createPortReport = function (record,callback) {
 
     var portDetails;
-    var portReport;
+    var portreport;
     async.series([
         function (callback) {
             if(record.createdBy)
@@ -72,7 +72,7 @@ exports.createPortReport = function (record,callback) {
                     {
                         return callback(err,null);
                     }
-                    portReport = result;
+                    portreport = result;
                     return callback(null,result);
                 });
             }
@@ -86,6 +86,6 @@ exports.createPortReport = function (record,callback) {
         {
             return callback(err,null);
         }
-        return callback(null,portReport);
+        return callback(null,portreport);
     })
 };

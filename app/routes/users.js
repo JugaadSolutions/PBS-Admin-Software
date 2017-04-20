@@ -52,7 +52,7 @@ router
 
     .put('/forgotpassword', function (req, res, next) {
 
-        UserService.forgotPassword(req.body.email, function (err) {
+        UserService.forgotPassword(req.body, function (err) {
 
             if (err) {
 

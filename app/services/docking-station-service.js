@@ -578,23 +578,48 @@ exports.createCleanedEntry = function (record,callback) {
 };
 
 exports.getcleanStationsById = function (id,callback) {
-    cleanstation.findOne({'_id':id}).deepPopulate('stationId empId').lean().exec(function (err,result) {
-        if(err)
-        {
-            return callback(err,null);
-        }
-        return callback(null,result);
-    });
+    if(isNaN(id))
+    {
+        cleanstation.findOne({'_id':id}).deepPopulate('stationId empId').lean().exec(function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        cleanstation.findOne({UserID:id}).deepPopulate('stationId empId').lean().exec(function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+
 };
 
-exports.getCleanedstatrec = function (callback) {
-  cleanstation.find({}).sort('-cleaneddate').lean().exec(function (err,result) {
-      if(err)
-      {
-          return callback(err,null);
-      }
-      return callback(null,result);
-  });
+exports.getCleanedstatrec = function (record,callback) {
+    if(record.fromdate && record.todate)
+    {
+        var fdate = moment(record.fromdate);
+        fdate=fdate.format('YYYY-MM-DD');
+        var ldate = moment(record.todate).add(1, 'days');
+        ldate=ldate.format('YYYY-MM-DD');
+        cleanstation.find({cleaneddate:{$gte:moment(fdate),$lte:moment(ldate)}}).sort('-fromtime').deepPopulate('stationId empId').lean().exec(function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            return callback(null,result);
+        });
+    }
+    else
+    {
+        return callback(new Error('Please provide from date and to date both'));
+    }
 };
 
 

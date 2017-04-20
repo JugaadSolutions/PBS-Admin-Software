@@ -44,6 +44,8 @@ exports.createMember=function (record,callback) {
     var password;
     var ResetKey;
     var passwordFlag = 0;
+    var passValidation=false;
+
     async.series([
         /*     function (callback) {
 
@@ -68,6 +70,40 @@ exports.createMember=function (record,callback) {
             if (record.password) {
                 password = record.password;
                 record.emailVerified=true;
+                if (password.length >= 6)
+                {
+                    //if password contains both lower and uppercase characters, increase strength value
+                    if (password.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/))
+                    {
+                        //if it has numbers and characters, increase strength value
+                        if (password.match(/([0-9])/))
+                        {
+                            //if it has one special character, increase strength value
+                            if (password.match(/([!,%,&,@,#,$,^,*,?,_,~])/))
+                            {
+                                if(record.cpassword==password)
+                                {
+                                    return callback(null,true);
+                                }
+                                else
+                                {
+                                    return callback(new Error("Password and confirm password doesn't match"));
+                                }
+                            } else {
+                                return callback(new Error("Password  doesn't match the policy"));
+                            }
+                        }
+                        else {
+                            return callback(new Error("Password  doesn't match the policy"));
+                        }
+                    }
+                    else {
+                        return callback(new Error("Password  doesn't match the policy"));
+                    }
+                }
+                else {
+                    return callback(new Error("Password doesn't match the policy"));
+                }
                 passwordFlag = 1;
                 return callback(null, null);
             } else {
@@ -76,7 +112,7 @@ exports.createMember=function (record,callback) {
                     if (err) {
                         return callback(err, null);
                     }
-                    password=data.split('').reverse().join('');
+                    //password=data.split('').reverse().join('');
                     ResetKey = data;
                     return callback(null, data);
                 });
@@ -118,7 +154,7 @@ exports.createMember=function (record,callback) {
             profilePic = record.profilePic;
             record.documents = [];
             record.profilePic = '';
-            record.password=password;
+            //record.password=password;
             Member.create(record,function (err,result) {
                 if(err)
                 {
@@ -2164,6 +2200,40 @@ exports.addMember=function (record,callback) {
             if (record.password) {
                 password = record.password;
                 record.emailVerified=true;
+                if (password.length >= 6)
+                {
+                    //if password contains both lower and uppercase characters, increase strength value
+                    if (password.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/))
+                    {
+                        //if it has numbers and characters, increase strength value
+                        if (password.match(/([0-9])/))
+                        {
+                            //if it has one special character, increase strength value
+                            if (password.match(/([!,%,&,@,#,$,^,*,?,_,~])/))
+                            {
+                                if(record.cpassword==password)
+                                {
+                                    return callback(null,true);
+                                }
+                                else
+                                {
+                                    return callback(new Error("Password and confirm password doesn't match"));
+                                }
+                            } else {
+                                return callback(new Error("Password  doesn't match the policy"));
+                            }
+                        }
+                        else {
+                            return callback(new Error("Password  doesn't match the policy"));
+                        }
+                    }
+                    else {
+                        return callback(new Error("Password  doesn't match the policy"));
+                    }
+                }
+                else {
+                    return callback(new Error("Password doesn't match the policy"));
+                }
                 passwordFlag = 1;
                 return callback(null, null);
             } else {
@@ -2266,7 +2336,7 @@ exports.addMember=function (record,callback) {
             profilePic = record.profilePic;
             record.documents = [];
             record.profilePic = '';
-            //record.password=password;
+            record.password=password;
 
             if(record.UserID==0)
             {
