@@ -92,7 +92,7 @@ exports.getOneRecord = function (id,callback) {
 };
 
 exports.updateFleetport = function (id,record,callback) {
-  Fleet.findOneAndUpdate({PortID:id},record,{new:true},function (err,result) {
+  Fleet.findOneAndUpdate({PortID:id},{$set:{portCapacity:record.portCapacity}},{new:true},function (err,result) {
       if(err)
       {
           return callback(err,null);

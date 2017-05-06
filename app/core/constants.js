@@ -33,6 +33,13 @@ exports.EmployeeShift={
     REGULAR:3
 };
 
+exports.DepositStatus = {
+    NOT_DEPOSITED:"Not Deposited",
+    PARTIAL:"Partially Deposited",
+    DEPOSITED:"Deposited",
+    EXCESS:"Excess Deposited"
+};
+
 exports.PayDescription={
     SECURITY_DEPOSIT:"Security Deposit",
     PROCESSING_FEE:"Processing Fee",

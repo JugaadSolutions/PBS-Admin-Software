@@ -27,10 +27,8 @@ var FleetPortSchema = require('mongoose').model('port').schema.extend({
     StationId:{type:Schema.ObjectId, required:false, ref:'station'},
     vehicles: {type: [VehicleIds], required: false, default:[]},
     timeStamp: {type: Date, required: false, default:Date.now()},
-    status:{type:FleetStatus,required:true,default:FleetStatus.WORKING},
+    status:{type:FleetStatus,required:true,default:FleetStatus.WORKING}
     //fleetName:{type:String, required:true},
-    VehicleCapacity:{type:Number,required:false,default:0}
-
 });
 
 var Fleet = mongoose.model('Fleet', FleetPortSchema);

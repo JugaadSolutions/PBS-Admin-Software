@@ -18,7 +18,7 @@ var LeaveTrackerSchema = mongoose.Schema({
     todate:{type:Date,required:false,default:Date.now},
     reason:{type:String,required:false},
     createdBy: {type: Schema.ObjectId, required: false, ref: 'user'},
-    createdDate:{type:Date,required:true,default:Date.now}
+    createdAt:{type:Date,required:true,default:Date.now}
 }, { collection : 'leavetracks' });
 
 

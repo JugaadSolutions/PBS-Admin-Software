@@ -84,9 +84,9 @@ exports.ReconcileTransaction=function () {
                                             if (err) {
                                                 return console.log('Error Fare plan calculation'+err);
                                             }
-                                            if (!creditUsed) {
+                                            /*if (!creditUsed) {
                                                 return console.log('Error Fare plan calculation'+err);
-                                            }
+                                            }*/
                                             balance = Number(userdetails.creditBalance) - creditUsed;
                                             /*if(balance<0)
                                              {

@@ -98,7 +98,7 @@ exports.getAllTransactions = function (callback) {
                 {
                     for(var i=0;i<result.length;i++)
                     {
-                        if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area'))
+                        if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area' || result[i].fromPort._type=='Holding-area'))
                         {
                         var details={
                             user:'',
@@ -124,7 +124,7 @@ exports.getAllTransactions = function (callback) {
                 }
                 return callback(null,result);
             });
-        },
+        }/*,
         function (callback) {
             MemberTransaction.find({}).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
                 if(err)
@@ -149,7 +149,7 @@ exports.getAllTransactions = function (callback) {
                 return callback(null,result);
             });
 
-        }
+        }*/
     ],function (err,result) {
         if(err)
         {
@@ -1511,7 +1511,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                     {
                         if(result[i].user)
                         {
-                            if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area')&& (result[i].toPort._type=='Docking-port' || result[i].toPort._type=='Redistribution-area')) {
+                            if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area' || result[i].fromPort._type=='Holding-area') && (result[i].toPort._type=='Docking-port' || result[i].toPort._type=='Redistribution-area'|| result[i].toPort._type=='Holding-area')) {
                                 alltrans.push(result[i]);
                             }
                         }

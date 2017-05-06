@@ -298,13 +298,14 @@ exports.forgotPassword = function (record, callback) {
                 if(userObject)
                 {
                     var data = {
-                        profileName: userObject.Name//,
+                        profileName: userObject.Name,
                         // ResetKey: ResetKey,
                         //link: config.get('pbsMemberPortal.resetUrl')+ResetKey
+                        link:''
                     };
                     if(record.origin)
                     {
-                        if(record.origin=='ios')
+                        if(record.origin=="ios")
                         {
                             data.link= config.get('pbsMemberPortal.iosResetUrl')+ResetKey
                         }
@@ -315,7 +316,7 @@ exports.forgotPassword = function (record, callback) {
                     }
                     else
                     {
-                        data.link= config.get('pbsMemberPortal.resetUrl')+ResetKey
+                        data.link= config.get('pbsMemberPortal.resetUrl')+ResetKey;
                     }
                     var htmlString = swig.renderFile('./templates/forgot-password.html', data);
 

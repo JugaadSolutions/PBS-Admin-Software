@@ -1,8 +1,8 @@
 var async = require('async');
 
 var Card = require('../models/card'),
-    /*Member = require('../models/member'),
-    Employee = require('../models/employee'),*/
+    Member = require('../models/member'),
+    /*Employee = require('../models/employee'),*/
     Constants = require('../core/constants'),
     Station = require('../models/station'),
     User = require('../models/user'),
@@ -14,6 +14,27 @@ exports.createCard = function (record,callback) {
     var cardDetails;
     async.waterfall([
         function (callback) {
+            if(record.createdBy)
+            {
+                User.findOne({UserID:record.createdBy},function (err,ud) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!ud)
+                    {
+                        return callback(new Error('Logged in user not found'),null);
+                    }
+                    record.createdBy = ud._id;
+                    return callback(null,ud);
+                });
+            }
+            else
+            {
+                return callback(null,cardDetails);
+            }
+        },
+        function (cardDetails,callback) {
             Station.findOne({stationType:'Control-centre'},function (err,station) {
                 if(err)
                 {
@@ -32,6 +53,8 @@ exports.createCard = function (record,callback) {
             Card.create(record,function (err,result) {
                 if(err)
                 {
+                    err.name = "UniqueFieldError";
+                    err.message = record.cardNumber+':'+record.cardRFID;
                     return callback(err,null);
                 }
                 cardDetails = result;

@@ -683,7 +683,26 @@ exports.updateMember = function (record,callback) {
                     return callback(new Error(Messages.USER_NOT_FOUND),null);
                 }
                 record._id = result._id;
-                Member.update({_id:record._id}, record, {new: true}).lean().exec(function (err, result) {
+                var memData = {
+                    Name:record.Name,
+                    lastName:record.lastName,
+                    email:record.email,
+                    phoneNumber:record.phoneNumber,
+                    documents:record.documents,
+                    status:record.status,
+                    age:record.age,
+                    pinCode:record.pinCode,
+                    education:record.education,
+                    occupation:record.occupation,
+                    emergencyContact:record.emergencyContact,
+                    sex:record.sex,
+                    address:record.address,
+                    city:record.city,
+                    state:record.state,
+                    countryCode:record.countryCode,
+                    country:record.country
+                };
+                Member.update({_id:record._id}, memData, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
                         return callback(err, null);
@@ -2196,6 +2215,14 @@ exports.addMember=function (record,callback) {
          }*/
 
         function (callback) {
+            if(record.documents)
+            {
+                if(record.documents.length==0)
+                {
+                    return callback(new Error('Please provide the documents'),null);
+                }
+            }
+
 
             if (record.password) {
                 password = record.password;
@@ -2237,6 +2264,7 @@ exports.addMember=function (record,callback) {
                 passwordFlag = 1;
                 return callback(null, null);
             } else {
+
                 random.strings({"length": 12, "number": 1, "upper": true, "digits": true}, function (err, data) {
 
                     if (err) {
@@ -2346,11 +2374,17 @@ exports.addMember=function (record,callback) {
                     //email:record.email,
                     password: record.password,
                     //phoneNumber:record.phoneNumber,
+                    age:record.age,
+                    pinCode:record.pinCode,
+                    education:record.education,
+                    occupation:record.occupation,
+                    emergencyContact:record.emergencyContact,
                     sex:record.sex,
                     address:record.address,
                     city:record.city,
                     state:record.state,
                     country:record.country,
+                    countryCode:record.countryCode,
                     createdBy:record.createdBy,
                     registeredLocation:location,
                     resetPasswordKey:ResetKey,
@@ -2378,46 +2412,60 @@ exports.addMember=function (record,callback) {
                 });
             }else
             {
-                var memData = {
-                    Name:record.Name,
-                    lastName:record.lastName,
-                    //email:record.email,
-                    //phoneNumber:record.phoneNumber,
-                    sex:record.sex,
-                    address:record.address,
-                    city:record.city,
-                    state:record.state,
-                    country:record.country,
-                    createdBy:record.createdBy,
-                    registeredLocation:location
-
-                };
-                if(record.phoneNumber)
-                {
-                    if(record.phoneNumber.length>8)
-                    {
-                        memData.phoneNumber = record.phoneNumber;
-                    }
-                }
-                if(record.email)
-                {
-                    memData.email = record.email;
-                }
                 if(record.UserID)
                 {
-                    Member.findOneAndUpdate({UserID:record.UserID},memData,{new:true},function (err,result) {
-                        if(err)
+                    var memData = {
+                        Name:record.Name,
+                        lastName:record.lastName,
+                        //email:record.email,
+                        //phoneNumber:record.phoneNumber,
+                        age:record.age,
+                        pinCode:record.pinCode,
+                        education:record.education,
+                        occupation:record.occupation,
+                        emergencyContact:record.emergencyContact,
+                        sex:record.sex,
+                        address:record.address,
+                        city:record.city,
+                        state:record.state,
+                        countryCode:record.countryCode,
+                        country:record.country,
+                        createdBy:record.createdBy,
+                        registeredLocation:location
+
+                    };
+                    if(record.phoneNumber)
+                    {
+                        if(record.phoneNumber.length>8)
                         {
-                            return callback(err,null);
+                            memData.phoneNumber = record.phoneNumber;
                         }
-                        memberDetails = result;
-                        return callback(null,result);
-                    });
+                    }
+                    if(record.email)
+                    {
+                        memData.email = record.email;
+                    }
+                    if(record.UserID)
+                    {
+                        Member.findOneAndUpdate({UserID:record.UserID},memData,{new:true},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            memberDetails = result;
+                            return callback(null,result);
+                        });
+                    }
+                    else
+                    {
+                        return callback(null,null);
+                    }
                 }
                 else
                 {
-                    return callback(null,null);
+                    return callback(new Error("Couldn't able to find Uid, Please reload the page and enter details"));
                 }
+
 
             }
 
@@ -2602,21 +2650,25 @@ exports.addMember=function (record,callback) {
 
                     docArray.push(docDetails);
                 }
-                memberDetails.documents = docArray;
-                /*memberDetails.resetPasswordKey = ResetKey;
-                 memberDetails.resetPasswordKeyValidity = moment().add(2,'hours');*/
-                memberDetails.profilePic = record.profilePic;
+                if(documents.length>0)
+                {
+                    memberDetails.documents = docArray;
+                    /*memberDetails.resetPasswordKey = ResetKey;
+                     memberDetails.resetPasswordKeyValidity = moment().add(2,'hours');*/
+                    memberDetails.profilePic = record.profilePic;
 
-                Member.findByIdAndUpdate(memberDetails._id,memberDetails,{new:true},function (err,result) {
-                    if(err)
-                    {
-                        return callback(err,null);
-                    }
-                    memberDetails = result;
-                    return callback(null,result);
-                });
+                    Member.findByIdAndUpdate(memberDetails._id,memberDetails,{new:true},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        memberDetails = result;
+                        return callback(null,result);
+                    });
 
-                //return callback(null, null);
+                    //return callback(null, null);
+                }
+
             }
             else
             {
@@ -2709,16 +2761,17 @@ exports.addMember=function (record,callback) {
                 CardService.cardAvailableForMember(record.cardNumber,function (err,result) {
                     if(err)
                     {
-                        if(err.message=="This card has already been assigned to a user")
-                        {
+                        /*if(err.message=="This card has already been assigned to a user")
+                        {*/
                             err.name = "CardError";
+                            err.description = err.message;
                             err.message=memberDetails.UserID;
                             return callback(err,null);
-                        }
+                        /*}
                         else
                         {
                             return callback(err,null);
-                        }
+                        }*/
                     }
                     valid = true;
                     return callback(null,result);
@@ -2932,21 +2985,19 @@ function otprequest(record,callback) {
                 if (err) {
                     return callback(err, null);
                 }
-                if(!data)
-                {
-                    return callback(new Error("Couldn't able to generate random key, Please try again"),null);
+                if (!data) {
+                    return callback(new Error("Couldn't able to generate random key, Please try again"), null);
                 }
-                otp=data;
-                if(record.phoneNumber.length>10)
-                {
+                otp = data;
+                if (record.phoneNumber) {
+                if (record.phoneNumber.length > 10) {
                     var temp = record.phoneNumber.split('-');
-                    if(temp[0].length==10)
-                    {
+                    if (temp[0].length == 10) {
                         record.phoneNumber = temp[0];
                     }
-                    else
-                    {
-                        record.phoneNumber = temp[1];
+                    else {
+                            record.phoneNumber = temp[1];
+                        }
                     }
                 }
                 return callback(null, data);

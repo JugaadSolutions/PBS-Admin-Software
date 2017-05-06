@@ -35,6 +35,8 @@ model.plugin(abstract);
 
 // Mongoose Model
 var CheckOut = mongoose.model('CheckOut', model, 'checkout');
+
+
 /*var check = new CheckOut({
     member:'asdf',
     bicycle:'qwer',

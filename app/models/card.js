@@ -23,7 +23,8 @@ var CardSchema = mongoose.Schema({
     status: {type: CardStatus, required: true, default: CardStatus.AVAILABLE},
     cardType: {type: CardType, required: true,default: CardType.REGISTERED_MEMBER},
     currentLocation : {type:Schema.ObjectId,required:false,ref:'station'},
-    issuedDate:{type:Date,required: false}
+    issuedDate:{type:Date,required: false},
+    createdBy:{type:Schema.ObjectId,required:false,ref:'user'}
 
 }, { collection : 'cards' });
 

@@ -14,7 +14,8 @@ var DockStation=require('../models/dock-station'),
     Fareplan = require('../models/fare-plan'),
     Users= require('../models/user');
 
-var cleanstation = require('../models/stationcleaning');
+var cleanstation = require('../models/stationcleaning'),
+    notcleanedStation = require('../models/station-not-cleaned');
 
 var DockService = require('../services/docking-port-service');
 
@@ -622,7 +623,20 @@ exports.getCleanedstatrec = function (record,callback) {
     }
 };
 
+/*exports.createNotCleanedEntry = function (record,callback) {
 
+    async.series([
+        function (callback) {
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    })
+};*/
 
 
 

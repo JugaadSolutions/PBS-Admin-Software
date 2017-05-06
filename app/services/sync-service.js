@@ -3,6 +3,11 @@
 
 var async = require('async'),
     Users = require('../models/user'),
+    Membership = require('../models/membership'),
+    FarePlan = require('../models/fare-plan'),
+    Station = require('../models/station'),
+    Ports = require('../models/port'),
+    DockPort = require('../models/dock-port'),
     RequestService = require('./request-service'),
     userqueue = require('block-queue'),
     moment = require('moment'),
@@ -14,6 +19,338 @@ var Dictionary = require("dictionaryjs-es6");
 var UsersDict = new Dictionary();
 var VehiclesDictionary = new Dictionary(); //dictionary to hold unsynced vehicles
 //var userqueue = RapidQueue.createQueue();
+
+exports.getUsers  = function (callback) {
+    var allUsers = [];
+    var updateArray = [];
+    async.series([
+        function (callback) {
+            Users.find({$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('_type UserID smartCardKey status cardNum smartCardNumber creditBalance membershipId validity lastModifiedAt').deepPopulate('membershipId').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    allUsers.push(result[i]);
+                    /* var data = {
+                     _id:''
+                     };
+                     data._id = result[i]._id;*/
+                    updateArray.push(result[i].UserID);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(updateArray.length>0)
+            {
+                for(var i=0;i<updateArray.length;i++)
+                {
+                    Users.findOneAndUpdate({UserID:updateArray[i]},{$set:{lastSyncedAt:new Date()}}).lean().exec(function (err) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                    });
+
+                }
+                return callback(null,null);
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allUsers);
+    })
+
+};
+
+exports.getVehicles  = function (callback) {
+    var allVehicles = [];
+    var updateArray = [];
+    async.series([
+        function (callback) {
+            Vehicles.find({$where:"this.lastModifieddate>this.lastSyncedAt"}).select('vehicleUid vehicleNumber vehicleRFID currentAssociationId vehicleCurrentStatus vehicleStatus vehicleType lastModifieddate').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    result[i].lastModifiedAt= result[i].lastModifieddate;
+                    allVehicles.push(result[i]);
+                    /* var data = {
+                     _id:''
+                     };
+                     data._id = result[i]._id;*/
+                    updateArray.push(result[i].vehicleUid);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(updateArray.length>0)
+            {
+                for(var i=0;i<updateArray.length;i++)
+                {
+                    Vehicles.findOneAndUpdate({vehicleUid:updateArray[i]},{$set:{lastSyncedAt:new Date()}}).lean().exec(function (err) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                    });
+
+                }
+                return callback(null,null);
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allVehicles);
+    })
+
+};
+
+exports.getMembership  = function (callback) {
+    var allMembership = [];
+    var updateArray = [];
+    async.series([
+        function (callback) {
+            Membership.find({$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('membershipId validity userFees securityDeposit processingFees smartCardFees status farePlan lastModifiedAt').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    allMembership.push(result[i]);
+                    /* var data = {
+                     _id:''
+                     };
+                     data._id = result[i]._id;*/
+                    updateArray.push(result[i].membershipId);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(updateArray.length>0)
+            {
+                for(var i=0;i<updateArray.length;i++)
+                {
+                    Membership.findOneAndUpdate({membershipId:updateArray[i]},{$set:{lastSyncedAt:new Date()}}).lean().exec(function (err) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                    });
+
+                }
+                return callback(null,null);
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allMembership);
+    })
+
+};
+
+exports.getFarePlan  = function (callback) {
+    var allFarePlan = [];
+    var updateArray = [];
+    async.series([
+        function (callback) {
+            FarePlan.find({$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('fareplanUid status plans lastModifiedAt').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    allFarePlan.push(result[i]);
+                    /* var data = {
+                     _id:''
+                     };
+                     data._id = result[i]._id;*/
+                    updateArray.push(result[i].fareplanUid);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(updateArray.length>0)
+            {
+                for(var i=0;i<updateArray.length;i++)
+                {
+                    FarePlan.findOneAndUpdate({fareplanUid:updateArray[i]},{$set:{lastSyncedAt:new Date()}}).lean().exec(function (err) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                    });
+
+                }
+                return callback(null,null);
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allFarePlan);
+    })
+
+};
+
+exports.getStation  = function (callback) {
+    var allStation = [];
+    var updateArray = [];
+    async.series([
+        function (callback) {
+            Station.find({stationType:{$eq:['dock-station','Holding-station']},$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('StationID name stationType portIds operationStatus ipAddress subnet lastModifiedAt').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    allStation.push(result[i]);
+                    /* var data = {
+                     _id:''
+                     };
+                     data._id = result[i]._id;*/
+                    updateArray.push(result[i].StationID);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(updateArray.length>0)
+            {
+                for(var i=0;i<updateArray.length;i++)
+                {
+                    Station.findOneAndUpdate({StationID:updateArray[i]},{$set:{lastSyncedAt:new Date()}}).lean().exec(function (err) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                    });
+
+                }
+                return callback(null,null);
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allStation);
+    })
+
+};
+
+exports.getPorts  = function (callback) {
+    var allPorts = [];
+    var updateArray = [];
+    async.series([
+        function (callback) {
+            Ports.find({_type:{$eq:['Docking-port','Holding-area']},$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('_type PortID StationId vehicleId portStatus portCapacity FPGA ePortNumber DockingStationName').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                for(var i=0;i<result.length;i++)
+                {
+                    allPorts.push(result[i]);
+                    /* var data = {
+                     _id:''
+                     };
+                     data._id = result[i]._id;*/
+                    updateArray.push(result[i].PortID);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(updateArray.length>0)
+            {
+                for(var i=0;i<updateArray.length;i++)
+                {
+                    DockPort.findOneAndUpdate({PortID:updateArray[i]},{$set:{lastSyncedAt:new Date()}}).lean().exec(function (err) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                    });
+
+                }
+                return callback(null,null);
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,allPorts);
+    })
+
+};
+
 
 exports.startUserSync = function (callback) {
     var DSCount=0;

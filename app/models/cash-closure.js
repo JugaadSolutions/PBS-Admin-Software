@@ -6,6 +6,7 @@ var Schema = mongoose.Schema;
 var autoIncrement = require('mongoose-auto-increment');
 var abstract = require('./abstract'),
     Constants = require('../core/constants');
+const depStatus = Constants.DepositStatus;
 
 var CashClosureSchema = mongoose.Schema({
     ccId:Number,
@@ -14,6 +15,7 @@ var CashClosureSchema = mongoose.Schema({
     cashCollected:{type:Number,required:true,default:0},
     bankDeposits:{type:Number,required:true,default:0},
     refund:{type:Number,required:true,default:0},
+    depositStatus:{type:String,required:true,default:depStatus.NOT_DEPOSITED},
     closingBalance:{type:Number,required:true,default:0},
     createdAt: {type: Date, required: true,default:Date.now},
     createdBy:{type:Schema.ObjectId, required: false, ref: 'user'}

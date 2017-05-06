@@ -922,6 +922,7 @@ exports.addLeaveDetails = function (record,callback) {
                         return callback(new Error(Messages.USER_NOT_FOUND),null);
                     }
                 record.empid = result._id;
+                userDetails=result;
                 return callback(null,result);
 
             });

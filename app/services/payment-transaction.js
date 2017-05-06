@@ -1358,7 +1358,7 @@ exports.createcashClosure = function (record,callback) {
     var cashDetails;
     var daycloseDetails;
     async.series([
-        function (callback) {
+      /*  function (callback) {
             dayclose(function (err,result) {
                 if(err)
                 {
@@ -1381,9 +1381,9 @@ exports.createcashClosure = function (record,callback) {
                     return callback(null,null);
                 }
             });
-        },
+        },*/
         function (callback) {
-            if(daycloseDetails) {
+           /* if(daycloseDetails) {*/
                 if (record.createdBy) {
                     User.findOne({UserID: record.createdBy}, function (err, result) {
                         if (err) {
@@ -1401,14 +1401,14 @@ exports.createcashClosure = function (record,callback) {
                 else {
                     return callback(null, null);
                 }
-            }
+           /* }
             else
             {
                 return callback(null,null);
-            }
+            }*/
         },
         function (callback) {
-            if(daycloseDetails) {
+           /* if(daycloseDetails) {*/
                 Cashclosure.create(record, function (err, result) {
                     if (err) {
                         return callback(err, null);
@@ -1416,11 +1416,11 @@ exports.createcashClosure = function (record,callback) {
                     cashDetails = result;
                     return callback(null, result);
                 });
-            }
+            /*}
             else
             {
                 return callback(null,null);
-            }
+            }*/
         }
     ],function (err,result) {
         if(err)
@@ -1536,8 +1536,9 @@ function dayclose(callback) {
         dateTime:'',
         openingBalance:0,
         cashcollected:0,
-        bankdeposit:0,
+        bankDeposits:0,
         refunds:0,
+        depositStatus:'',
         closingBalance:0
     };
     async.series([
@@ -1623,17 +1624,22 @@ function dayclose(callback) {
         function (callback) {
             if(exitState==0)
             {
-                var data = {
+                var d = {
                     dateInfo:cashDetails.dateTime
                 };
-                depositInfo(data,function (err,result) {
+                depositInfo(d,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
                     if(result)
                     {
-                        cashDetails.bankdeposit = result;
+                        cashDetails.bankDeposits = result;
+                        return callback(null,result);
+                    }
+                    else if(result==0)
+                    {
+                        cashDetails.bankDeposits = result;
                         return callback(null,result);
                     }
                     else
@@ -1651,12 +1657,20 @@ function dayclose(callback) {
         function (callback) {
             if(exitState==0)
             {
-                refundInfo(cashDetails.dateTime,function (err,result) {
+                var data = {
+                dateInfo:cashDetails.dateTime
+                };
+                refundInfo(data,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
                     }
                     if(result)
+                    {
+                        cashDetails.refunds = result;
+                        return callback(null,result);
+                    }
+                    else if(result==0)
                     {
                         cashDetails.refunds = result;
                         return callback(null,result);
@@ -1690,7 +1704,7 @@ function dayclose(callback) {
                     if(result)
                     {
                         cashDetails.cashcollected = result[0].cash;
-                        cashDetails.closingBalance = (cashDetails.openingBalance+cashDetails.cashcollected)-(cashDetails.bankdeposit+cashDetails.refunds);
+                        cashDetails.closingBalance = (cashDetails.openingBalance+cashDetails.cashcollected)-(cashDetails.bankDeposits+cashDetails.refunds);
                         return callback(null,result);
                     }
                     else
@@ -1704,6 +1718,32 @@ function dayclose(callback) {
                 return callback(null,null);
             }
 
+        },
+        function (callback) {
+            if(cashDetails)
+            {
+                if(cashDetails.bankDeposits==0)
+                {
+                    cashDetails.depositStatus=Constants.DepositStatus.NOT_DEPOSITED;
+                }
+                else if(cashDetails.openingBalance==cashDetails.bankDeposits)
+                {
+                    cashDetails.depositStatus=Constants.DepositStatus.DEPOSITED;
+                }
+                else if(cashDetails.openingBalance<cashDetails.bankDeposits)
+                {
+                    cashDetails.depositStatus=Constants.DepositStatus.EXCESS;
+                }
+                else if(cashDetails.bankDeposits>0 && cashDetails.openingBalance>cashDetails.bankDeposits)
+                {
+                    cashDetails.depositStatus=Constants.DepositStatus.PARTIAL;
+                }
+                return callback(null,null);
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
     ],function (err,result) {
         if(err)

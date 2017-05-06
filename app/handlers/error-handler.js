@@ -62,7 +62,7 @@ exports.processError = function (err, callback) {
             response = {
                 error: true,
                 message: 'This card has already been assigned to a user',
-                description: 'This card has already been assigned to a user',
+                description: err.description,
                 data: {UserId:err.message}
             };
             break;
