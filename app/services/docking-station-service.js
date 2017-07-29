@@ -427,7 +427,8 @@ exports.getstationdetail = function (id,callback) {
     var details ={
         _id:'',
         bicycleCapacity:'',
-        bicycleCount:0
+        bicycleCount:0,
+        modelType:''
     };
     DockStation.findOne({'_id': id}).deepPopulate('portIds portIds.dockingPortId portIds.dockingPortId.vehicleId.vehicleid').lean().exec(function (err,result) {
         if (err) {
@@ -435,6 +436,7 @@ exports.getstationdetail = function (id,callback) {
         }
         if(result)
         {
+            details.modelType = result.modelType;
             details.bicycleCapacity=result.portIds.length;
             details._id = result._id;
             for(var j=0;j<result.portIds.length;j++)

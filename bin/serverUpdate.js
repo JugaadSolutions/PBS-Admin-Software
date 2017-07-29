@@ -6,6 +6,7 @@ var checkinAndCheckout = require('../app/services/transaction-service');
 var TransactionReconciliation = require('../app/services/transaction-reconciliation');
 var HourlyReport = require('../app/services/kpi-hourlyreport');
 var VehicleReport = require('../app/services/kpi-vehicle-service');
+var UserService = require('../app/services/user-service');
 var moment = require('moment');
 /*
 setInterval(function () {
@@ -57,9 +58,35 @@ setInterval(function () {
         /*if(result) {
             console.log(result);
         }*/
-        TransactionReconciliation.ReconcileTransaction();
+      //  TransactionReconciliation.ReconcileTransaction();
     });
 },3000);
+
+setInterval(function () {
+ //setTimeout(function () {
+ //console.log('Timeout');
+   // TransactionReconciliation.ReconcileTransaction();
+ },5000);
+
+setInterval(function () {
+    //setTimeout(function () {
+    //console.log('Timeout');
+    TransactionReconciliation.Associater();
+},5000);
+
+setInterval(function () {
+//setTimeout(function () {
+    //console.log('Timeout');
+    TransactionReconciliation.reconse();
+},3000);
+
+
+/*setTimeout(function () {
+//setTimeout(function () {
+    //console.log('Timeout');
+    UserService.ondemandcreater();
+},5000);*/
+
 
 /*setInterval(function () {
 //setTimeout(function () {
@@ -104,26 +131,26 @@ var t = moment.duration(eDate.diff(sDate));
 var dur = t.asMilliseconds();
 //setInterval(function () {
 setTimeout(function () {
-/*    VehicleReport.createVehicleReport(function (err,result) {
-        if(err)
-        {
-            console.log('Error');
-            return;
-        }
-    });*/
     intervalSetter();
 },dur);
 //},86400000);
 function intervalSetter() {
+    /*VehicleReport.createVehicleReport(function (err,result) {
+        if(err)
+        {
+            console.log('Error');
+            //return;
+        }
+    });*/
     setInterval(function () {
     //setTimeout(function () {
-            VehicleReport.createVehicleReport(function (err,result) {
+          /*  VehicleReport.createVehicleReport(function (err,result) {
          if(err)
          {
          console.log('Error');
          //return;
          }
-         });
+         });*/
   //  },dur);
 },86400000);
 

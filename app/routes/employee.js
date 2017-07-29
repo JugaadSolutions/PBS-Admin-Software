@@ -186,6 +186,54 @@ router
         });
 
     })
+    .get('/operator/emp', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_type':'Operator'}).lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+    .get('/hastaff/emp', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        User.find({'_type':'Holdingarea-employee'}).lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
     .get('/rvstaff/emp', function (req, res, next) {
 
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
@@ -406,6 +454,20 @@ router
     })
     .post('/monestaff', function (req, res, next) {
         EmployeeService.createEmployee(req.body,8,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.RECORD_CREATED_SUCCESS, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/kone/admin', function (req, res, next) {
+        EmployeeService.createEmployee(req.body,9,function (err,result) {
             if(err)
             {
                 next(err, req, res, next);

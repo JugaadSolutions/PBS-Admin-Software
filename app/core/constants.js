@@ -2,6 +2,11 @@
  * Created by root on 4/10/16.
  */
 
+exports.ServiceChargeType = {
+    FLAT:'Flat',
+    PERCENT:'Percent'
+};
+
 exports.TicketChannel = {
     WEBSITE:1,
     MOBILEAPP:2,
@@ -51,7 +56,10 @@ exports.PayDescription={
     //USAGE_FEE:"Usage Fee",
     DEBIT_NOTE:"Debit note",
     CREDIT_NOTE:"Credit note",
-    TOPUP:"Topup"
+    TOPUP:"Topup",
+    TRANSFER:"Transfer",
+    FROMSECURITY:"From Security Deposit",
+    SERVICE_CHARGE:"Online Payment Service Charge"
 };
 
 exports.PayMode={
@@ -59,6 +67,7 @@ exports.PayMode={
     CREDIT_CARD:"Credit Card",
     DEBIT_CARD:"Debit Card",
     NET_BANKING:"Net Banking",
+    TRANSFER:"Transfer",
     OTHERS:"Others"
 };
 
@@ -180,7 +189,7 @@ exports.ComplaintValidation={
 exports.CardType = {
     REGISTERED_MEMBER: 1,
     EMPLOYEE: 2,
-    CASUAL_MEMBER:3
+    ONDEMAND:"3"
 };
 
 exports.CardLevel = {

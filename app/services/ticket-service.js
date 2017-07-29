@@ -86,7 +86,7 @@ exports.ticketUpdate=function (id,record,callback) {
     }
     if(isNaN(record.assignedEmp))
     {
-        Ticket.findByIdAndUpdate(id,{$set:{'assignedEmp':record.assignedEmp}},{new:true},function (err,result) {
+        Ticket.findByIdAndUpdate(id,{$set:{'assignedEmp':record.assignedEmp,complaintType:record.complaintType}},{new:true},function (err,result) {
             if(err)
             {
                 return callback(err,null);
@@ -105,7 +105,7 @@ exports.ticketUpdate=function (id,record,callback) {
             {
                 return callback(new Error("The Assigned user doesn't exist"),null);
             }
-            Ticket.findByIdAndUpdate(id,{$set:{'assignedEmp':result._id}},{new:true},function (err,result) {
+            Ticket.findByIdAndUpdate(id,{$set:{'assignedEmp':result._id,complaintType:record.complaintType}},{new:true},function (err,result) {
                 if(err)
                 {
                     return callback(err,null);

@@ -6,6 +6,7 @@ var express = require('express'),
     config = require('config'),
     Messages = require('../core/messages'),
     Transaction = require('../models/transaction'),
+    CheckOut = require('../models/checkout'),
     MobileService = require('../services/mobile-request'),
     BridgeService = require('../services/bridge-service'),
     TransactionService = require('../services/transaction-service');
@@ -65,8 +66,99 @@ router
 
     })
 
+    .get('/myrides/all/:cardId', function (req, res, next) {
+
+        TransactionService.getRecordsWRTMember(req.params.cardId,function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                res.json(response);
+
+            }
+
+        });
+
+    })
+
     .get('/',function (req,res,next) {
         TransactionService.getAllTransactions(function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                res.json(response);
+
+            }
+
+        });
+    })
+    .get('/all',function (req,res,next) {
+        Transaction.find({}).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                res.json(response);
+
+            }
+
+        });
+    })
+    .get('/checkout/card/:id',function (req,res,next) {
+        TransactionService.getOpenCheckouts(req.params.id,function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                var response = result != null ? {
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                } : {error: false, message: Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE, description: '', data: {}};
+
+                res.json(response);
+
+            }
+
+        });
+    })
+    .get('/checkin',function (req,res,next) {
+        TransactionService.getAllcheckins(function (err, result) {
 
             if (err) {
 
@@ -224,7 +316,7 @@ router
 
     .delete('/:id', function (req, res, next) {
 
-        Transaction.findByIdAndRemove(req.params.id, function (err, result) {
+        TransactionService.clearOpenCheckout(req.params.id, function (err, result) {
 
             if (err) {
 
@@ -240,5 +332,109 @@ router
 
     })
 
+    .delete('/checkin/:id', function (req, res, next) {
+
+        TransactionService.clearOpenCheckin(req.params.id, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+    .delete('/checkout/all', function (req, res, next) {
+
+        TransactionService.clearAllOpenCheckout(function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .delete('/checkin/clear/open', function (req, res, next) {
+
+        TransactionService.clearAllOpenCheckin( function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+
+    .delete('/duplicate/info', function (req, res, next) {
+
+        TransactionService.clearDuplicate(req.body, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
+    .delete('/correction/:id', function (req, res, next) {
+
+         Transaction.findByIdAndRemove(req.params.id, function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+    })
+
+    .delete('/clear/checkout/cc', function (req, res, next) {
+
+        TransactionService.clearOpenCheckoutFromControlCenter(req.body,function (err, result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: Messages.DELETING_RECORD_SUCCESSFUL, description: '', data: result});
+
+            }
+
+        });
+
+    })
 ;
 module.exports=router;

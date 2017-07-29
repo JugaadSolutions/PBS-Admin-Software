@@ -53,6 +53,31 @@ router
         });
     })
 
+    .get('/app/msg',function (req,res,next) {
+        Settings.findOne({name:"Message",'visibility':0},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.FETCHING_RECORDS_SUCCESSFUL, description: '', data: result.value[0].text});
+            }
+
+        });
+    })
+    .post('/app/add/msg',function (req,res,next) {
+        Settings.findOneAndUpdate({name:"Message",'visibility':0},{$set:{value:{"visibility" :0, "text" : req.body.msg}}},{new:true},function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message:"Adding msg successful", description: '', data: result.value[0].text});
+            }
+
+        });
+    })
+
     .post('/', function (req, res, next) {
 
         SettingService.createSetting(req.body,function (err,result){

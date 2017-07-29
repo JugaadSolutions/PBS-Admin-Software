@@ -19,6 +19,7 @@ var Member = require('../models/member'),
     EmailNotificationHandler = require('../handlers/email-notification-handler'),
     Payments = require('../models/payment-transactions'),
     RegCenter = require('../models/registration-center'),
+    KoneCenter = require('../models/karnatakaone-center'),
     Card = require('../models/card'),
     CardTrack = require('../models/card-track'),
     Station = require('../models/station'),
@@ -686,8 +687,7 @@ exports.updateMember = function (record,callback) {
                 var memData = {
                     Name:record.Name,
                     lastName:record.lastName,
-                    email:record.email,
-                    phoneNumber:record.phoneNumber,
+                    profilePic:record.profilePic,
                     documents:record.documents,
                     status:record.status,
                     age:record.age,
@@ -702,6 +702,15 @@ exports.updateMember = function (record,callback) {
                     countryCode:record.countryCode,
                     country:record.country
                 };
+
+                if(record.email)
+                {
+                    memData.email=record.email;
+                }
+                if(record.phoneNumber)
+                {
+                    memData.phoneNumber=record.phoneNumber;
+                }
                 Member.update({_id:record._id}, memData, {new: true}).lean().exec(function (err, result) {
 
                     if (err) {
@@ -1244,13 +1253,13 @@ function addCreditToMember(id,record,callback) {
                         invoiceNo: uf,
                         paymentDescription: Constants.PayDescription.REGISTRATION,
                         paymentMode: record.creditMode,
-                        paymentThrough: Constants.PayThrough.PAYMENT_GATEWAY,
+                        paymentThrough: (record.paymentThrough)?record.paymentThrough:Constants.PayThrough.PAYMENT_GATEWAY,
                         gatewayTransactionId: record.transactionNumber,
+                        location:(record.location)?record.location:"Other Location",
                         comments: record.comments,
                         credit: record.credit,
                         balance: record.credit
                     };
-
                     Payments.create(userfeeDeposit, function (err, result) {
                         if (err) {
                             return callback(err, null);
@@ -1269,7 +1278,7 @@ function addCreditToMember(id,record,callback) {
                 }
                 else {
                     if (isProcessingFeeDeducted) {
-
+                        record.credit = record.credit-5;
                         Topup.findOne({userFees:record.credit},function (err,result) {
                             if(err)
                             {
@@ -1280,6 +1289,7 @@ function addCreditToMember(id,record,callback) {
                                 return callback(new Error("Couldn't find the top up plan for the given credit details"),null);
                             }
                             record.credit = result.topupId;
+                            record.onlinePay=true;
                             PaymentTransaction.topUp(memberObject, record, function (err, result) {
                                 if (err) {
                                     return callback(err, null);
@@ -1297,6 +1307,7 @@ function addCreditToMember(id,record,callback) {
                         }
                         else
                         {
+                            record.onlinePay=true;
                             PaymentTransaction.newMember(memberObject, record, function (err, result) {
                                 if (err) {
                                     return callback(err, null);
@@ -1330,10 +1341,223 @@ function addCreditToMember(id,record,callback) {
         {
             return callback(err,null);
         }
-        if(!updatedMemberObject)
+        /*if(!updatedMemberObject)
         {
             return callback(new Error('Amount you entered is less than Minimum Amount'),null);
+        }*/
+        return callback(null,updatedMemberObject);
+    });
+
+}
+
+exports.creditMemberWithPayGov=addCreditToMemberWithPayGov;
+function addCreditToMemberWithPayGov(id,record,callback) {
+
+    var memberObject;
+    var updatedMemberObject;
+    var isProcessingFeeDeducted = false;
+    var payments;
+    var amount = 0;
+    var transObject;
+    var transactionDetails;
+    var validity;
+
+    async.series([
+
+        function (callback) {
+
+            if(isNaN(id))
+            {
+                Member.findById(id, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    if (result.processingFeesDeducted) {
+                        isProcessingFeeDeducted = true;
+                    }
+
+                    memberObject = result;
+                    return callback(null, result);
+                });
+            }
+            else
+            {
+                Member.findOne({UserID:id}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (!result) {
+                        return callback(new Error(Messages.NO_MEMBER_FOUND), null);
+                    }
+
+                    if (result.processingFeesDeducted) {
+                        isProcessingFeeDeducted = true;
+                    }
+
+                    memberObject = result;
+                    return callback(null, result);
+                });
+            }
+
+        },
+        function (callback) {
+
+            if(isNaN(record.createdBy))
+            {
+
+                return callback(null, null);
+            }
+            else
+            {
+                User.findOne({UserID:record.createdBy}, function (err, result) {
+
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    if (result) {
+                        record.createdBy = result._id;
+                    }
+                    return callback(null, result);
+                });
+            }
+
+        },
+        function (callback) {
+            if(memberObject.status==Constants.MemberStatus.PROSPECTIVE)
+            {
+                Payments.findOne({'gatewayTransactionId':record.transactionNumber},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+
+                    transactionDetails = result;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
+        ,
+        function (callback) {
+            /* var orderId = 'PBS'+ new Date().getTime();*/
+            if(transactionDetails)
+            {
+                return callback(new Error('This payment has already been completed'),null);
+            }
+            else {
+                if (memberObject.status == Constants.MemberStatus.PROSPECTIVE) {
+
+
+                    var userfeeDeposit;
+                    var uf = 'PBS' + new Date().getTime();
+                    userfeeDeposit = {
+                        memberId: memberObject._id,
+                        invoiceNo: uf,
+                        paymentDescription: Constants.PayDescription.REGISTRATION,
+                        paymentMode: record.creditMode,
+                        paymentThrough: (record.paymentThrough)?record.paymentThrough:Constants.PayThrough.PAYMENT_GATEWAY,
+                        gatewayTransactionId: record.transactionNumber,
+                        location:(record.location)?record.location:"Other Location",
+                        comments: record.comments,
+                        credit: record.credit,
+                        balance: record.credit
+                    };
+                    Payments.create(userfeeDeposit, function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        payments = result;
+                        memberObject.creditBalance = record.credit;
+                        Member.findByIdAndUpdate(memberObject._id, memberObject, {new: true}, function (err, result) {
+                            if (err) {
+                                return callback(err, null);
+                            }
+                            memberObject = result;
+                        });
+
+                        return callback(null, result);
+                    });
+                }
+                else {
+                    if (isProcessingFeeDeducted) {
+                        Topup.findOne({userFees:record.credit},function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                return callback(new Error("Couldn't find the top up plan for the given credit details"),null);
+                            }
+                            record.credit = result.topupId;
+                            //record.onlinePay=true;
+                            PaymentTransaction.topUp(memberObject, record, function (err, result) {
+                                if (err) {
+                                    return callback(err, null);
+                                }
+                                updatedMemberObject = result;
+                                return callback(null, result);
+                            });
+                        });
+                    }
+                    else {
+                        if(payments)
+                        {
+                            updatedMemberObject = memberObject;
+                            return callback(null,null);
+                        }
+                        else
+                        {
+                            record.onlinePay=true;
+                            PaymentTransaction.newMember(memberObject, record, function (err, result) {
+                                if (err) {
+                                    return callback(err, null);
+                                }
+                                updatedMemberObject = result;
+                                return callback(null, result);
+                            });
+                        }
+                    }
+                }
+            }
+        }/*,
+         function (callback) {
+         if(transactionDetails!=0)
+         {
+         memberObject.creditBalance=transactionDetails.balance;
+         Member.findByIdAndUpdate(memberObject._id,memberObject,function (err,result) {
+         if(err)
+         {
+         return callback(err,null);
+         }
+         memberObject=result;
+         return callback(null,result);
+         });
+         }
+         }*/
+
+
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        /*if(!updatedMemberObject)
+         {
+         return callback(new Error('Amount you entered is less than Minimum Amount'),null);
+         }*/
         return callback(null,updatedMemberObject);
     });
 
@@ -1590,6 +1814,22 @@ exports.debitMember = function (id, record, callback) {
                                 return callback(null,result);
                             });
                         }
+                        else if(result._type=='Mysoreone-employee')
+                        {
+                            KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                if(!result)
+                                {
+                                    location = 'Other Location';
+                                    return callback(null,null);
+                                }
+                                location=result.location;
+                                return callback(null,result);
+                            });
+                        }
                         else {
                             location = 'Other Location';
                             return callback(null,result);
@@ -1626,6 +1866,22 @@ exports.debitMember = function (id, record, callback) {
                                 return callback(null,result);
                             });
                         }
+                        else if(result._type=='Mysoreone-employee')
+                        {
+                            KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                                if(err)
+                                {
+                                    return callback(err,null);
+                                }
+                                if(!result)
+                                {
+                                    location = 'Other Location';
+                                    return callback(null,null);
+                                }
+                                location=result.location;
+                                return callback(null,result);
+                            });
+                        }
                         else {
                             location = 'Other Location';
                             return callback(null,result);
@@ -1643,10 +1899,10 @@ exports.debitMember = function (id, record, callback) {
                 var paymentTransaction = {
                     memberId: memberObject._id,
                     invoiceNo: uf,
-                    paymentDescription: Constants.PayDescription.DEBIT_NOTE,
-                    paymentMode: Constants.PayMode.OTHERS,
-                    paymentThrough: Constants.PayThrough.OTHERS,
-                    gatewayTransactionId: Constants.PayDescription.OTHERS,
+                    paymentDescription: record.paymentDescription,
+                    paymentMode: record.paymentMode,
+                    paymentThrough: record.paymentThrough,
+                    gatewayTransactionId: record.gatewayTransactionId,
                     comments: record.comments,
                     debit:record.debit,
                     balance:memberObject.creditBalance,
@@ -1755,6 +2011,7 @@ exports.cancelMembershiprequest = function (id,callback) {
 
 exports.cancelMembership = function (memberId,record,callback) {
 
+    var location;
     var memberObject;
     var transactionList=[];
     var finalTransaction;
@@ -1804,6 +2061,51 @@ exports.cancelMembership = function (memberId,record,callback) {
 
         },
         function (callback) {
+            if (record.createdBy) {
+                if(isNaN(record.createdBy))
+                {
+                    return callback(null,null);
+                }
+                else
+                {
+                    User.findOne({UserID:record.createdBy},function (err,result) {
+                        if(err)
+                        {
+                            return callback(err,null);
+                        }
+                        if(result)
+                        {
+                            record.createdBy = result._id;
+                            return callback(null,result);
+                        }
+                        else
+                        {
+                            return callback(null,null);
+                        }
+                    });
+                }
+            }
+            else {
+                return callback(null, null);
+            }
+        },
+        function (callback) {
+            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    location = 'Other Location';
+                    return callback(null,result);
+                }
+                location=result.location;
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
             var cancelmembership;
             var cancelmembership2;
             var unusedBalance;
@@ -1817,25 +2119,29 @@ exports.cancelMembership = function (memberId,record,callback) {
                         memberId: memberId,
                         invoiceNo: ub,
                         paymentDescription: Constants.PayDescription.UNUSED_AMOUNT,
-                        paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayThrough.OTHERS,
+                        paymentMode: Constants.PayMode.TRANSFER,
+                        paymentThrough:Constants.PayMode.TRANSFER,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.creditBalance,
-                        balance: Number(memberObject.creditBalance-memberObject.creditBalance)
+                        balance: Number(memberObject.creditBalance-memberObject.creditBalance),
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(unusedBalance);
                     var cm = 'PBS' + new Date().getTime();
                     cancelmembership = {
                         memberId: memberId,
                         invoiceNo: cm,
-                        paymentDescription: Constants.PayDescription.REFUND,
-                        paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayThrough.OTHERS,
+                        paymentDescription: Constants.PayDescription.FROMSECURITY,
+                        paymentMode: Constants.PayMode.TRANSFER,
+                        paymentThrough: Constants.PayMode.TRANSFER,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         credit: memberObject.securityDeposit,
-                        balance: memberObject.securityDeposit
+                        balance: memberObject.securityDeposit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(cancelmembership);
                     var cm2 = 'PBS' + new Date().getTime();
@@ -1848,7 +2154,9 @@ exports.cancelMembership = function (memberId,record,callback) {
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.securityDeposit,
-                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
+                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit),
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(cancelmembership2);
                     memberObject.securityDeposit = 0;
@@ -1860,13 +2168,15 @@ exports.cancelMembership = function (memberId,record,callback) {
                     cancelmembership = {
                         memberId: memberId,
                         invoiceNo: cm,
-                        paymentDescription: Constants.PayDescription.REFUND,
-                        paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayThrough.OTHERS,
+                        paymentDescription: Constants.PayDescription.FROMSECURITY,
+                        paymentMode: Constants.PayMode.TRANSFER,
+                        paymentThrough: Constants.PayMode.TRANSFER,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         credit: memberObject.securityDeposit,
-                        balance: memberObject.securityDeposit
+                        balance: memberObject.securityDeposit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(cancelmembership);
                     var cm2 = 'PBS' + new Date().getTime();
@@ -1879,7 +2189,9 @@ exports.cancelMembership = function (memberId,record,callback) {
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.securityDeposit,
-                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
+                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit),
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(cancelmembership2);
                 }
@@ -1889,13 +2201,15 @@ exports.cancelMembership = function (memberId,record,callback) {
                     cancelmembership = {
                         memberId: memberId,
                         invoiceNo: cm,
-                        paymentDescription: Constants.PayDescription.REFUND,
-                        paymentMode: Constants.PayMode.OTHERS,
-                        paymentThrough: Constants.PayThrough.OTHERS,
+                        paymentDescription: Constants.PayDescription.FROMSECURITY,
+                        paymentMode: Constants.PayMode.TRANSFER,
+                        paymentThrough: Constants.PayMode.TRANSFER,
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         credit: memberObject.securityDeposit,
-                        balance: memberObject.securityDeposit
+                        balance: memberObject.securityDeposit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(cancelmembership);
                     var cm2 = 'PBS' + new Date().getTime();
@@ -1908,7 +2222,9 @@ exports.cancelMembership = function (memberId,record,callback) {
                         gatewayTransactionId: record.transactionNumber,
                         comments: record.comments,
                         debit: memberObject.securityDeposit,
-                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit)
+                        balance: Number(memberObject.securityDeposit-memberObject.securityDeposit),
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
                     };
                     transactionList.push(cancelmembership2);
                     memberObject.securityDeposit = 0;
@@ -2312,6 +2628,22 @@ exports.addMember=function (record,callback) {
                             return callback(null,result);
                         });
                     }
+                    else if(result._type=='Mysoreone-employee')
+                    {
+                        KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                location = 'Other Location';
+                                return callback(null,null);
+                            }
+                            location=result.location;
+                            return callback(null,result);
+                        });
+                    }
                     else {
                         location = 'Other Location';
                         return callback(null,result);
@@ -2342,9 +2674,27 @@ exports.addMember=function (record,callback) {
                             if(!reg)
                             {
                                 location = 'Other Location';
+                                record.nearbyHub="13.13.13.2";
                                 return callback(null,null);
                             }
                             location=reg.location;
+                            record.nearbyHub=reg.nearbyHub;
+                            return callback(null,result);
+                        });
+                    }
+                    else if(result._type=='Mysoreone-employee')
+                    {
+                        KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                            if(err)
+                            {
+                                return callback(err,null);
+                            }
+                            if(!result)
+                            {
+                                location = 'Other Location';
+                                return callback(null,null);
+                            }
+                            location=result.location;
                             return callback(null,result);
                         });
                     }
@@ -2387,6 +2737,7 @@ exports.addMember=function (record,callback) {
                     countryCode:record.countryCode,
                     createdBy:record.createdBy,
                     registeredLocation:location,
+                    nearbyHub:record.nearbyHub,
                     resetPasswordKey:ResetKey,
                     resetPasswordKeyValidity:moment().add(2,'hours')
                 };
@@ -3166,4 +3517,24 @@ exports.verifyOTP = function (record,callback) {
         }
         return callback(null,userDetails);
     })
+};
+
+exports.updateMemberEmail = function (id,record,callback) {
+    User.findOneAndUpdate({UserID:id},{$set:{email:record.email,emailVerified:true,password:"$2a$10$o2ZAe48Le0eLALWknO03gOnobYPJsvT/CKN3UAHeMAZket4YMKfjy"}},{new:true},function (err,result) {
+        if(err)
+        {
+            if(err.code==11000)
+            {
+                var duplicateError = new Error("This email id already exists");
+                duplicateError.name = "UserError";
+                return callback(duplicateError, null);
+            }
+            return callback(err,null);
+        }
+        if(!result)
+        {
+            return callback(new Error("Couldn't able to update user details"),null);
+        }
+        return callback(null,result);
+    });
 };

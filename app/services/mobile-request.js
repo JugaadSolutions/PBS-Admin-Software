@@ -9,7 +9,7 @@ var async = require('async'),
 
 var MemberService = require('../services/transaction-service');
 
-exports.checkoutApp=function (record,callback) {
+    exports.checkoutApp=function (record,callback) {
     var vehicleDetails;
     var requestDetails;
     var userDetails;

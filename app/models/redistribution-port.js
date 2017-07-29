@@ -19,7 +19,8 @@ var RedistributionPortSchema = require('mongoose').model('port').schema.extend({
     zoneId:{type:Zone,required:false},
     driverId: {type: String, required: false},
     gpsCoordinates: {type: GPS, required: false},
-    assignedBy:{type:Schema.ObjectId,required:false,ref:'user'}
+    assignedBy:{type:Schema.ObjectId,required:false,ref:'user'},
+    tracking:{type:Boolean,required:false,default:false}
 });
 
 var RedistributionPort = mongoose.model('Redistribution-vehicle', RedistributionPortSchema);

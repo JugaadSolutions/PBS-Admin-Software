@@ -2,6 +2,7 @@
  * Created by root on 9/1/17.*/
 
 var async = require('async'),
+    net = require('net'),
     Users = require('../models/user'),
     Membership = require('../models/membership'),
     FarePlan = require('../models/fare-plan'),
@@ -25,7 +26,7 @@ exports.getUsers  = function (callback) {
     var updateArray = [];
     async.series([
         function (callback) {
-            Users.find({$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('_type UserID smartCardKey status cardNum smartCardNumber creditBalance membershipId validity lastModifiedAt').deepPopulate('membershipId').lean().exec(function (err,result) {
+            Users.find({$where:"this.lastModifiedAt>this.lastSyncedAt"}).select('_type UserID Name smartCardKey status cardNum smartCardNumber creditBalance membershipId validity nearbyHub lastModifiedAt').deepPopulate('membershipId').lean().exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
@@ -350,6 +351,106 @@ exports.getPorts  = function (callback) {
     })
 
 };
+
+exports.syncAll = function (callback) {
+
+    async.series([
+        function (callback) {
+            Users.update({}, {$set:{lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}}, {multi: true}, function (err, result) {
+                if (err) {
+                    //return console.error('Unable to push data to users while creating dock-station');
+                    return callback(err, null);
+                }
+                return callback(null, result);
+            });
+        },
+        function (callback) {
+            Vehicles.update({}, {$set:{lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}}, {multi: true}, function (err, result) {
+                if (err) {
+                    //return console.error('Unable to push data to users while creating dock-station');
+                    return callback(err, null);
+                }
+                return callback(null, result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,"Sync Initiated");
+    })
+};
+
+exports.syncUser = function (id,callback) {
+    Users.update({cardNum:id}, {$set:{lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}}, function (err, result) {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, "User sync initiated");
+    });
+};
+
+exports.syncAllUser = function (callback) {
+    Users.update({status:{$ne:0}}, {$set:{lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}}, {multi: true}, function (err, result) {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, "Users sync initiated");
+    });
+};
+
+exports.syncVehicle = function (id,callback) {
+    Vehicles.update({vehicleNumber:id}, {$set:{lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}}, function (err, result) {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null, "Vehicle sync initiated");
+    });
+};
+
+exports.syncAllVehicle = function (callback) {
+    Vehicles.update({}, {$set:{lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}}, {multi: true}, function (err, result) {
+        if (err) {
+
+            return callback(err, null);
+        }
+        return callback(null, "Vehicle sync initiated");
+    });
+};
+
+exports.resetElectronics = function (record,callback) {
+
+    var HOST = record.host;
+    var PORT = 6969;
+    var client = new net.Socket();
+    client.connect(PORT, HOST, function() {
+
+        console.log('CONNECTED TO: ' + HOST + ':' + PORT);
+        client.write('reset');
+
+    });
+
+    client.on('data', function(data) {
+        console.log('DATA: ' + data);
+        client.destroy();
+    });
+
+    client.on('error',function (err) {
+        console.error("Error while sending to socket"+err);
+        return callback(new Error('Error while sending data to docking station'),null);
+    });
+
+    client.on('close', function() {
+        console.log('Connection closed');
+        return callback(null,"Reset initiated");
+    });
+
+};
+
+
+
+
 
 
 exports.startUserSync = function (callback) {

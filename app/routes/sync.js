@@ -91,22 +91,86 @@ router
         });
     })
 
-   /* .get('/', function (req, res, next) {
+    .post('/', function (req, res, next) {
 
-        Stations.find({'stationType':{$ne:'dock-station'}}).lean().exec(function (err, result) {
-
-            if (err) {
-
+        Sync.syncAll(function (err,result) {
+            if(err)
+            {
                 next(err, req, res, next);
-
-            } else {
-
-                res.json({error: false, message: 'Fetching record successful', description: '', data: result});
-
+            }
+            else {
+                res.json({error: false, message: Messages.SYNC_INITIATE, description: '', data: result});
             }
 
         });
-    })*/
+    })
+    .post('/user/:id', function (req, res, next) {
+
+        Sync.syncUser(req.params.id,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.SYNC_INITIATE, description: '', data: result});
+            }
+
+        });
+    })
+    .post('/user', function (req, res, next) {
+
+        Sync.syncAllUser(function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.SYNC_INITIATE, description: '', data: result});
+            }
+
+        });
+    })
+
+    .post('/vehicle/:id', function (req, res, next) {
+
+        Sync.syncVehicle(req.params.id,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.SYNC_INITIATE, description: '', data: result});
+            }
+
+        });
+    })
+    .post('/vehicle', function (req, res, next) {
+
+        Sync.syncAllVehicle(function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.SYNC_INITIATE, description: '', data: result});
+            }
+
+        });
+    })
+    .post('/electronic/reset', function (req, res, next) {
+
+        Sync.resetElectronics(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else {
+                res.json({error: false, message: Messages.SYNC_INITIATE, description: '', data: result});
+            }
+
+        });
+    })
+
 
 ;
 

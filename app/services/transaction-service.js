@@ -17,7 +17,8 @@ var async = require('async'),
     DockStation = require('../models/dock-station'),
     Station = require('../models/station'),
     Port = require('../models/port'),
-    MemberTransaction = require('../models/transaction');
+    MemberTransaction = require('../models/transaction'),
+    _ = require('underscore');
  var fleet = require('../models/fleet');
 
 var TransactionReconciliation = require('./transaction-reconciliation');
@@ -86,7 +87,6 @@ var details=0;
 
 exports.getAllTransactions = function (callback) {
     var alltrans = [];
-
     async.series([
         function (callback) {
             CheckOut.find({'status':'Open'}).sort({'createdAt': -1}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
@@ -101,6 +101,7 @@ exports.getAllTransactions = function (callback) {
                         if(result[i].user._type=='member' && (result[i].fromPort._type=='Docking-port' || result[i].fromPort._type=='Redistribution-area' || result[i].fromPort._type=='Holding-area'))
                         {
                         var details={
+                            _id:'',
                             user:'',
                             vehicle:'',
                             fromPort:'',
@@ -112,6 +113,7 @@ exports.getAllTransactions = function (callback) {
                             status:'',
                             creditsUsed:'-'
                         };
+                        details._id=result[i]._id;
                         details.user=result[i].user;
                         details.vehicle=result[i].vehicleId;
                         details.fromPort=result[i].fromPort;
@@ -224,6 +226,7 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
     });*/
 
     var transDetails;
+    var alltrans=[];
 //    if (typeof id !== "number") {
     async.series([
         function(callback)
@@ -247,7 +250,42 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
             {
                 return callback(null,null);
             }
-        },
+        }/*,
+        function (callback) {
+            CheckOut.findOne({'status':'Open'}).sort({'createdAt': -1}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(result)
+                {
+                        if(result.user._type=='member' && (result.fromPort._type=='Docking-port' || result.fromPort._type=='Redistribution-area' || result.fromPort._type=='Holding-area'))
+                        {
+                            var details={
+                                user:'',
+                                vehicle:'',
+                                fromPort:'',
+                                toPort:'-',
+                                checkOutTime:'',
+                                checkInTime:'-',
+                                duration:'-',
+                                creditBalance:'-',
+                                status:'',
+                                creditsUsed:'-'
+                            };
+                            details.user=result.user;
+                            details.vehicle=result.vehicleId;
+                            details.fromPort=result.fromPort;
+                            details.checkOutTime=result.checkOutTime;
+                            details.status=result.status;
+                            alltrans.push(details);
+                        }
+
+                }
+                return callback(null,result);
+            });
+        }*/
+        ,
         function (callback) {
             if (isNaN(id)) {
                 MemberTransaction.find({'user': id}).sort({'createdAt': -1}).deepPopulate('fromPort toPort').lean().exec(function (err, res) {
@@ -264,10 +302,10 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
                     res.forEach(function(r){
 
                         result.push({
-                            'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                            'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)),
                             'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
                             'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
-                            'checkInTime':  moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                            'checkInTime':  moment((r.checkInTime == null) ? '-' : (r.checkInTime)),
                             'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
                             'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
                             'duration': (r.duration == null) ? '-' : (r.duration)
@@ -298,10 +336,10 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
                             res.forEach(function (r) {
 
                                 result.push({
-                                    'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)).format('DD-MM-YYYY, h:mm:s a'),
+                                    'checkOutTime': moment((r.checkOutTime == null) ? '-' : (r.checkOutTime)),
                                     'FromStation': (r.fromPort.Name == null) ? '-' : (r.fromPort.Name),
                                     'ToStation': (r.toPort.Name == null) ? '-' : (r.toPort.Name),
-                                    'checkInTime': moment((r.checkInTime == null) ? '-' : (r.checkInTime)).format('DD-MM-YYYY, h:mm:s a'),
+                                    'checkInTime': moment((r.checkInTime == null) ? '-' : (r.checkInTime)),
                                     'balance': (r.creditBalance == null) ? '-' : (r.creditBalance),
                                     'fare': (r.creditsUsed == null) ? '-' : (r.creditsUsed),
                                     'duration': (r.duration == null) ? '-' : (r.duration)
@@ -329,6 +367,41 @@ exports.getFewRecordsWRTMember = function (id,flag, callback) {
     });
 
     };
+
+exports.getRecordsWRTMember = function (id,callback) {
+    var data;
+    async.series([
+        function (callback) {
+            User.findOne({cardNum:id},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error(Messages.USER_NOT_FOUND),null);
+                }
+                id=result._id;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            MemberTransaction.find({'user': id}).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort fromPort.StationId toPort  toPort.StationId').lean().exec(function (err, res) {
+                if (err) {
+                    return callback(err, null);
+                }
+                data = res;
+                return callback(null,res);
+            });
+        }
+    ],function (err,result) {
+       if(err)
+       {
+           return callback(err,null);
+       }
+       return callback(null,data);
+    });
+};
 
 exports.checkout=function (record,callback) {
     var vehiclesDetails;
@@ -754,7 +827,7 @@ exports.timelyCheckout = function (callback) {
                                                 vehicleUid: checkoutDetail.vehicleUid
                                             };
                                             result.vehicleId.push(vehicleDetails);
-                                            result.lastModifiedAt=new Date();
+                                            //result.lastModifiedAt=new Date();
                                             DockStation.find({'stationType':'dock-station'},'ipAddress',function (err,ds) {
                                                 if(err)
                                                 {
@@ -1118,7 +1191,7 @@ exports.timelyCheckin = function (callback) {
                                                             {
                                                                 return callback(new Error("No docking station found to update for sync"));
                                                             }
-                                                            result.lastModifiedAt=new Date();
+                                                            //result.lastModifiedAt=new Date();
                                                             result.unsuccessIp=[];
                                                             for(var i=0;i<ds.length;i++)
                                                             {
@@ -1435,7 +1508,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                  ldate = moment(record.todate).add(1, 'days');
                  ldate=ldate.format('YYYY-MM-DD');
                  queryObject = {
-                     createdAt: {$gte: moment(fdate), $lte: moment(ldate)}
+                     checkOutTime: {$gte: moment(fdate), $lte: moment(ldate)}
                  };
                  return callback(null,null);
              }
@@ -1446,7 +1519,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                  ldate = moment().add(1, 'days');
                 ldate=ldate.format('YYYY-MM-DD');
                 queryObject = {
-                    createdAt: {$gte: moment(fdate), $lte: moment(ldate)}
+                    checkOutTime: {$gte: moment(fdate), $lte: moment(ldate)}
                 };
                 return callback(null,null);
             }
@@ -1500,13 +1573,41 @@ exports.getAllCompletedTransactions = function (record,callback) {
         }
         ,
         function (callback) {
-            MemberTransaction.find(queryObject).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
+            queryObject.duration = {$lt:240};
+
+
+             MemberTransaction.distinct("checkOutTime",queryObject).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
+           // MemberTransaction.find(queryObject).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
+                 if (err) {
+                     return callback(err, null);
+                 }
+                 if (result.length > 0) {
+
+                     for (var i = 0; i < result.length; i++) {
+                         if (result[i].user) {
+                             if (result[i].user._type == 'member' && (result[i].fromPort._type == 'Docking-port' || result[i].fromPort._type == 'Redistribution-area' || result[i].fromPort._type == 'Holding-area') && (result[i].toPort._type == 'Docking-port' || result[i].toPort._type == 'Redistribution-area' || result[i].toPort._type == 'Holding-area')) {
+                                 alltrans.push(result[i]);
+                             }
+                         }
+                     }
+                     return callback(null, result);
+                 }
+                 else {
+                     return callback(new Error(Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE), null);
+                 }
+
+             });
+
+           // MemberTransaction.find(queryObject).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
+           /* MemberTransaction.find(queryObject).sort({'createdAt': -1}).deepPopulate('user vehicle fromPort toPort').lean().exec(function (err,result) {
+
                 if(err)
                 {
                     return callback(err,null);
                 }
                 if(result.length>0)
                 {
+
                     for(var i=0;i<result.length;i++)
                     {
                         if(result[i].user)
@@ -1523,7 +1624,7 @@ exports.getAllCompletedTransactions = function (record,callback) {
                     return callback(new Error(Messages.NO_SUCH_RECORD_EXISTS_IN_THE_DATABASE),null);
                 }
 
-            });
+            });*/
         }
     ],function (err,result) {
         if(err)
@@ -1533,4 +1634,309 @@ exports.getAllCompletedTransactions = function (record,callback) {
         return callback(null,alltrans);
     });
 
+};
+
+exports.clearOpenCheckout = function (id,callback) {
+    async.waterfall([
+        function (callback) {
+            CheckOut.findById(id,function (err,checkoutDetail) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!checkoutDetail)
+                {
+                    return callback(new Error('Checkout not found for this id'),null);
+                }
+                return callback(null,checkoutDetail);
+            });
+        },
+        function (checkoutDetail,callback) {
+            User.findById(checkoutDetail.user,function (err,userDetail) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!userDetail)
+                {
+                    return callback(null,"No user");
+                }
+                if(userDetail._type=='member')
+                {
+                    userDetail.vehicleId=[];
+                }
+                else 
+                {
+                    for(var i=0;i<userDetail.vehicleId.length;i++)
+                    {
+                        if(userDetail.vehicleId.vehicleid.equals(checkoutDetail.vehicleId))
+                        {
+                            userDetail.vehicleId.splice(i,1);
+                        }
+                    }
+                }
+                userDetail.lastModifiedAt = new Date();
+                User.findByIdAndUpdate(userDetail._id,userDetail,{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+                
+            }); 
+        },
+        function (result,callback) {
+            CheckOut.findByIdAndRemove(id,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,'Checkout cleared');
+    });
+};
+
+exports.getAllcheckins = function (callback) {
+    CheckIn.find({'status':'Open'}).sort({'createdAt': -1}).deepPopulate('user vehicleId toPort').lean().exec(function (err,result) {
+        if (err) {
+            return callback(err, null);
+        }
+        return callback(null,result);
+    });
+};
+
+exports.clearOpenCheckin = function (id,callback) {
+    CheckIn.findByIdAndRemove(id,function (err,checkinDetail) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,checkinDetail);
+    });
+};
+
+exports.clearAllOpenCheckout = function (callback) {
+    var checkout;
+    var users = [];
+    async.series([
+        function (callback) {
+            CheckOut.find({status:"Open"},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error("No open checkouts found"));
+                }
+                checkout = result;
+                for(var i=0;i<checkout.length;i++)
+                {
+                    users.push(checkout[i].user);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(users.length>0)
+            {
+               for(var i=0;i<users.length;i++)
+               {
+                   User.update({_id:users[i]},{$set:{vehicleId:[]}}).exec();
+                   if(i==users.length-1)
+                   {
+                       return callback(null,null);
+                   }
+               }
+
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        },
+        function (callback) {
+            if(checkout.length>0) {
+                for (var i = 0; i < checkout.length; i++) {
+                    CheckOut.findByIdAndRemove(checkout[i]._id).exec();
+                    if (i == checkout.length - 1) {
+                        return callback(null, null);
+                    }
+                }
+            }
+            else
+            {
+                return callback(null,null);
+            }
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+
+};
+
+exports.clearAllOpenCheckin = function (callback) {
+    CheckIn.remove({status:"Open"},function (err,checkinDetail) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,checkinDetail);
+    });
+};
+
+exports.clearDuplicate = function (record,callback) {
+    async.forEach(record.IDS, function (item, callback2) {
+      MemberTransaction.findByIdAndRemove(item).exec().then(function (err) {
+          callback2();
+      });
+    });
+    return callback(null,"Transactions removing");
+};
+
+exports.getOpenCheckouts = function (id,callback) {
+    User.findOne({cardNum:id},function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        if(!result)
+        {
+            return callback(new Error("No user found by this id"),null);
+        }
+        CheckOut.find({status:"Open",user:result._id}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
+            if(err)
+            {
+                return callback(err,null);
+            }
+            if(!result)
+            {
+                return callback(new Error("No open checkouts found"));
+            }
+            return callback(null,result);
+        });
+    });
+};
+
+exports.clearOpenCheckoutFromControlCenter = function (record,callback) {
+    var user;
+    var vehicleDet;
+    var port;
+    var checkout;
+    async.series([
+        function (callback) {
+            User.findOne({UserID:record.user},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error("No user found"),null);
+                }
+                user = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            vehicle.findOne({vehicleUid:record.vehicle},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error("No vehicle found"),null);
+                }
+                vehicleDet = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Port.findOne({PortID:record.port},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error("Port not found"),null);
+                }
+                port = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            CheckOut.findOne({user:user._id, vehicleId:vehicleDet._id, fromPort:port._id,checkOutTime:record.checkouttime, status:"Open"},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error("No matching checkout found"),null);
+                }
+                checkout = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            CheckOut.findByIdAndRemove(checkout._id,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+        ,
+        function (callback) {
+            if(user._type == "member")
+            {
+                User.findByIdAndUpdate(user._id,{$set:{vehicleId:[]}},{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                for(var i=0;i<user.vehicleId;i++)
+                {
+                    if(vehicleDet._id.equals(user.vehicleId[i].vehicleid))
+                    {
+                        user.vehicleId.splice(i,1);
+                    }
+                }
+                User.findByIdAndUpdate(user._id,{$set:{vehicleId:user.vehicleId}},{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+        }
+
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
 };

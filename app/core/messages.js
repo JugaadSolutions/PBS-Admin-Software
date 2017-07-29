@@ -63,6 +63,7 @@ module.exports={
     RECORD_EXISTS:"Record already exists",
 
     SIGN_UP_SUCCESSFUL:"Sign Up Successful",
+    SYNC_INITIATE:"Sync initiate successful",
 
     THIS_CARD_HAS_ALREADY_BEEN_ASSIGNED_TO_A_USER:"This card has already been assigned to a user",
     THIS_CARD_HAS_BEEN_BLOCKED:"This card has been blocked, Please try some other cards",

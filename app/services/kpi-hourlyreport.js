@@ -270,7 +270,7 @@ exports.getReport = function (record,callback) {
 exports.getcardReport = function (record,callback) {
     if(record.duration==0)
     {
-        record.duration=1;
+        record.duration=3000;
     }
     var notrans;
     var totalTrans;
@@ -283,7 +283,7 @@ exports.getcardReport = function (record,callback) {
     async.series([
         function (callback) {
 
-            Checkout.find({checkOutTime:{$gte:moment(fdate),$lte:moment(ldate)},duration:{$lte:Number(record.duration)}}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
+            Checkout.find({checkOutTime:{$gte:moment(fdate),$lte:moment(ldate)},duration:{$lte:record.duration}}).deepPopulate('user vehicleId fromPort').lean().exec(function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
@@ -301,7 +301,7 @@ exports.getcardReport = function (record,callback) {
             fdate=fdate.format('YYYY-MM-DD');
             var ldate = moment(record.todate).add(1, 'days');
             ldate=ldate.format('YYYY-MM-DD');*/
-            Checkout.count({checkOutTime:{$gte:moment(fdate),$lte:moment(ldate)}},function (err,result) {
+            Checkout.count({checkOutTime:{$gte:moment(fdate),$lt:moment(ldate)}},function (err,result) {
                 if(err)
                 {
                     return callback(err,null);

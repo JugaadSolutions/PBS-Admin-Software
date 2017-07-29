@@ -411,3 +411,81 @@ exports.cardAvailableForMember = function (cardNumber, callback) {
     );
 
 };
+
+exports.reassignCard = function (record,callback) {
+    var oldCardData;
+    var newCardData;
+    async.series([
+        function (callback) {
+            Card.findOne({cardNumber:record.oldCard},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null)
+                }
+                if(!result)
+                {
+                    return callback(new Error("Old card number not found"),null);
+                }
+                oldCardData = result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Card.findOne({cardNumber:record.newCard},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null)
+                }
+                if(!result)
+                {
+                    return callback(new Error("New card number not found"),null);
+                }
+                if(result.status!=Constants.CardStatus.AVAILABLE)
+                {
+                    return callback(new Error("Card is not available to re-assign, Please check the card number"),null);
+                }
+                result.assignedTo = oldCardData.assignedTo;
+                result.issuedBy = oldCardData.issuedBy;
+                result.balance = oldCardData.balance;
+                result.membershipId = oldCardData.membershipId;
+                result.status = oldCardData.status;
+                result.cardType = oldCardData.cardType;
+                result.currentLocation = oldCardData.currentLocation;
+                result.issuedDate = oldCardData.issuedDate;
+                result.createdBy = oldCardData.createdBy;
+                Card.findByIdAndUpdate(result._id,result,{new:true},function (err,res) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    newCardData = res;
+                    return callback(null,res);
+                });
+            });
+        },
+        function (callback) {
+            User.findOneAndUpdate({cardNum:oldCardData.cardNumber},{$set:{cardNum:newCardData.cardNumber,smartCardNumber:newCardData.cardRFID,smartCardId:newCardData._id,lastSyncedAt:new Date('2017-01-01T00:00:00.000Z')}},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            Card.findByIdAndRemove(oldCardData._id,function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                return callback(null,result);
+            });
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+};

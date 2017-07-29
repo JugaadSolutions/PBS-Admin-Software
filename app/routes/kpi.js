@@ -7,6 +7,7 @@ var express = require('express'),
     kpivehicleservice = require('../services/kpi-vehicle-service'),
     kioskService = require('../services/kiosk-service'),
     Webinfo = require('../models/websiteInfo'),
+    kpids = require('../models/kpi-dockstation'),
     kpidsservice = require('../services/kpi-dockstation-service');
 var webinfoService = require('../services/webinfo-service');
 var router = express.Router();
@@ -42,6 +43,30 @@ router
 
     })
 
+    .get('/dockstation/all', function (req, res, next) {
+
+        //var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+        // Card.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {
+        kpids.find({}).deepPopulate('stationid').lean().exec(function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
     .post('/webinfo/details', function (req, res, next) {
 
         /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
@@ -105,6 +130,31 @@ router
                 res.json({
                     error: false,
                     message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .post('/usage/stats', function (req, res, next) {
+
+        /* var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
+
+         Member.paginate(appliedFilter.query, appliedFilter.options, function (err, result) {*/
+        kpivehicleservice.createVehicleReport(req.body,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.RECORD_CREATED_SUCCESS,
                     description: '',
                     data: result
                 });
@@ -255,6 +305,53 @@ router
                 res.json({
                     error: false,
                     message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .put('/dockstation/:id', function (req, res, next) {
+        if(req.body._id)
+        {
+            delete req.body._id;
+        }
+        kpids.findByIdAndUpdate(req.params.id,req.body,{new:true},function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: "Updating record successful",
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
+
+    .delete('/dockstation/:id', function (req, res, next) {
+
+        kpids.findByIdAndRemove(req.params.id,function (err, result) {
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: "Delete record successful",
                     description: '',
                     data: result
                 });

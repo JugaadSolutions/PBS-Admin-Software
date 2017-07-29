@@ -1,3 +1,6 @@
+/**
+ * Created by root on 30/6/17.
+ */
 var mongoose = require('mongoose'),
     //extend = require('mongoose-schema-extend'),
     Schema = mongoose.Schema;
@@ -10,15 +13,14 @@ const GPS = {
     latitude: {type: Number, required: false}
 };
 
-var RegistrationCenterSchema = require('mongoose').model('station').schema.extend({
+var KarnatakaOneCenterSchema = require('mongoose').model('station').schema.extend({
     name:{type:String,required:false,unique:true},
     location:{type:String,required:false},
-    nearbyHub:{type:String,required:true,default:"13.13.13.2"},
     assignedTo:{type:Schema.ObjectId,required:false,ref:'user'},
     gpsCoordinates: {type: GPS, required: false}
 });
 
-var RegistrationCenter = mongoose.model('registration-center', RegistrationCenterSchema);
+var KarnatakaOneCenter = mongoose.model('kone-center', KarnatakaOneCenterSchema);
 
 
-module.exports=RegistrationCenter;
+module.exports=KarnatakaOneCenter;

@@ -91,7 +91,10 @@ var UserSchema = mongoose.Schema({
     resetPasswordKeyValidity:{type:Date,required:false},
     createdBy:{type:Schema.ObjectId,required:false,ref:'user'},
     registeredLocation:{type:String,required:false},
-    lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'}
+    nearbyHub:{type:String,required:true,default:"13.13.13.2"},
+    lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'},
+    token:{type:String,required:false},
+    ondemand:{type:Boolean,required:false,default:false}
 
 }, { collection : 'users', discriminatorKey : '_type' });
 
@@ -160,6 +163,7 @@ User.schema.methods.comparePassword = function (passw, cb) {
         cb(null, isMatch);
     });
 };
+
 
 User.schema.pre('update',function (next) {
     var User = this;

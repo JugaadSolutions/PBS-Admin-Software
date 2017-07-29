@@ -217,7 +217,8 @@ exports.kpistat = function (portid,time,state) {
                         stationid:stationDetails._id,
                         status:Constants.AvailabilityStatus.FULL,
                         starttime:time,
-                        cyclenums:stationDetails.bicycleCount
+                        cyclenums:stationDetails.bicycleCount,
+                        stationtype:stationDetails.modelType
                         };
                         kpids.create(obj,function (err,result) {
                             if(err)
@@ -387,7 +388,8 @@ exports.kpistat = function (portid,time,state) {
                         stationid:stationDetails._id,
                         status:Constants.AvailabilityStatus.EMPTY,
                         starttime:time,
-                        cyclenums:stationDetails.bicycleCount
+                        cyclenums:stationDetails.bicycleCount,
+                        stationtype:stationDetails.modelType
                     };
                     kpids.create(obj,function (err,result) {
                         if(err)
@@ -670,7 +672,7 @@ exports.kpicleaninfo = function (record,callback) {
         fdate=fdate.format('YYYY-MM-DD');
         var ldate = moment(record.todate).add(1, 'days');
         ldate=ldate.format('YYYY-MM-DD');
-        cleanstation.find({'cleaneddate':{$gte:moment(fdate),$lte:moment(ldate)},'cleanCount':1}).sort({'cleaneddate': 'ascending'})/*.deepPopulate('stationId empId')*/.lean().exec(function (err,result) {
+        cleanstation.find({'cleaneddate':{$gte:moment(fdate),$lte:moment(ldate)},'cleanCount':1}).sort({'cleaneddate': 'ascending'}).deepPopulate('stationId empId').lean().exec(function (err,result) {
             if(err)
             {
                 return callback(err,null);

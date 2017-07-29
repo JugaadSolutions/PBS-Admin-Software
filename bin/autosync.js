@@ -3,7 +3,7 @@
  */
 
 var syncService=require('../app/services/sync-service');
-
+var TransactionCorrection = require('../app/services/transcorrection');
 var flag = 1;
 var lastSyncedTime;
 /*
@@ -15,6 +15,19 @@ setTimeout(function () {
 /*setTimeout(function () {
     vehiclesync();
 },15);*/
+
+/*setTimeout(function () {
+    TransactionCorrection.correct(function (err,result) {
+        if(err)
+        {
+            console.log(err);
+        }
+        else
+        {
+            console.log(result);
+        }
+    });
+},5000);*/
 
 function usersync() {
     setTimeout(function () {

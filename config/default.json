@@ -5,7 +5,7 @@
     "port": 27017,
     "username": "",
     "password": "",
-    "database": "pbs-development"
+    "database": "pbs-testing"
   },
   "fleet":{
     "mysore":{
@@ -46,7 +46,7 @@
   //  "resetUrl":"http://www.mytrintrin.com/portal/reset.php?key=",
     "resetUrl":"http://www.mytrintrin.com/userportal/app/resetpassword.html?rskey=",
     "iosResetUrl":"http://www.mytrintrin.com/ios/app/resetpassword.html?rskey=",
-    "appResetUrl":"intent://com.mytrintrin.www.linktest/#Intent;scheme=mytrintrin;package=com.mytrintrin.www.linktest;S.content=",
+    "appResetUrl":"http://www.mytrintrin.com/userportal/app/resetpassword.html?rskey=",
     "emailVerifySuccessful": "public/email-verification-success",
     "emailVerificationFailed": "public/email-verification-failed",
     "paymentSuccessful": "payment-successful",

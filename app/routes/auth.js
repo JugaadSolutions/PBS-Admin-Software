@@ -29,6 +29,23 @@ router
 
     })
 
+    .post('/logout', function (req, res, next) {
+
+        UserService.logoutUser(req.body.token, function (err, data) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({error: false, message: "Logout Successful", description: null, data: data});
+
+            }
+
+        });
+
+    })
 ;
 
 module.exports = router;

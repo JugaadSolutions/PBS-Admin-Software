@@ -752,3 +752,120 @@ exports.summery = function (callback) {
        return callback(null,data);
     });
 };
+
+exports.forceBicycle = function (record,callback) {
+
+    async.forEach(record.forceList,function (rec,callback2) {
+        force(rec,function (err,result) {
+            if(err)
+            {
+                console.error(err);
+                callback2();
+            }
+            else
+            {
+                callback2();
+            }
+        });
+    },function (err) {
+        console.error(err);
+    });
+    return callback(null,"Force initiated");
+};
+
+function force(record,callback) {
+    var port;
+    var vehicle;
+
+    console.log(record.portId);
+    console.log(record.vehicleId);
+    async.series([
+        function (callback) {
+            Port.findOne({PortID:record.portId},function (err,result) {
+                if(err)
+                {
+                    return callback(err,null);
+                }
+                if(!result)
+                {
+                    return callback(new Error("Port id not found"),null);
+                }
+                port=result;
+                return callback(null,result);
+            });
+        },
+        function (callback) {
+            if(record.vehicleId=='-')
+            {
+                return callback(null,null);
+            }
+            else
+            {
+                Vehicle.findOne({vehicleNumber:record.vehicleId},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Vehicle not found"),null);
+                    }
+                    vehicle = result;
+                    return callback(null,result);
+                });
+            }
+
+        },
+        function (callback) {
+            if(record.vehicleId=='-')
+            {
+                port.vehicleId=[];
+                port.portStatus = Constants.AvailabilityStatus.EMPTY;
+                Port.findByIdAndUpdate(port._id,port,{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                port.vehicleId=[];
+                var data = {vehicleid:vehicle._id,vehicleUid:vehicle.vehicleUid};
+                port.vehicleId.push(data);
+                port.portStatus = Constants.AvailabilityStatus.FULL;
+                Port.findByIdAndUpdate(port._id,port,{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+
+        },
+        function (callback) {
+            if(record.vehicleId=='-') {
+                return callback(null,null);
+            }
+            else
+            {
+                Vehicle.findByIdAndUpdate(vehicle._id,{$set:{vehicleCurrentStatus:Constants.VehicleLocationStatus.WITH_PORT,currentAssociationId:port._id}},{new:true},function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    return callback(null,result);
+                });
+            }
+
+        }
+    ],function (err,result) {
+        if(err)
+        {
+            return callback(err,null);
+        }
+        return callback(null,result);
+    });
+}

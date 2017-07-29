@@ -17,7 +17,9 @@ var schema = {
     checkOutTime: {type: String, required: false},
     status: {type: String, required: false,default:'Open'},
     errorStatus:{type: String, required: false},
-    errorMsg:{type: String, required: false}
+    errorMsg:{type: String, required: false},
+    checkOutInitiatedTime: {type: String, required: false},
+    checkOutCompletionTime: {type: String, required: false}
 };
 
 var model = new Schema(schema);

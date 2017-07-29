@@ -97,6 +97,20 @@ router
         });
     })
 
+    .post('/force', function (req, res, next) {
+        VehicleService.forceBicycle(req.body,function (err,result) {
+            if(err)
+            {
+                next(err, req, res, next);
+            }
+            else
+            {
+                res.json({error: false, message: Messages.UPDATING_RECORD_SUCCESSFUL, description: '', data: result});
+            }
+
+        });
+    })
+
     .put('/:id', function (req, res, next) {
 
         var existingRecord = req.body;

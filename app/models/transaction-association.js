@@ -15,7 +15,8 @@ var Schema = mongoose.Schema;
 var schema = {
 
     checkInEntry: {type: Schema.ObjectId, required: true},// ref: 'Member'},
-    checkOutEntry: {type: Schema.ObjectId, required: true}
+    checkOutEntry: {type: Schema.ObjectId, required: true},
+    status:{type:String,required:true,default:"Open"}
 
 };
 

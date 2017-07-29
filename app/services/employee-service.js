@@ -29,6 +29,7 @@ var async = require('async'),
     HoldingareaStaff = require('../models/holdingarea-staff'),
     RedistributionEmployee =require('../models/redistribution-staff'),
     Mysoreone = require('../models/mysoreone-staff'),
+    KoneAdmin = require('../models/karnatakaone-admin'),
     MaintenanceEmployee = require('../models/maintanancecentre-staff');
 
 
@@ -62,7 +63,7 @@ exports.createEmployee=function (record,id,callback) {
                     if (err) {
                         return callback(err, null);
                     }
-                    password=data;
+                    password="Employee@123";
                     ResetKey = data;
                     return callback(null, data);
                 });
@@ -98,6 +99,7 @@ exports.createEmployee=function (record,id,callback) {
             documents = record.documents;
             record.documents = [];
             record.password=password;
+            record.emailVerified = true;
             record.profilePic = '';
             profilePic = record.profilePic;
             if(id==1)
@@ -208,6 +210,21 @@ exports.createEmployee=function (record,id,callback) {
             if(id==8)
             {
                 Mysoreone.create(record,function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        return callback(new Error("Couldn't able to create the employee "),null);
+                    }
+                    memberDetails=result;
+                    return callback(null,result);
+                });
+            }
+            if(id==9)
+            {
+                KoneAdmin.create(record,function (err,result) {
                     if(err)
                     {
                         return callback(err,null);
@@ -703,7 +720,17 @@ exports.updateEmployee = function (record,callback) {
                     return callback(null, result);
                 });
             }
+            if(record._type=='Kone-admin') {
+                KoneAdmin.update({UserID:record.UserID}, record, {new: true}).lean().exec(function (err, result) {
 
+                    if (err) {
+                        return callback(err, null);
+                    }
+
+                    //memberDetails = result;
+                    return callback(null, result);
+                });
+            }
             //});
         }
 

@@ -30,3 +30,5 @@ require('./admin');
 require('./user');
 require('./port');
 require('./control-centre');
+require('./karnatakaone-admin');
+require('./ondemand-staff');

@@ -14,6 +14,8 @@ var abstract = require('./abstract'),
 // Mongoose Schema
 var Schema = mongoose.Schema;
 
+const Stype = Constants.ServiceChargeType;
+
 const TopupPlanStatus = Constants.TopupPlanStatus;
 
 // Model
@@ -26,6 +28,8 @@ var schema = {
     userFees: {type: Number, required: true},
     status: {type: TopupPlanStatus, required: true, default: TopupPlanStatus.ACTIVE},
     createdBy : {type:Schema.ObjectId,required:false,ref:'user'},
+    ccserviceCharge:{type:Number,required:false,default:5},
+    serviceChargeType:{type:Stype,required:false,default:Stype.FLAT},
 
     lastSyncedAt:{type:Date,required:false,default:Date.now},
     updateCount:{type: Number, required: false,default:0},

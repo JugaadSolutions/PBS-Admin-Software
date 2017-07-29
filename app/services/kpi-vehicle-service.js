@@ -8,7 +8,7 @@ var async = require('async'),
     Transactions = require('../models/transaction'),
     UsageStats = require('../models/usage-stats');
 
-exports.createVehicleReport  = function (callback) {
+exports.createVehicleReport  = function (record,callback) {
 
     var kpidata = {
         reportDate:'',
@@ -22,12 +22,17 @@ exports.createVehicleReport  = function (callback) {
     };
     async.series([
         function (callback) {
-            var sdate = moment().subtract(1, 'days');
+            /*var sdate = moment().subtract(1, 'days');
             sdate=sdate.format('YYYY-MM-DD');
             var ldate = moment();//.subtract(1, 'days');
             ldate=ldate.format('YYYY-MM-DD');
+            kpidata.reportDate= sdate;*/
+            var sdate = moment(record.reportDate);
+            sdate=sdate.format('YYYY-MM-DD');
+            var ldate = moment(record.reportDate).add(1, 'days');
+            ldate=ldate.format('YYYY-MM-DD');
             kpidata.reportDate= sdate;
-          Transactions.find({checkOutTime:{$gte:moment(sdate),$lte:moment(ldate)}},function (err,result) {
+          Transactions.find({checkOutTime:{$gte:moment(sdate),$lt:moment(ldate)}},function (err,result) {
               if(err)
               {
                   return callback(err,null);
@@ -69,10 +74,15 @@ exports.createVehicleReport  = function (callback) {
         }
         ,
         function (callback) {
-            var sdate = moment().subtract(1, 'days');
+            /*var sdate = moment().subtract(1, 'days');
             sdate=sdate.format('YYYY-MM-DD');
             var ldate = moment();//.subtract(1, 'days');
+            ldate=ldate.format('YYYY-MM-DD');*/
+            var sdate = moment(record.reportDate);
+            sdate=sdate.format('YYYY-MM-DD');
+            var ldate = moment(record.reportDate).add(1, 'days');
             ldate=ldate.format('YYYY-MM-DD');
+            kpidata.reportDate= sdate;
             Transactions.find({checkOutTime:{$gt:moment(sdate),$lt:moment(ldate)}}).distinct('user').lean().exec(function (err,user) {
                 if (err) {
                     return callback(err, null);
@@ -108,7 +118,7 @@ exports.createVehicleReport  = function (callback) {
         {
             return callback(err,null);
         }
-        return callback(null,null);
+        return callback(null,result);
     });
 };
 

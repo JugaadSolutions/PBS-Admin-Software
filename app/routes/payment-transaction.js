@@ -15,6 +15,7 @@ var router = express.Router();
 router
 
 
+
     .get('/dashboard',function (req,res,next) {
         PaymentTransactionService.dashboardDetails(function (err,result) {
 
@@ -90,6 +91,27 @@ router
 
     })
 
+    .get('/reg/members', function (req, res, next) {
+        PaymentTransaction.find({paymentDescription:'Security Deposit',paymentMode:{$ne:'OnDemand'}}).deepPopulate('memberId').lean().exec(function (err,result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+
+            }
+
+        });
+
+    })
     .get('/member/:id', function (req, res, next) {
 
         // var appliedFilter = RequestDataHandler.createQuery(req.query['filter']);
@@ -403,5 +425,35 @@ router
 
     })
 
+    .put('/correction',function (req,res,next) {
+
+        var query = {invoiceNo:req.body.invoiceNo,credit:req.body.credit};
+        var set = {paymentMode:req.body.paymentMode,paymentThrough:req.body.paymentThrough};
+
+        if(req.body.location)
+        {
+            //query = {invoiceNo:req.body.invoiceNo,credit:req.body.credit,location:req.body.location};
+            set ={$set:{paymentMode:req.body.paymentMode,paymentThrough:req.body.paymentThrough,location:req.body.location}} ;
+        }
+
+        PaymentTransaction.findOneAndUpdate({invoiceNo:req.body.invoiceNo,credit:req.body.credit},set,{new:true},function (err,result) {
+
+            if (err) {
+
+                next(err, req, res, next);
+
+            } else {
+
+                //res.postReq();
+
+                res.json({
+                    error: false,
+                    message: Messages.FETCHING_RECORDS_SUCCESSFUL,
+                    description: '',
+                    data: result
+                });
+            }
+        });
+    })
 ;
 module.exports=router;

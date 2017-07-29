@@ -9,6 +9,7 @@ var async = require('async'),
     CheckIn = require('../models/checkin'),
     CheckoutError = require('../models/checkoutError'),
     CheckInError = require('../models/checkinError'),
+    moment = require('moment'),
     vehicle = require('../models/vehicle');
 
 var MemberService = require('../services/transaction-service');
@@ -31,7 +32,7 @@ exports.BridgeCheckout=function (record,callback) {
 
     async.series([
         function (callback) {
-            User.findOne({'UserID':record.cardId},function (err,result) {
+            User.findOne({'UserID':record.cardId}).lean().exec(function (err,result) {
                 if(err)
                 {
                     errorstatus=1;
@@ -53,7 +54,7 @@ exports.BridgeCheckout=function (record,callback) {
         }
         ,
         function (callback) {
-            vehicle.findOne({'vehicleUid':record.vehicleId},function (err,result) {
+            vehicle.findOne({'vehicleUid':record.vehicleId}).lean().exec(function (err,result) {
                 if(err)
                 {
                     errorstatus=1;
@@ -74,9 +75,7 @@ exports.BridgeCheckout=function (record,callback) {
             });
         },
         function (callback) {
-            Port.findOne({PortID:record.fromPort},function (err,result) {
-
-
+            Port.findOne({PortID:record.fromPort}).lean().exec(function (err,result) {
                 if(err)
                 {
                     errorstatus=1;
@@ -99,12 +98,17 @@ exports.BridgeCheckout=function (record,callback) {
         ,
         function (callback) {
             if (errorstatus == 0) {
+                var durationMin = moment.duration(moment(record.checkOutCompletionTime).diff(record.checkOutInitiatedTime));
+                var duration = durationMin.asMilliseconds();
                 requestDetails = {
                     user: userDetails._id,
                     vehicleId: vehicleDetails._id,
                     fromPort: portDetails._id,
                     checkOutTime: record.checkOutTime,
-                    vehicleUid:vehicleDetails.vehicleUid
+                    vehicleUid:vehicleDetails.vehicleUid,
+                    checkOutInitiatedTime:record.checkOutInitiatedTime,
+                    checkOutCompletionTime:record.checkOutCompletionTime,
+                    duration:duration
                 };
                 /*MemberService.checkout(requestDetails,function (err,result) {
                  if(err)
@@ -141,6 +145,8 @@ exports.BridgeCheckout=function (record,callback) {
             {
                 details.errorStatus=errorstatus;
                 details.errorMsg = errormsg;
+                details.checkOutInitiatedTime=record.checkOutInitiatedTime;
+                details.checkOutCompletionTime=record.checkOutCompletionTime;
                 CheckoutError.create(details,function (err,result) {
                     if(err)
                     {
@@ -200,7 +206,7 @@ exports.BridgeCheckin = function (record,callback) {
 
     async.series([
         function (callback) {
-            vehicle.findOne({'vehicleUid':record.vehicleId},function (err,result) {
+            vehicle.findOne({'vehicleUid':record.vehicleId}).lean().exec(function (err,result) {
                 if(err)
                 {
                     errorstatus=1;
@@ -221,7 +227,7 @@ exports.BridgeCheckin = function (record,callback) {
             });
         },
         function (callback) {
-            Port.findOne({PortID:record.toPort},function (err,result) {
+            Port.findOne({PortID:record.toPort}).lean().exec(function (err,result) {
                 if(err)
                 {
                     errorstatus=1;

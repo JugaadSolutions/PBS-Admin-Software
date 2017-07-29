@@ -1,5 +1,3 @@
-var json2csv = require('json2csv');
-var fields = ['DATE', 'PAYER', 'TRANSACTION NO','TRANSACTION TYPE','PAYMODE','AMOUNT'];
 var async = require('async'),
     moment = require('moment'),
     MembershipService=require('../services/membership-service'),
@@ -7,6 +5,7 @@ var async = require('async'),
     User = require('../models/user'),
     Stations = require('../models/station'),
     RegCenter = require('../models/registration-center'),
+    KoneCenter = require('../models/karnatakaone-center'),
     Topup = require('../models/topup-plan'),
     Member = require('../models/member'),
     Messages = require('../core/messages'),
@@ -24,6 +23,7 @@ exports.signedUp = function (record,memberObject,callback) {
     var validity;
     var updatedMember;
     var location;
+    var flag = false;
     async.series([
         function (callback) {
             Membership.findById(memberObject.membershipId,function (err,result) {
@@ -53,16 +53,64 @@ exports.signedUp = function (record,memberObject,callback) {
                 if(!result)
                 {
                     location = 'Other Location';
+                    flag = true;
                     return callback(null,null);
                 }
                 location=result.location;
                 return callback(null,result);
             });
+        },
+        function (callback) {
+            if(flag)
+            {
+                KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        location = 'Other Location';
+                        return callback(null,null);
+                    }
+                    location=result.location;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
+
         }
         ,
         function (callback) {
             if(memberShipObject)
             {
+
+                var serviceObject;
+                var uf = 'PBS'+ new Date().getTime();
+                if(record.credit==360)
+                {
+                    record.credit = record.credit-memberShipObject.ccserviceCharge;
+                    serviceObject={
+                        memberId:memberObject._id,
+                        invoiceNo: uf,
+                        paymentDescription:Constants.PayDescription.SERVICE_CHARGE,
+                        paymentMode:Constants.PayMode.TRANSFER,
+                        paymentThrough:Constants.PayMode.TRANSFER,
+                        gatewayTransactionId:record.transactionNumber,
+                        comments:record.comments,
+                        debit:memberShipObject.ccserviceCharge,
+                        balance:record.credit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
+                    };
+
+                    transactionList.push(serviceObject);
+                }
+
+
                 var securityObject;
                 var sd = 'PBS'+ new Date().getTime();
                 record.credit=record.credit-memberShipObject.securityDeposit;
@@ -70,8 +118,8 @@ exports.signedUp = function (record,memberObject,callback) {
                     memberId:memberObject._id,
                     invoiceNo: sd,
                     paymentDescription:Constants.PayDescription.SECURITY_DEPOSIT,
-                    paymentMode:record.creditMode,
-                    paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.PAYMENT_GATEWAY,
+                    paymentMode:Constants.PayMode.TRANSFER,
+                    paymentThrough:Constants.PayMode.TRANSFER,
                     gatewayTransactionId:record.transactionNumber,
                     comments:record.comments,
                     debit:memberShipObject.securityDeposit,
@@ -87,8 +135,8 @@ exports.signedUp = function (record,memberObject,callback) {
                     memberId:memberObject._id,
                     invoiceNo: cd,
                     paymentDescription:Constants.PayDescription.SMART_CARD_FEE,
-                    paymentMode:record.creditMode,
-                    paymentThrough:Constants.PayThrough.POS,
+                    paymentMode:Constants.PayMode.TRANSFER,
+                    paymentThrough:Constants.PayMode.TRANSFER,
                     gatewayTransactionId:record.transactionNumber,
                     comments:record.comments,
                     debit:memberShipObject.smartCardFees,
@@ -108,8 +156,8 @@ exports.signedUp = function (record,memberObject,callback) {
                         memberId:memberObject._id,
                         invoiceNo: ps,
                         paymentDescription:Constants.PayDescription.PROCESSING_FEE,
-                        paymentMode:record.creditMode,
-                        paymentThrough:Constants.PayThrough.POS,
+                        paymentMode:Constants.PayMode.TRANSFER,
+                        paymentThrough:Constants.PayMode.TRANSFER,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.processingFees,
@@ -223,6 +271,7 @@ exports.existingMember = function (memberObject,record,callback) {
     var membershipType;
     var location;
     var orderId = 'PBS'+ new Date().getTime();
+    var flag = false;
    async.series([
        function (callback) {
            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
@@ -233,11 +282,34 @@ exports.existingMember = function (memberObject,record,callback) {
                if(!result)
                {
                    location = 'Other Location';
+                   flag = true;
                    return callback(null,result);
                }
                location=result.location;
                return callback(null,result);
            });
+       },
+       function (callback) {
+           if(flag)
+           {
+               KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                   if(err)
+                   {
+                       return callback(err,null);
+                   }
+                   if(!result)
+                   {
+                       location = 'Other Location';
+                       return callback(null,null);
+                   }
+                   location=result.location;
+                   return callback(null,result);
+               });
+           }
+           else
+           {
+               return callback(null,null);
+           }
        }
        ,
     function (callback) {
@@ -445,23 +517,67 @@ exports.topUp = function (memberObject,record,callback) {
     var location;
     var orderId = 'PBS'+ new Date().getTime();
     var topupDetails;
+    var trans = [];
+    var flag = false;
 
     async.series([
         function (callback) {
-            RegCenter.findOne({'stationType':'registration-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
-                if(err)
-                {
-                    return callback(err,null);
+        if(record.location)
+        {
+            location = record.location;
+            return callback(null,null);
+        }
+        else {
+            RegCenter.findOne({
+                'stationType': 'registration-center',
+                'assignedTo': record.createdBy
+            }).lean().exec(function (err, result) {
+                if (err) {
+                    return callback(err, null);
                 }
-                if(!result)
-                {
+                if (!result) {
                     location = 'Other Location';
-                    return callback(null,result);
+                    flag = true;
+                    return callback(null, result);
                 }
-                location=result.location;
-                return callback(null,result);
+                location = result.location;
+                return callback(null, result);
             });
+        }
         },
+
+        function (callback) {
+            if(record.location)
+            {
+                location = record.location;
+                return callback(null,null);
+            }
+            else {
+                if(flag)
+                {
+                    KoneCenter.findOne({
+                        'stationType': 'kone-center',
+                        'assignedTo': record.createdBy
+                    }).lean().exec(function (err, result) {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        if (!result) {
+                            location = 'Other Location';
+                            return callback(null, null);
+                        }
+                        location = result.location;
+                        return callback(null, result);
+                    });
+                }
+                else
+                {
+                    return callback(null,null);
+                }
+
+            }
+        }
+        ,
         function (callback) {
             Topup.findOne({topupId:record.credit},function (err,result) {
                 if(err)
@@ -479,26 +595,88 @@ exports.topUp = function (memberObject,record,callback) {
         }
         ,
         function (callback) {
-            transObject={
-                memberId:memberObject._id,
-                invoiceNo: orderId,
-                paymentDescription:Constants.PayDescription.TOPUP,
-                paymentMode:(record.creditMode==null)?Constants.PayMode.NET_BANKING:record.creditMode,
-                paymentThrough:(record.creditMode==Constants.PayThrough.CASH)?Constants.PayThrough.CASH:Constants.PayThrough.PAYMENT_GATEWAY ,
-                gatewayTransactionId:record.transactionNumber,
-                comments:record.comments,
-                credit:record.credit,
-                balance:record.credit,
-                location:(location!=null)?location:'Other Location',
-                createdBy:record.createdBy
-            };
-            Payments.create(transObject,function (err,result) {
+
+
+            if(record.onlinePay)
+            {
+                record.credit = record.credit+topupDetails.ccserviceCharge;
+                transObject={
+                    memberId:memberObject._id,
+                    invoiceNo: orderId,
+                    paymentDescription:Constants.PayDescription.TOPUP,
+                    paymentMode:(record.creditMode==null)?Constants.PayMode.NET_BANKING:record.creditMode,
+                    paymentThrough:(record.creditMode==Constants.PayThrough.CASH)?Constants.PayThrough.CASH:Constants.PayThrough.PAYMENT_GATEWAY ,
+                    gatewayTransactionId:record.transactionNumber,
+                    comments:record.comments,
+                    credit:record.credit,
+                    balance:record.credit,
+                    location:(location!=null)?location:Constants.PayThrough.PAYMENT_GATEWAY,
+                    createdBy:record.createdBy
+                };
+                trans.push(transObject);
+
+                record.credit = record.credit-topupDetails.ccserviceCharge;
+                var serviceObject;
+                serviceObject={
+                    memberId:memberObject._id,
+                    invoiceNo: orderId,
+                    paymentDescription:Constants.PayDescription.SERVICE_CHARGE,
+                    paymentMode:Constants.PayMode.TRANSFER,
+                    paymentThrough:Constants.PayMode.TRANSFER,
+                    gatewayTransactionId:record.transactionNumber,
+                    comments:record.comments,
+                    debit:topupDetails.ccserviceCharge,
+                    balance:record.credit,
+                    location:(location!=null)?location:Constants.PayThrough.PAYMENT_GATEWAY,
+                    createdBy:record.createdBy
+                };
+                trans.push(serviceObject);
+
+            }
+            else
+            {
+
+                transObject={
+                    memberId:memberObject._id,
+                    invoiceNo: orderId,
+                    paymentDescription:Constants.PayDescription.TOPUP,
+                    paymentMode:(record.creditMode)?record.creditMode:"Others",
+                    paymentThrough:(record.paymentThrough)?record.paymentThrough:"Others",
+                    gatewayTransactionId:record.transactionNumber,
+                    comments:record.comments,
+                    credit:record.credit,
+                    balance:record.credit,
+                    location:(location!=null)?location:'Other Location',
+                    createdBy:record.createdBy
+                };
+                if(transObject.paymentMode=="Credit Card" ||transObject.paymentMode=="Debit Card")
+                {
+                    transObject.paymentThrough = "POS";
+                }
+                if(transObject.paymentThrough=="Others")
+                {
+                    if(transObject.paymentMode=="Cash" ||transObject.paymentMode=="mone-cash")
+                    {
+                        transObject.paymentThrough = transObject.paymentMode;
+                    }
+                }
+                trans.push(transObject);
+            }
+            Payments.create(trans,function (err,result) {
                 if(err)
                 {
                     return callback(err,null);
                 }
-                transactionDetails=result;
-                return callback(null,result);
+                if(result.length>1)
+                {
+                    transactionDetails=result[1];
+                    return callback(null,result);
+                }
+                else
+                {
+                    transactionDetails=result[0];
+                    return callback(null,result);
+                }
             });
         },
         function (callback) {
@@ -534,6 +712,7 @@ exports.newMember = function (memberObject,record,callback) {
     var paymentBalance;
     var transactionList=[];
     var location;
+    var flag = false;
 
     var updatedMember;
     async.series([
@@ -566,11 +745,34 @@ exports.newMember = function (memberObject,record,callback) {
                 if(!result)
                 {
                     location = 'Other Location';
+                    flag = true;
                     return callback(null,result);
                 }
                 location=result.location;
                 return callback(null,result);
             });
+        },
+        function (callback) {
+            if(flag)
+            {
+                KoneCenter.findOne({'stationType':'kone-center','assignedTo':record.createdBy}).lean().exec(function (err,result) {
+                    if(err)
+                    {
+                        return callback(err,null);
+                    }
+                    if(!result)
+                    {
+                        location = 'Other Location';
+                        return callback(null,null);
+                    }
+                    location=result.location;
+                    return callback(null,result);
+                });
+            }
+            else
+            {
+                return callback(null,null);
+            }
         }
         ,
         function (callback) {
@@ -578,12 +780,38 @@ exports.newMember = function (memberObject,record,callback) {
             {
                     var userfeeDeposit;
                     var uf = 'PBS'+ new Date().getTime();
+
+               /* if(record.onlinePay)
+                {
+                    var serviceObject;
+                    serviceObject={
+                        memberId:memberObject._id,
+                        invoiceNo: uf,
+                        paymentDescription:Constants.PayDescription.SERVICE_CHARGE,
+                        paymentMode:Constants.PayMode.TRANSFER,
+                        paymentThrough:Constants.PayMode.TRANSFER,
+                        gatewayTransactionId:record.transactionNumber,
+                        comments:record.comments,
+                        debit:memberShipObject.ccserviceCharge,
+                        balance:record.credit,
+                        location:(location!=null)?location:'Other Location',
+                        createdBy:record.createdBy
+                    };
+                    record.credit = record.credit-memberShipObject.ccserviceCharge;
+                    Payments.create(serviceObject,function (err,result) {
+                        if(err)
+                        {
+                           console.error('Error creating service charge payment record');
+                        }
+                    });
+                }*/
+
                     userfeeDeposit={
                         memberId:memberObject._id,
                         invoiceNo: uf,
                         paymentDescription:Constants.PayDescription.REGISTRATION,
                         paymentMode:record.creditMode,
-                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
+                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:(record.creditMode=='mone-cash')?record.creditMode:Constants.PayThrough.POS,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         credit:record.credit,
@@ -600,8 +828,8 @@ exports.newMember = function (memberObject,record,callback) {
                         memberId:memberObject._id,
                         invoiceNo: sd,
                         paymentDescription:Constants.PayDescription.SECURITY_DEPOSIT,
-                        paymentMode:record.creditMode,
-                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
+                        paymentMode:Constants.PayMode.TRANSFER,
+                        paymentThrough:Constants.PayMode.TRANSFER,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.securityDeposit,
@@ -617,8 +845,8 @@ exports.newMember = function (memberObject,record,callback) {
                         memberId:memberObject._id,
                         invoiceNo: cd,
                         paymentDescription:Constants.PayDescription.SMART_CARD_FEE,
-                        paymentMode:record.creditMode,
-                        paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
+                        paymentMode:Constants.PayMode.TRANSFER,
+                        paymentThrough:Constants.PayMode.TRANSFER,
                         gatewayTransactionId:record.transactionNumber,
                         comments:record.comments,
                         debit:memberShipObject.smartCardFees,
@@ -638,8 +866,8 @@ exports.newMember = function (memberObject,record,callback) {
                             memberId:memberObject._id,
                             invoiceNo: ps,
                             paymentDescription:Constants.PayDescription.PROCESSING_FEE,
-                            paymentMode:record.creditMode,
-                            paymentThrough:(record.creditMode=='Cash')?record.creditMode:Constants.PayThrough.POS,
+                            paymentMode:Constants.PayMode.TRANSFER,
+                            paymentThrough:Constants.PayMode.TRANSFER,
                             gatewayTransactionId:record.transactionNumber,
                             comments:record.comments,
                             debit:memberShipObject.processingFees,
@@ -779,7 +1007,21 @@ exports.daywiseCollection = function (record,callback) {
                 }
                 else
                 {
-                    queryObject.paymentDescription = {$nin:['Smart Card Fee','Security Deposit','Processing Fee']};
+                    queryObject.paymentDescription = {$nin:['Smart Card Fee','Security Deposit','Processing Fee','OnDemand','Online Payment Service Charge','Refund','Unused Balance']};
+                }
+            }
+            if(record.paymentMode)
+            {
+                if(record.paymentMode!='All')
+                {
+                    queryObject.paymentMode = record.paymentMode;
+                }
+            }
+            if(record.paymentThrough)
+            {
+                if(record.paymentThrough!='All')
+                {
+                    queryObject.paymentThrough = record.paymentThrough;
                 }
             }
             if(record.location)
@@ -795,6 +1037,7 @@ exports.daywiseCollection = function (record,callback) {
                         return callback(err,null);
                     }
                     //trans.push(result);
+
                     return callback(null,result);
                 });
 };
@@ -1154,7 +1397,17 @@ function totalcash (record,callback) {
                     cash:0,
                     pos:0,
                     gateway:0,
-                    refunds:0
+                    refunds:0,
+                    topup:0,
+                    regCash:0,
+                    regPOS:0,
+                    regPG:0,
+                    topupCash:0,
+                    topupPOS:0,
+                    topupPG:0,
+                    moneregCash:0,
+                    monetopupCash:0
+
                 };
                 details.date=moment(currentDate).format('YYYY-MM-DD');
                 trans.push(details);
@@ -1235,7 +1488,46 @@ function totalcash (record,callback) {
                                 }
                                 if(payDetails[j].paymentDescription==Constants.PayDescription.REFUND)
                                 {
-                                    data.refunds= data.refunds+Number(payDetails[j].credit);
+                                    data.refunds= data.refunds+Number(payDetails[j].debit);
+                                }
+                                if(payDetails[j].paymentDescription==Constants.PayDescription.TOPUP)
+                                {
+                                    if(payDetails[j].paymentMode!="mone-cash") {
+                                        data.topup = data.topup + Number(payDetails[j].credit);
+                                    }
+                                }
+                                if(payDetails[j].paymentDescription=="Registration" && (payDetails[j].paymentThrough==Constants.PayThrough.PAYMENT_GATEWAY || payDetails[j].paymentThrough=="CCAvenue" || payDetails[j].paymentThrough=="PayGov"))
+                                {
+                                    data.regPG= data.regPG+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentDescription=="Registration" && payDetails[j].paymentThrough==Constants.PayThrough.POS)
+                                {
+                                    data.regPOS= data.regPOS+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentDescription=="Registration" && payDetails[j].paymentThrough==Constants.PayThrough.CASH)
+                                {
+                                    data.regCash= data.regCash+Number(payDetails[j].credit);
+                                }
+
+                                if(payDetails[j].paymentDescription=="Topup" && (payDetails[j].paymentThrough==Constants.PayThrough.PAYMENT_GATEWAY || payDetails[j].paymentThrough=="CCAvenue" || payDetails[j].paymentThrough=="PayGov"))
+                                {
+                                    data.topupPG= data.topupPG+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentDescription=="Topup" && payDetails[j].paymentThrough==Constants.PayThrough.POS)
+                                {
+                                    data.topupPOS= data.topupPOS+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentDescription=="Topup" && payDetails[j].paymentThrough==Constants.PayThrough.CASH)
+                                {
+                                    data.topupCash= data.topupCash+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentDescription=="Registration" && payDetails[j].paymentMode=="mone-cash")
+                                {
+                                    data.moneregCash= data.moneregCash+Number(payDetails[j].credit);
+                                }
+                                if(payDetails[j].paymentDescription=="Topup" && payDetails[j].paymentMode=="mone-cash")
+                                {
+                                    data.monetopupCash= data.monetopupCash+Number(payDetails[j].credit);
                                 }
                             }
                         }
@@ -1307,7 +1599,7 @@ exports.getMembertrans = function (id,flag,callback) {
 
             if(isNaN(id))
             {
-                Payments.find({'memberId':id,paymentDescription:{$in:['Registration','Credit note','Topup','Refund']}}).sort('-createdAt').lean().exec(function (err, result) {
+                Payments.find({'memberId':id/*,paymentDescription:{$in:['Registration','Credit note','Topup','Refund']}*/}).sort('-createdAt').lean().exec(function (err, result) {
 
                     if(err){
                         return callback(err,null)
@@ -1326,7 +1618,7 @@ exports.getMembertrans = function (id,flag,callback) {
 
                         Payments.find({
                             'memberId': result._id,
-                            paymentDescription: {$in: ['Registration', 'Credit note', 'Topup','Refund']}
+                            paymentDescription: {$nin: ['Smart Card Fee']}
                         }).sort('-createdAt').lean().exec(function (err, result) {
 
                             if (err) {

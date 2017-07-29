@@ -11,6 +11,8 @@ var abstract = require('./abstract'),
 // Mongoose Schema
 var Schema = mongoose.Schema;
 
+const Stype = Constants.ServiceChargeType;
+
 const MembershipStatus = Constants.MembershipStatus;
 
 // Model
@@ -25,14 +27,16 @@ var schema = {
     securityDeposit: {type: Number, required: true},
     smartCardFees: {type: Number, required: false,default:0},
     processingFees: {type: Number, required: true},
-
+    ccserviceCharge:{type:Number,required:false,default:10},
+    serviceChargeType:{type:Stype,required:false,default:Stype.FLAT},
     farePlan: {type: Schema.ObjectId, required: true, ref: "FarePlan"},
-
     status: {type: MembershipStatus, required: true, default: MembershipStatus.ACTIVE},
+
     lastSyncedAt:{type:Date,required:false,default:'2017-01-01T00:00:00.000Z'},
     updateCount:{type: Number, required: false,default:0},
     unsuccessIp:{type:[String],required:false,default:[]},
     successIp:{type:[String],required:false,default:[]}
+
 };
 
 var model = new Schema(schema);
